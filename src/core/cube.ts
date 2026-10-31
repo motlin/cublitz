@@ -3,7 +3,7 @@ import type {Direction, Face, FaceColor, Faces, PieceColor} from "./types.ts";
 export const FACES: Face[] = ["t", "b", "n", "s", "e", "w"];
 export const DIRS: Record<Direction, [number, number]> = {N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0]};
 
-export function roll(f: Faces, d: Direction): Faces {
+export function roll<T>(f: Record<Face, T>, d: Direction): Record<Face, T> {
 	const {t, b, n, s, e, w} = f;
 	if (d === "E") return {t: w, e: t, b: e, w: b, n, s};
 	if (d === "W") return {t: e, w: t, b: w, e: b, n, s};
