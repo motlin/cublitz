@@ -37,6 +37,8 @@ export type OriginalEngine = {
 	encodeLevel: (level: unknown) => string;
 	decodeLevel: (code: string) => unknown;
 	infRng: (seed: number) => () => number;
+	infCandidate: (R: () => number, n: number) => unknown;
+	infTry: (R: () => number, n: number) => unknown;
 	infRating: (run: {effs: number[]}) => number;
 	infRank: (run: {effs: number[]}) => string;
 };
@@ -70,7 +72,7 @@ export function loadOriginalEngine(): OriginalEngine {
 			return level;
 		}`,
 		`return { LEVELS, parseLevel, initState, tryMove, stateKey, solve, generateInfinite, roll, solidColor, workColor,
-			openColors, nextMilestone, hintTexts, encodeLevel, decodeLevel, infRng, infRating, infRank };`,
+			openColors, nextMilestone, hintTexts, encodeLevel, decodeLevel, infRng, infCandidate, infTry, infRating, infRank };`,
 	].join("\n");
 	// genInf yields to the browser between batches of tries; here the next batch can simply run.
 	const runNow = (step: () => void): void => step();
