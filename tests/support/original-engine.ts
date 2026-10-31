@@ -19,6 +19,7 @@ export type MoveResult = {
 	[detail: string]: unknown;
 };
 export type GeneratedLevel = LevelSource & {name: string; inf: number; par: number};
+export type Milestone = Record<string, unknown>;
 export type OriginalEngine = {
 	LEVELS: Level[];
 	parseLevel: (source: LevelSource) => Level;
@@ -27,6 +28,17 @@ export type OriginalEngine = {
 	stateKey: (state: State) => string;
 	solve: ((level: Level, state: State, limit?: number) => string | null) & {hitLimit: boolean};
 	generateInfinite: (seed: number, n: number) => GeneratedLevel;
+	roll: (faces: Record<string, string>, direction: string) => Record<string, string>;
+	solidColor: (faces: Record<string, string>) => string;
+	workColor: (faces: Record<string, string>) => string;
+	openColors: (level: Level, state: State) => Record<string, boolean>;
+	nextMilestone: (level: Level, state: State, solution: string) => Milestone | null;
+	hintTexts: (level: Level, state: State, milestone: Milestone) => string[];
+	encodeLevel: (level: unknown) => string;
+	decodeLevel: (code: string) => unknown;
+	infRng: (seed: number) => () => number;
+	infRating: (run: {effs: number[]}) => number;
+	infRank: (run: {effs: number[]}) => string;
 };
 
 const between = (text: string, from: string, to: string): string => {
@@ -41,18 +53,24 @@ export function loadOriginalEngine(): OriginalEngine {
 	const html = readFileSync(new URL("../../legacy/original.html", import.meta.url), "utf8");
 	const source = [
 		between(html, "const LEVELS = [", "const COLORS = {"),
+		between(html, "const CNAME = {", "const ROT = {"),
+		between(html, "const dirWord = ", "function win()"),
 		between(html, "// ==ENGINE==", "LEVELS.forEach(L => parseLevel(L));"),
 		"LEVELS.forEach(L => parseLevel(L));",
 		between(html, "// ==INFGEN==", "// ---------- Infinite mode"),
 		"let infGenToken = 0, run = null;",
+		between(html, "const RANKS = ", "// Generate level n of the current run"),
 		between(html, "function genInf(", "function pregenerate("),
+		between(html, "function nextMilestone(", "const mKey = "),
+		between(html, "const encodeLevel = ", "function edCellHTML("),
 		`function generateInfinite(seed, n) {
 			run = { seed };
 			let level = null;
 			genInf(n, lv => { level = lv; });
 			return level;
 		}`,
-		"return { LEVELS, parseLevel, initState, tryMove, stateKey, solve, generateInfinite };",
+		`return { LEVELS, parseLevel, initState, tryMove, stateKey, solve, generateInfinite, roll, solidColor, workColor,
+			openColors, nextMilestone, hintTexts, encodeLevel, decodeLevel, infRng, infRating, infRank };`,
 	].join("\n");
 	// genInf yields to the browser between batches of tries; here the next batch can simply run.
 	const runNow = (step: () => void): void => step();
