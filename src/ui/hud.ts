@@ -1,7 +1,7 @@
 import {FACES, solidColor} from "../core/cube.ts";
 import {LEVELS} from "../core/levels.ts";
 import {CNAME, FNAME} from "../core/names.ts";
-import type {Face, FaceColor, Need, Paint} from "../core/types.ts";
+import type {Face, Need, Paint} from "../core/types.ts";
 import {$, domValue} from "./dom.ts";
 import {renderStock} from "./editor.ts";
 import {loadLevel} from "./play.ts";
@@ -21,7 +21,7 @@ export function renderHud(popFace?: Face | null): void {
 		d.className = "nf";
 		d.style.gridColumn = domValue(NET_POS[k][0]);
 		d.style.gridRow = domValue(NET_POS[k][1]);
-		const has = f[k] as FaceColor;
+		const has = f[k];
 		d.style.setProperty("--fc", has ? COLORS[has] : "var(--clay)");
 		d.textContent = k.toUpperCase();
 		d.title = FNAME[k] + (has ? ": " + CNAME[has] : ": bare");

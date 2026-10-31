@@ -3,7 +3,7 @@ import {infCandidate, infRng, infSearch} from "../../../src/core/infinite.ts";
 import {solve} from "../../../src/core/solver.ts";
 
 // No quick real seed needs more than 240 tries, so the solver is scripted to reject that many.
-vi.mock("../../../src/core/solver.ts", () => ({solve: vi.fn()}));
+vi.mock("../../../src/core/solver.ts", () => ({solve: vi.fn<typeof solve>()}));
 
 it("after 240 failed tries it draws candidates from four levels earlier", () => {
 	let calls = 0;

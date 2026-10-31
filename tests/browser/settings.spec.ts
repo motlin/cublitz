@@ -5,33 +5,34 @@ import {keyFor} from "../support/paths.ts";
 import {atLevel, DESKTOP, MOBILE, withPair} from "./harness/pair.ts";
 
 const golden = JSON.parse(readFileSync(new URL("../golden/solve.json", import.meta.url), "utf8")) as SolveGolden[];
-const pathOf = (index: number): string => golden[index]?.path as string;
+const pathOf = (index: number): string => golden[index]!.path!;
 
 test("palette: swatches, picker, sliders, numbers, hex, resets and persistence", async ({browser}) => {
 	await withPair(browser, {storage: atLevel(1)}, async (pair) => {
 		await pair.click("#titlePlay");
 		await pair.click("#palBtn");
 		for (const k of ["o", "y", "g", "c", "b", "p", "r"]) await pair.click(`#palSwatches [data-k="${k}"]`);
-		const fill = (id: string, v: string) => pair.step(`set ${id} to ${v}`, (page) => page.locator(id).fill(v));
+		const fill = async (id: string, v: string) =>
+			pair.step(`set ${id} to ${v}`, async (page) => page.locator(id).fill(v));
 		await fill("#palPick", "#112233");
-		expect(JSON.parse(pair.last.storage["cubist-colors-v1"] as string)).toStrictEqual({r: "#112233"});
+		expect(JSON.parse(pair.last.storage["cubist-colors-v1"]!)).toStrictEqual({r: "#112233"});
 		await fill("#palR", "200");
 		await fill("#palG", "10");
 		await fill("#palB", "90");
 		await fill("#palRn", "999");
 		await fill("#palGn", "0");
 		await fill("#palBn", "1");
-		expect(JSON.parse(pair.last.storage["cubist-colors-v1"] as string)).toStrictEqual({r: "#ff0001"});
+		expect(JSON.parse(pair.last.storage["cubist-colors-v1"]!)).toStrictEqual({r: "#ff0001"});
 		await fill("#palHex", "abc");
 		await fill("#palHex", "ABCDEF");
 		await fill("#palHex", "#123456");
-		await pair.step("blur the hex field", (page) => page.locator("#palHex").blur());
+		await pair.step("blur the hex field", async (page) => page.locator("#palHex").blur());
 		await pair.click(`#palSwatches [data-k="b"]`);
 		await fill("#palHex", "#654321");
 		await pair.press("Escape", "escape closes the palette");
 		await pair.click("#palBtn");
 		await pair.click("#palResetOne");
-		expect(JSON.parse(pair.last.storage["cubist-colors-v1"] as string)).toStrictEqual({r: "#123456"});
+		expect(JSON.parse(pair.last.storage["cubist-colors-v1"]!)).toStrictEqual({r: "#123456"});
 		await pair.click("#palClose");
 		await pair.reload();
 		await pair.click("#titlePlay", "custom color survives a reload");
@@ -48,12 +49,12 @@ test("sound: toggle, M key, persistence and the exact audio call sequence", asyn
 	await withPair(browser, {storage: atLevel(8)}, async (pair) => {
 		const started = await pair.click("#titlePlay", "the first press wakes the audio context");
 		expect(started.audio[0]).toStrictEqual(["new AudioContext"]);
-		const on = await pair.press(keyFor(pathOf(8)[0] as string), "a roll with sound on");
+		const on = await pair.press(keyFor(pathOf(8)[0]!), "a roll with sound on");
 		expect(on.audio.length).toBeGreaterThan(10);
 		await pair.click("#topbar .soundbtn", "mute");
 		expect(pair.last.storage["cubist-sound-v1"]).toBe("off");
 		expect(await pair.legacy.locator("#topbar .soundbtn .lbl").textContent()).toBe("Sound off");
-		const muted = await pair.press(keyFor(pathOf(8)[1] as string), "a muted roll is silent");
+		const muted = await pair.press(keyFor(pathOf(8)[1]!), "a muted roll is silent");
 		expect(muted.audio).toStrictEqual([]);
 		await pair.reload();
 		const reloaded = await pair.click("#titlePlay", "mute survives a reload");
@@ -161,30 +162,32 @@ const SWIPES: Record<string, [number, number]> = {N: [0, -60], S: [0, 60], E: [6
 
 test("mobile viewport: swipe every direction, short swipes ignored, d-pad taps, win", async ({browser}) => {
 	await withPair(browser, {viewport: MOBILE, mobile: true, storage: atLevel(1)}, async (pair) => {
-		await pair.step("tap play", (page) => page.locator("#titlePlay").tap());
+		await pair.step("tap play", async (page) => page.locator("#titlePlay").tap());
 		expect(pair.last.hud.num).toBe("Level 2 of 30");
-		const ignored = await pair.step("a too-short swipe", (page) => swipe(page, 10, 5));
+		const ignored = await pair.step("a too-short swipe", async (page) => swipe(page, 10, 5));
 		expect(ignored.hud.moves).toBe("0");
-		const swiped = await pair.step("swipe east", (page) => swipe(page, 60, 0));
+		const swiped = await pair.step("swipe east", async (page) => swipe(page, 60, 0));
 		expect(swiped.hud.moves).toBe("1");
-		await pair.step("swipe north", (page) => swipe(page, 0, -60));
-		await pair.step("swipe south", (page) => swipe(page, 0, 60));
-		await pair.step("swipe west", (page) => swipe(page, -60, 0));
-		await pair.step("tap undo", (page) => page.locator("#undoBtn").tap());
-		await pair.step("tap restart", (page) => page.locator("#resetBtn").tap());
+		await pair.step("swipe north", async (page) => swipe(page, 0, -60));
+		await pair.step("swipe south", async (page) => swipe(page, 0, 60));
+		await pair.step("swipe west", async (page) => swipe(page, -60, 0));
+		await pair.step("tap undo", async (page) => page.locator("#undoBtn").tap());
+		await pair.step("tap restart", async (page) => page.locator("#resetBtn").tap());
 		const path = pathOf(1);
-		for (const [i, d] of [...path].entries()) {
+		for (const [i, d] of Array.from(path).entries()) {
 			if (i % 2 === 0) {
-				const [dx, dy] = SWIPES[d] as [number, number];
-				await pair.step(`swipe ${d} ${i}`, (page) => swipe(page, dx, dy));
+				const [dx, dy] = SWIPES[d]!;
+				await pair.step(`swipe ${d} ${i}`, async (page) => swipe(page, dx, dy));
 			} else {
-				await pair.step(`d-pad ${d} ${i}`, (page) => page.locator(`#dpad [data-d="${d}"]`).tap());
+				await pair.step(`d-pad ${d} ${i}`, async (page) => page.locator(`#dpad [data-d="${d}"]`).tap());
 			}
 		}
 		expect(pair.last.win.hidden).toBe(false);
-		await pair.step("tap next", (page) => page.locator("#winNext").tap());
-		await pair.step("open editor from the mode bar", (page) => page.locator("#modeEdit").tap());
-		await pair.step("tap a tile in the editor", (page) => page.locator('#edGrid [data-x="1"][data-y="1"]').tap());
+		await pair.step("tap next", async (page) => page.locator("#winNext").tap());
+		await pair.step("open editor from the mode bar", async (page) => page.locator("#modeEdit").tap());
+		await pair.step("tap a tile in the editor", async (page) =>
+			page.locator('#edGrid [data-x="1"][data-y="1"]').tap(),
+		);
 	});
 });
 
@@ -193,11 +196,11 @@ test("mobile with reduced motion", async ({browser}) => {
 		browser,
 		{viewport: MOBILE, mobile: true, reducedMotion: true, storage: atLevel(0, false)},
 		async (pair) => {
-			await pair.step("tap play", (page) => page.locator("#titlePlay").tap());
+			await pair.step("tap play", async (page) => page.locator("#titlePlay").tap());
 			await pair.dismissTips();
 			for (const d of pathOf(0)) {
-				const [dx, dy] = SWIPES[d] as [number, number];
-				await pair.step(`swipe ${d}`, (page) => swipe(page, dx, dy));
+				const [dx, dy] = SWIPES[d]!;
+				await pair.step(`swipe ${d}`, async (page) => swipe(page, dx, dy));
 			}
 			expect(pair.last.win.hidden).toBe(false);
 		},

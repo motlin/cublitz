@@ -5,8 +5,8 @@ import {findBlockedMove, findDeadEnd, findMissedGoal, keyFor} from "../support/p
 import {atLevel, engine, type Pair, withPair} from "./harness/pair.ts";
 
 const golden = JSON.parse(readFileSync(new URL("../golden/solve.json", import.meta.url), "utf8")) as SolveGolden[];
-const pathOf = (index: number): string => golden[index]?.path as string;
-const level = (index: number) => engine.LEVELS[index] as (typeof engine.LEVELS)[number];
+const pathOf = (index: number): string => golden[index]!.path!;
+const level = (index: number) => engine.LEVELS[index]!;
 const openLevel = async (pair: Pair): Promise<void> => {
 	await pair.click("#titlePlay");
 };
@@ -21,7 +21,7 @@ const CNAME: Record<string, string> = {
 	w: "white",
 };
 const WORD: Record<string, string> = {N: "north", S: "south", E: "east", W: "west"};
-const cap = (s: string) => (s[0] as string).toUpperCase() + s.slice(1);
+const cap = (s: string) => s[0]!.toUpperCase() + s.slice(1);
 
 type Blocked = {
 	title: string;
@@ -37,8 +37,7 @@ const BLOCKED: Blocked[] = [
 		index: 2,
 		why: "gate",
 		accept: (r) => !r["down"],
-		text: (r, d) =>
-			`<b>${cap(CNAME[r["c"] as string] as string)} gate.</b> Rolling ${WORD[d]} would put a bare face down.`,
+		text: (r, d) => `<b>${cap(CNAME[r["c"]!]!)} gate.</b> Rolling ${WORD[d]} would put a bare face down.`,
 	},
 	{
 		title: "color gate, wrong color",
@@ -46,7 +45,7 @@ const BLOCKED: Blocked[] = [
 		why: "gate",
 		accept: (r) => !!r["down"] && r["down"] !== r["c"],
 		text: (r, d) =>
-			`<b>${cap(CNAME[r["c"] as string] as string)} gate.</b> Rolling ${WORD[d]} would put ${CNAME[r["down"] as string]} face down.`,
+			`<b>${cap(CNAME[r["c"]!]!)} gate.</b> Rolling ${WORD[d]} would put ${CNAME[r["down"]!]} face down.`,
 	},
 	{
 		title: "plain white gate",
@@ -54,14 +53,14 @@ const BLOCKED: Blocked[] = [
 		why: "wgate",
 		accept: (r) => r["f"] === "b",
 		text: (r, d) =>
-			`<b>White gate.</b> It needs a bare face down, but rolling ${WORD[d]} would put ${CNAME[r["has"] as string]} down.`,
+			`<b>White gate.</b> It needs a bare face down, but rolling ${WORD[d]} would put ${CNAME[r["has"]!]} down.`,
 	},
 	{
 		title: "named white gate",
 		index: 21,
 		why: "wgate",
 		text: (r) =>
-			`<b>East white gate.</b> Your east face has to be bare when you land, but it would be ${CNAME[r["has"] as string]}.`,
+			`<b>East white gate.</b> Your east face has to be bare when you land, but it would be ${CNAME[r["has"]!]}.`,
 	},
 	{
 		title: "shut door",
@@ -100,7 +99,7 @@ for (const {title, index, why, accept, text} of BLOCKED) {
 			const moves = pair.last.hud.moves;
 			const blocked = await pair.press(keyFor(found.dir), "blocked roll");
 			let state = engine.initState(level(index));
-			for (const d of found.path) state = engine.tryMove(level(index), state, d).st as typeof state;
+			for (const d of found.path) state = engine.tryMove(level(index), state, d).st!;
 			const detail = engine.tryMove(level(index), state, found.dir) as unknown as Record<string, string>;
 			expect(blocked.status).toStrictEqual({
 				text: text(detail, found.dir).replace(/<\/?b>/g, ""),
@@ -115,7 +114,7 @@ for (const {title, index, why, accept, text} of BLOCKED) {
 }
 
 test("landing on a picky target without its colors", async ({browser}) => {
-	const path = findMissedGoal(engine, level(5)) as string;
+	const path = findMissedGoal(engine, level(5))!;
 	await withPair(browser, {storage: atLevel(5)}, async (pair) => {
 		await openLevel(pair);
 		const missed = await pair.roll(path);
@@ -188,14 +187,14 @@ const HINT_LEVELS: [number, string[]][] = [
 	[28, ["button", "door", "gate", "goal", "wash"]],
 ];
 const milestone = (text: string): string => {
-	if (/paint remover/.test(text)) return "wash";
-	if (/white gate/.test(text)) return "wgate";
-	if (/ gate\./.test(text)) return "gate";
-	if (/coat all six/.test(text)) return "solid";
-	if (/ switch\./.test(text)) return "switch";
-	if (/ box onto /.test(text)) return "button";
-	if (/ door\./.test(text)) return "door";
-	if (/Head for the target/.test(text)) return "goal";
+	if (text.includes("paint remover")) return "wash";
+	if (text.includes("white gate")) return "wgate";
+	if (text.includes(" gate.")) return "gate";
+	if (text.includes("coat all six")) return "solid";
+	if (text.includes(" switch.")) return "switch";
+	if (text.includes(" box onto ")) return "button";
+	if (text.includes(" door.")) return "door";
+	if (text.includes("Head for the target")) return "goal";
 	return `unknown: ${text}`;
 };
 
@@ -217,7 +216,7 @@ for (const [index, expected] of HINT_LEVELS) {
 				await pair.press(keyFor(d), `roll after hint ${i}`);
 				i++;
 			}
-			expect([...seen].sort()).toStrictEqual(expected);
+			expect([...seen].toSorted()).toStrictEqual(expected);
 			expect(pair.last.win.hidden).toBe(false);
 		});
 	});
@@ -240,7 +239,7 @@ test("hint can be hidden and re-asked, and is cleared by the solution", async ({
 
 test("hints and solutions from a position with no way out", async ({browser}) => {
 	const index = 20;
-	const path = findDeadEnd(engine, level(index)) as string;
+	const path = findDeadEnd(engine, level(index))!;
 	await withPair(browser, {storage: atLevel(index)}, async (pair) => {
 		await openLevel(pair);
 		await pair.roll(path);
@@ -308,7 +307,7 @@ test("solution reveal: next, up to goal, reveal the rest, pause, follow, diverge
 
 test("title screen: progress text, tutorial replay, reset arm, timeout and confirm", async ({browser}) => {
 	await withPair(browser, {storage: atLevel(4)}, async (pair) => {
-		const title = () => pair.legacy.locator("#titleProgress").textContent();
+		const title = async () => pair.legacy.locator("#titleProgress").textContent();
 		expect(await title()).toBe("4 of 30 levels cleared");
 		await pair.click("#tipsReplay");
 		await pair.fireParkedTimers();
@@ -341,10 +340,12 @@ test("navigation: brand, mode buttons, levels list, hash and window resize", asy
 		await pair.click("#titleEdit");
 		await pair.resize(1000, 700);
 		await pair.click(".brand");
-		await pair.step("hash navigation to the editor", (page) => page.evaluate(() => (location.hash = "#editor")));
+		await pair.step("hash navigation to the editor", async (page) =>
+			page.evaluate(() => (location.hash = "#editor")),
+		);
 		expect(pair.last.location).toBe("#editor");
 		await pair.reload();
-		await pair.step("hash cleared", (page) => page.evaluate(() => (location.hash = "")));
+		await pair.step("hash cleared", async (page) => page.evaluate(() => (location.hash = "")));
 	});
 });
 
@@ -355,7 +356,7 @@ test("window.claude.hot hooks: data resumes a level, with and without ready", as
 		await withPair(browser, {storage: atLevel(1), hot: {data: RESUME, useReady}}, async (pair) => {
 			expect(pair.last.audio).toStrictEqual([["hot.snapshot", "function"]]);
 			const snapshots = await Promise.all(
-				pair.pages.map((page) =>
+				pair.pages.map(async (page) =>
 					page.evaluate(() => (window as unknown as {__hotSnapshot: () => unknown}).__hotSnapshot()),
 				),
 			);

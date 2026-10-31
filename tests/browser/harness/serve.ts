@@ -1,5 +1,5 @@
 import {readFile} from "node:fs/promises";
-import {createServer} from "node:http";
+import {createServer, type IncomingMessage, type ServerResponse} from "node:http";
 import {extname, join, normalize, resolve} from "node:path";
 import {readExpectedHtml} from "../../support/intentional-divergences.ts";
 
@@ -19,7 +19,7 @@ const TYPES: Record<string, string> = {
 	".png": "image/png",
 };
 
-createServer(async (request, response) => {
+const respond = async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
 	const pathname = normalize(new URL(request.url ?? "/", "http://x").pathname);
 	if (pathname === "/legacy/expected.html") {
 		response.writeHead(200, {"content-type": "text/html; charset=utf-8", "cache-control": "no-store"});
@@ -40,4 +40,10 @@ createServer(async (request, response) => {
 	} catch {
 		response.writeHead(404).end("not found");
 	}
-}).listen(port, "127.0.0.1", () => console.log(`serving ${distDir} on ${port}`));
+};
+
+createServer((request, response) => {
+	void respond(request, response);
+}).listen(port, "127.0.0.1", () => {
+	console.log(`serving ${distDir} on ${port}`);
+});

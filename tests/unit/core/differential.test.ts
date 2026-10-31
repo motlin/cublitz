@@ -91,10 +91,14 @@ describe("the core modules against the original script", () => {
 		const compared = oddities.map((source) => {
 			const mine = parseLevel(structuredClone(source));
 			const theirs = original.parseLevel(structuredClone(source) as Parameters<OriginalEngine["parseLevel"]>[0]);
-			return [JSON.stringify(mine), JSON.stringify(theirs), ...mismatches(compareWalk(mine, theirs, 20))];
+			return {
+				mine: JSON.stringify(mine),
+				theirs: JSON.stringify(theirs),
+				differences: mismatches(compareWalk(mine, theirs, 20)),
+			};
 		});
-		expect(compared.map(([mine]) => mine)).toStrictEqual(compared.map(([, theirs]) => theirs));
-		expect(compared.flatMap((entry) => entry.slice(2))).toStrictEqual([]);
+		expect(compared.map(({mine}) => mine)).toStrictEqual(compared.map(({theirs}) => theirs));
+		expect(compared.flatMap(({differences}) => differences)).toStrictEqual([]);
 	});
 
 	it("a legend entry that cannot be destructured throws in both", () => {

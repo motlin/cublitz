@@ -21,11 +21,11 @@ test("a new editor is a blank 8 by 5 grid with a start and a target", () => {
 		cols: 8,
 		rows: 5,
 		grid: [
-			Array(8).fill(floor),
-			Array(8).fill(floor),
-			[{t: "start"}, ...Array(6).fill(floor), {t: "goal"}],
-			Array(8).fill(floor),
-			Array(8).fill(floor),
+			Array.from({length: 8}, () => floor),
+			Array.from({length: 8}, () => floor),
+			[{t: "start"}, ...Array.from({length: 6}, () => floor), {t: "goal"}],
+			Array.from({length: 8}, () => floor),
+			Array.from({length: 8}, () => floor),
 		],
 		need: {},
 	});
@@ -40,7 +40,7 @@ test("the grid becomes map characters, with legend entries handed out in reading
 	expect(edToLevel(draft(grid, {name: "  Spaced  ", need: {b: "r", t: "g"}}))).toStrictEqual({
 		level: {
 			name: "Spaced",
-			map: ["S.rBWZ", "123" + "2X"],
+			map: ["S.rBWZ", "1232X"],
 			k: {1: ["wgate", "n"], 2: ["switch", "w"], 3: ["box", "g"]},
 			need: {t: "g", b: "r"},
 		},

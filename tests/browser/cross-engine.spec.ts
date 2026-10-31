@@ -28,10 +28,10 @@ const generateIn = async (engine: BrowserType): Promise<{levels: unknown[]; cand
 	const browser = await engine.launch();
 	try {
 		const context = await browser.newContext();
-		await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, (route) => route.abort());
+		await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, async (route) => route.abort());
 		const page = await context.newPage();
 		await page.goto(BASE_URL + DIST_PATH);
-		return (await page.evaluate(GENERATE)) as {levels: unknown[]; candidates: unknown[]};
+		return await page.evaluate(GENERATE);
 	} finally {
 		await browser.close();
 	}

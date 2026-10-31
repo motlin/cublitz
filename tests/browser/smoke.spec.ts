@@ -7,8 +7,8 @@ import {expect, test} from "@playwright/test";
 import type {InfiniteGolden, SolveGolden} from "../support/golden.ts";
 import {BASE_URL, DIST_PATH, EXPECTED_PATH, LEGACY_PATH, withPair} from "./harness/pair.ts";
 
-const readGolden = <T>(name: string): T =>
-	JSON.parse(readFileSync(new URL(`../golden/${name}`, import.meta.url), "utf8")) as T;
+const readGolden = (name: string): unknown =>
+	JSON.parse(readFileSync(new URL(`../golden/${name}`, import.meta.url), "utf8"));
 
 test("the legacy artifact is the source file, byte for byte", async ({request}) => {
 	const body = await (await request.get(BASE_URL + LEGACY_PATH)).body();
@@ -58,9 +58,9 @@ test("the goldens match the original script running in the browser", async ({pag
 	await page.goto(BASE_URL + LEGACY_PATH);
 	// A string, because const and let at the top of a classic script are not properties of window.
 	const solved = await page.evaluate("LEVELS.map(level => [solve(level, initState(level)), solve.hitLimit])");
-	expect(solved).toStrictEqual(readGolden<SolveGolden[]>("solve.json").map((g) => [g.path, g.hitLimit]));
+	expect(solved).toStrictEqual((readGolden("solve.json") as SolveGolden[]).map((g) => [g.path, g.hitLimit]));
 
-	const infinite = readGolden<InfiniteGolden[]>("infinite.json");
+	const infinite = readGolden("infinite.json") as InfiniteGolden[];
 	const cases = JSON.stringify(infinite.map((g) => [g.seed, g.n]));
 	const generated = await page.evaluate(`(async () => {
 		const out = [];
@@ -93,7 +93,7 @@ for (const seed of [1, 4, 9, 77, 2024, 31337]) {
 }
 
 test("the post-fix goldens match the expected page and dist in the browser", async ({page}) => {
-	const infinite = readGolden<InfiniteGolden[]>("infinite-post-fix.json");
+	const infinite = readGolden("infinite-post-fix.json") as InfiniteGolden[];
 	const generate = `(async () => {
 		const out = [];
 		for (const [seed, n] of ${JSON.stringify(infinite.map((g) => [g.seed, g.n]))}) {
@@ -122,7 +122,7 @@ test("the screenshot comparison on its own notices a one-element paint change", 
 test("the harness pins Math.random and Date identically in both pages", async ({browser}) => {
 	await withPair(browser, {}, async (pair) => {
 		const sample = () => [Math.random(), Math.random(), Date.now(), new Date().toISOString()];
-		const [legacy, dist] = await Promise.all(pair.pages.map((page) => page.evaluate(sample)));
+		const [legacy, dist] = await Promise.all(pair.pages.map(async (page) => page.evaluate(sample)));
 		expect(dist).toStrictEqual(legacy);
 		expect(legacy?.slice(2)).toStrictEqual([Date.UTC(2026, 0, 2, 3, 4, 5), "2026-01-02T03:04:05.000Z"]);
 	});

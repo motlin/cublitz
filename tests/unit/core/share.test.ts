@@ -47,6 +47,6 @@ describe("decodeLevel", () => {
 
 	it("fails on invalid JSON and invalid base64", () => {
 		expect(() => decodeLevel("not json")).toThrow(SyntaxError);
-		expect(() => decodeLevel("CUBLITZ:%%%")).toThrow();
+		expect(() => decodeLevel("CUBLITZ:%%%")).toThrow("Invalid character");
 	});
 });

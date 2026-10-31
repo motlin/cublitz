@@ -27,10 +27,11 @@ const generate = (seed: number, n: number): GeneratedLevel => {
 	}
 };
 
+const drawFour = (rng: () => number) => [rng(), rng(), rng(), rng()];
+
 describe("infRng", () => {
 	it("produces the original's stream for a seed", () => {
-		const draw = (rng: () => number) => [rng(), rng(), rng(), rng()];
-		expect(draw(infRng(12345))).toStrictEqual(draw(original.infRng(12345)));
+		expect(drawFour(infRng(12345))).toStrictEqual(drawFour(original.infRng(12345)));
 	});
 
 	it("produces known values, in [0, 1)", () => {
@@ -39,15 +40,16 @@ describe("infRng", () => {
 	});
 });
 
-describe("shuffle", () => {
-	const scripted = (draws: number[]) => {
-		const left = [...draws];
-		return () => {
-			const next = left.shift();
-			if (next === undefined) throw new Error("drew more than expected");
-			return next;
-		};
+const scripted = (draws: number[]) => {
+	const left = [...draws];
+	return () => {
+		const next = left.shift();
+		if (next === undefined) throw new Error("drew more than expected");
+		return next;
 	};
+};
+
+describe("shuffle", () => {
 	const items = ["a", "b", "c", "d"];
 
 	it("swaps from the end with the position each draw picks, one draw per step", () => {
@@ -77,26 +79,30 @@ describe("infRelaxed", () => {
 	});
 });
 
+const drawAttempts = (attempt: (R: () => number, n: number) => unknown, rng: (seed: number) => () => number) =>
+	[0, 4, 8].flatMap((n) => {
+		const R = rng(n + 1);
+		return Array.from({length: 8}, () => attempt(R, n));
+	});
+
 describe("infCandidate and infTry", () => {
 	const levelNumbers = [0, 2, 4, 6, 8, 10, 12, 14, 20, 33];
 
+	const drawCandidates = (candidate: (R: () => number, n: number) => unknown, rng: (seed: number) => () => number) =>
+		levelNumbers.flatMap((n) => {
+			const R = rng(n + 1);
+			return Array.from({length: 800}, () => candidate(R, n));
+		});
+
 	it("draws the same candidates as the original at every tier, for many draws", () => {
-		const draw = (candidate: (R: () => number, n: number) => unknown, rng: (seed: number) => () => number) =>
-			levelNumbers.flatMap((n) => {
-				const R = rng(n + 1);
-				return Array.from({length: 800}, () => candidate(R, n));
-			});
-		expect(draw(infCandidate, infRng)).toStrictEqual(draw(original.infCandidate, original.infRng));
+		expect(drawCandidates(infCandidate, infRng)).toStrictEqual(
+			drawCandidates(original.infCandidate, original.infRng),
+		);
 	});
 
 	it("accepts and rejects the same candidates as the original", () => {
-		const draw = (attempt: (R: () => number, n: number) => unknown, rng: (seed: number) => () => number) =>
-			[0, 4, 8].flatMap((n) => {
-				const R = rng(n + 1);
-				return Array.from({length: 8}, () => attempt(R, n));
-			});
-		const tried = draw(infTry, infRng);
-		expect(tried).toStrictEqual(draw(original.infTry, original.infRng));
+		const tried = drawAttempts(infTry, infRng);
+		expect(tried).toStrictEqual(drawAttempts(original.infTry, original.infRng));
 		expect(tried.some((level) => level === null)).toBe(true);
 		expect(tried.some((level) => level !== null)).toBe(true);
 	});

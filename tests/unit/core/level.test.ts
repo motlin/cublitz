@@ -61,8 +61,8 @@ describe("parseLevel", () => {
 	it("reads all seven paints and gates", () => {
 		const cells = parseLevel({map: ["rgbyopc", "RGBYOPC"]}).cells;
 		expect(cells).toStrictEqual([
-			[..."rgbyopc"].map((c) => ({t: "paint", c})),
-			[..."rgbyopc"].map((c) => ({t: "gate", c})),
+			Array.from("rgbyopc", (c) => ({t: "paint", c})),
+			Array.from("rgbyopc", (c) => ({t: "gate", c})),
 		]);
 	});
 

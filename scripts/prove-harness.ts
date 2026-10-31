@@ -331,10 +331,11 @@ try {
 	const control = join(scratch, "control");
 	cpSync("dist", control, {recursive: true});
 	const baseline = runHarness(control, selected.map((m) => m.grep).join("|"));
-	const baselineVerdict = verdict(baseline.status, baseline.report);
-	if (baselineVerdict.kind !== "passed")
+	const {report: baselineReport} = baseline;
+	const baselineVerdict = verdict(baseline.status, baselineReport);
+	if (baselineVerdict.kind !== "passed" || !baselineReport)
 		throw new Error(`The unmutated copy does not pass: ${JSON.stringify(baselineVerdict)}`);
-	const unmatched = selected.filter((m) => !grepMatchedPassingTest(baseline.report as PlaywrightReport, m.grep));
+	const unmatched = selected.filter((m) => !grepMatchedPassingTest(baselineReport, m.grep));
 	if (unmatched.length > 0)
 		throw new Error(`These greps select no passing test: ${unmatched.map((m) => m.grep).join(", ")}`);
 	console.log("control: the unmutated copy passes, and each grep below selects a test that passed");

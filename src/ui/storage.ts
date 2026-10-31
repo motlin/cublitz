@@ -47,11 +47,11 @@ export type EditorDraft = {
 };
 export type SavedLevel = {id: string; level: LevelSource; saved: number};
 
-const readObject = <T>(key: string): T => {
+const readObject = (key: string): unknown => {
 	try {
-		return (JSON.parse(localStorage.getItem(key) || "{}") || {}) as T;
+		return JSON.parse(localStorage.getItem(key) || "{}") || {};
 	} catch {
-		return {} as T;
+		return {};
 	}
 };
 const loadJSON = <T>(key: string, fallback: T): T => {
@@ -74,10 +74,10 @@ const saveJSON = (key: string, value: unknown): void => {
 	write(key, value);
 };
 
-export const readProgress = (): Progress => readObject(STORAGE_KEYS.progress);
+export const readProgress = (): Progress => readObject(STORAGE_KEYS.progress) as Progress;
 export const writeProgress = (progress: Progress): boolean => write(STORAGE_KEYS.progress, progress);
 
-export const readTipsSeen = (): TipsSeen => readObject(STORAGE_KEYS.tipsSeen);
+export const readTipsSeen = (): TipsSeen => readObject(STORAGE_KEYS.tipsSeen) as TipsSeen;
 export const writeTipsSeen = (seen: TipsSeen): boolean => write(STORAGE_KEYS.tipsSeen, seen);
 export const clearTipsSeen = (): void => {
 	try {
@@ -87,7 +87,7 @@ export const clearTipsSeen = (): void => {
 	}
 };
 
-export const readColors = (): CustomColors => readObject(STORAGE_KEYS.colors);
+export const readColors = (): CustomColors => readObject(STORAGE_KEYS.colors) as CustomColors;
 export const writeColors = (colors: CustomColors): boolean => write(STORAGE_KEYS.colors, colors);
 
 export const readRun = (): SavedRun | null => loadJSON<SavedRun | null>(STORAGE_KEYS.infiniteRun, null);

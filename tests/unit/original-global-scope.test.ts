@@ -83,7 +83,9 @@ describe("keepOriginalGlobalScope", () => {
 		const context = createContext({});
 		runInContext("var window = this;", context);
 		const failing = keepOriginalGlobalScope(`${BUNDLE}\nthrow new RangeError("boom");`, topLevelNames(ORIGINAL));
-		expect(() => runInContext(failing, context)).toThrow("boom");
+		expect(() => {
+			runInContext(failing, context);
+		}).toThrow("boom");
 		expect(runInContext("JSON.stringify([LIMIT, count])", context)).toBe("[3,0]");
 	});
 

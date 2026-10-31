@@ -34,7 +34,7 @@ test("the source holds every string in the original script", () => {
 	const script = /(?<=<script>\n)[\s\S]*(?=<\/script>)/.exec(readExpectedHtml())?.[0] ?? "";
 	const original = stringsIn(script, {sourceType: "script"});
 	const source = new Set(
-		sourceFiles("src").flatMap((file) => [...stringsIn(readFileSync(file, "utf8"), {lang: "ts"})]),
+		sourceFiles("src").flatMap((file) => Array.from(stringsIn(readFileSync(file, "utf8"), {lang: "ts"}))),
 	);
 	expect([...original].filter((text) => !source.has(text))).toStrictEqual(RESTRUCTURED);
 	expect(original.size > 500).toBe(true);

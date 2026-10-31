@@ -245,7 +245,12 @@ export default defineConfig({
 				},
 			},
 			{
-				files: ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}"],
+				files: [
+					"**/*.test.{ts,tsx}",
+					"**/*.spec.{ts,tsx}",
+					"tests/browser/harness/**/*.ts",
+					"tests/support/**/*.ts",
+				],
 				rules: {
 					"@typescript-eslint/no-explicit-any": "off",
 					"@typescript-eslint/no-non-null-assertion": "off",
@@ -269,8 +274,6 @@ export default defineConfig({
 					"@typescript-eslint/no-misused-spread": "off", // 3
 					"@typescript-eslint/no-non-null-assertion": "off", // 153
 					"@typescript-eslint/no-unnecessary-condition": "off", // 14
-					"@typescript-eslint/no-unnecessary-type-assertion": "off", // 3
-					"@typescript-eslint/no-unnecessary-type-parameters": "off", // 1
 					"@typescript-eslint/no-unsafe-type-assertion": "off", // 56
 					"@typescript-eslint/prefer-nullish-coalescing": "off", // 43
 					"@typescript-eslint/prefer-optional-chain": "off", // 21
@@ -285,49 +288,55 @@ export default defineConfig({
 					"unicorn/prefer-set-has": "off", // 1
 				},
 			},
-			// Existing test and harness code, written before this lint block. The number is how many findings each rule had at the template sync.
+			// Each step waits for the last, so the awaits in a loop are the point. The harness's own names on window start with two underscores to stay clear of the game's.
 			{
 				files: ["tests/**/*.ts"],
 				rules: {
-					"@typescript-eslint/no-confusing-void-expression": "off", // 16
-					"@typescript-eslint/no-deprecated": "off", // 3
-					"@typescript-eslint/no-implied-eval": "off", // 1
-					"@typescript-eslint/no-misused-promises": "off", // 1
-					"@typescript-eslint/no-misused-spread": "off", // 3
-					"@typescript-eslint/no-unnecessary-condition": "off", // 2
-					"@typescript-eslint/no-unnecessary-type-assertion": "off", // 5
-					"@typescript-eslint/no-unnecessary-type-parameters": "off", // 1
-					"@typescript-eslint/no-unsafe-argument": "off", // 1
-					"@typescript-eslint/no-unsafe-call": "off", // 1
-					"@typescript-eslint/no-unsafe-return": "off", // 1
-					"@typescript-eslint/no-unsafe-type-assertion": "off", // 23
-					"@typescript-eslint/non-nullable-type-assertion-style": "off", // 45
-					"@typescript-eslint/prefer-includes": "off", // 8
-					"@typescript-eslint/promise-function-async": "off", // 63
-					"@typescript-eslint/require-await": "off", // 1
-					"@typescript-eslint/unbound-method": "off", // 5
-					"no-await-in-loop": "off", // 49
-					"no-underscore-dangle": "off", // 12
-					"no-useless-concat": "off", // 1
-					"oxc/no-map-spread": "off", // 2
-					"unicorn/consistent-function-scoping": "off", // 27
-					"unicorn/no-array-fill-with-reference-type": "off", // 5
-					"unicorn/no-array-sort": "off", // 6
-					"vitest/require-mock-type-parameters": "off", // 1
-					"vitest/require-to-throw-message": "off", // 1
+					"no-await-in-loop": "off",
+					"no-underscore-dangle": "off",
 				},
 			},
-			// Existing build scripts, written before this lint block. The number is how many findings each rule had at the template sync.
+			// Helpers here often go to the page as source text with the function that holds them, so they cannot move out of it.
 			{
-				files: ["scripts/**/*.ts", "*.config.ts"],
+				files: ["tests/browser/**/*.ts"],
 				rules: {
-					"@typescript-eslint/no-confusing-void-expression": "off", // 1
-					"@typescript-eslint/no-deprecated": "off", // 1
-					"@typescript-eslint/no-dynamic-delete": "off", // 1
-					"@typescript-eslint/no-non-null-assertion": "off", // 7
-					"@typescript-eslint/no-unsafe-type-assertion": "off", // 4
-					"@typescript-eslint/non-nullable-type-assertion-style": "off", // 1
-					"no-control-regex": "off", // 1
+					"unicorn/consistent-function-scoping": "off",
+				},
+			},
+			// The instruments keep the page's real methods aside and call them with the right this.
+			{
+				files: ["tests/browser/harness/instruments.ts"],
+				rules: {
+					"@typescript-eslint/unbound-method": "off",
+				},
+			},
+			// This runs the original's own script, which arrives as text.
+			{
+				files: ["tests/support/original-engine.ts"],
+				rules: {
+					"@typescript-eslint/no-implied-eval": "off",
+					"@typescript-eslint/no-unsafe-call": "off",
+				},
+			},
+			// Both read the bundler's parser output. Moving off the deprecated parseAst could change the parse that shapes the shipped script.
+			{
+				files: ["scripts/original-global-scope.ts", "tests/unit/original-strings.test.ts"],
+				rules: {
+					"@typescript-eslint/no-deprecated": "off",
+				},
+			},
+			// Parser output and JSON reports have no static type to check against.
+			{
+				files: ["scripts/**/*.ts"],
+				rules: {
+					"@typescript-eslint/no-unsafe-type-assertion": "off",
+				},
+			},
+			// Rollup's documented way to drop a file from the bundle is to delete its key.
+			{
+				files: ["vite.config.ts"],
+				rules: {
+					"@typescript-eslint/no-dynamic-delete": "off",
 				},
 			},
 		],

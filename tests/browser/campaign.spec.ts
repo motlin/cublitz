@@ -10,11 +10,7 @@ const LAST = golden.length - 1;
 
 // All three keyboard schemes get exercised on every level.
 const mixedKeys = (direction: string, index: number): string =>
-	index % 3 === 0
-		? keyFor(direction)
-		: index % 3 === 1
-			? (WASD[direction] as string)
-			: (WASD[direction] as string).toUpperCase();
+	index % 3 === 0 ? keyFor(direction) : index % 3 === 1 ? WASD[direction]! : WASD[direction]!.toUpperCase();
 
 for (const {index, name, par, path} of golden) {
 	test(`level ${index + 1} ${name}: solver path to a win, with its tutorial tips`, async ({browser}) => {
@@ -23,7 +19,7 @@ for (const {index, name, par, path} of golden) {
 			expect(pair.last.hud.num).toBe(`Level ${index + 1} of 30`);
 			const tips = await pair.dismissTips();
 			expect(tips.length).toBeGreaterThan(0);
-			const won = await pair.roll(path as string, mixedKeys);
+			const won = await pair.roll(path!, mixedKeys);
 			expect(won.win).toStrictEqual({
 				hidden: false,
 				title: "Perfect roll",
@@ -36,7 +32,7 @@ for (const {index, name, par, path} of golden) {
 				retryHidden: false,
 			});
 			expect(won.status.text).toBe("Cleared.");
-			expect(JSON.parse(won.storage["cubist-progress-v2"] as string)[name]).toBe(par);
+			expect(JSON.parse(won.storage["cubist-progress-v2"]!)[name]).toBe(par);
 			if (index === LAST) {
 				const replay = await pair.click("#winRetry");
 				expect(replay.hud).toStrictEqual({name, num: "Level 30 of 30", moves: "0", par: String(par)});
@@ -50,13 +46,13 @@ for (const {index, name, par, path} of golden) {
 
 test("fresh save: all 30 levels unlock one by one, with reduced motion", async ({browser}) => {
 	await withPair(browser, {reducedMotion: true}, async (pair) => {
-		const enabled = () => pair.legacy.locator(".lvbtn:not([disabled])").count();
+		const enabled = async () => pair.legacy.locator(".lvbtn:not([disabled])").count();
 		await pair.press("Enter", "start from the title with Enter");
 		for (const {index, path} of golden) {
 			expect(pair.last.hud.num).toBe(`Level ${index + 1} of 30`);
 			await pair.dismissTips();
 			expect(await enabled()).toBe(index + 1);
-			const won = await pair.roll(path as string);
+			const won = await pair.roll(path!);
 			expect(won.win.hidden).toBe(false);
 			expect(await enabled()).toBe(Math.min(30, index + 2));
 			if (index < LAST) await pair.press("Enter", "next level with Enter");

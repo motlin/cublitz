@@ -83,12 +83,21 @@ it("carries the template's lint settings and adds the project's overrides after 
 		plugins: lint?.plugins,
 		categories: lint?.categories,
 		options: lint?.options,
-		lastOverrideFiles: lint?.overrides?.slice(-3).map((override) => override.files),
+		lastOverrideFiles: lint?.overrides?.slice(-8).map((override) => override.files),
 	}).toStrictEqual({
 		plugins: ["typescript", "unicorn", "oxc", "import", "react", "vitest", "promise", "node", "jsx-a11y"],
 		categories: {correctness: "error", suspicious: "error", perf: "error"},
 		options: {typeAware: true, typeCheck: true},
-		lastOverrideFiles: [["src/**/*.ts"], ["tests/**/*.ts"], ["scripts/**/*.ts", "*.config.ts"]],
+		lastOverrideFiles: [
+			["src/**/*.ts"],
+			["tests/**/*.ts"],
+			["tests/browser/**/*.ts"],
+			["tests/browser/harness/instruments.ts"],
+			["tests/support/original-engine.ts"],
+			["scripts/original-global-scope.ts", "tests/unit/original-strings.test.ts"],
+			["scripts/**/*.ts"],
+			["vite.config.ts"],
+		],
 	});
 });
 

@@ -32,7 +32,7 @@ test("importing every ui module touches nothing in the browser", async () => {
 			},
 		});
 	for (const name of BROWSER_GLOBALS) vi.stubGlobal(name, trap(name));
-	const modules = readdirSync("src/ui").sort();
+	const modules = readdirSync("src/ui").toSorted();
 	for (const file of modules) await import(`../../../src/ui/${file}`);
 	expect(modules).toStrictEqual([
 		"board.ts",

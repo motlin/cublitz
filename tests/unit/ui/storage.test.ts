@@ -10,10 +10,11 @@ const stub = (entries: Record<string, string>) => {
 	});
 	return data;
 };
+const refuse = () => {
+	throw new Error("blocked");
+};
+
 const blocked = () => {
-	const refuse = () => {
-		throw new Error("blocked");
-	};
 	vi.stubGlobal("localStorage", {getItem: refuse, setItem: refuse, removeItem: refuse});
 };
 afterEach(() => vi.unstubAllGlobals());

@@ -13,7 +13,7 @@ function* reachable(engine: OriginalEngine, level: Level, limit: number): Genera
 	const queue: [State, string][] = [[start, ""]];
 	const seen = new Set([engine.stateKey(start)]);
 	for (let i = 0; i < queue.length && i < limit; i++) {
-		const entry = queue[i] as [State, string];
+		const entry = queue[i]!;
 		yield entry;
 		for (const d of "NSEW") {
 			const r = engine.tryMove(level, entry[0], d);

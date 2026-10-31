@@ -9,6 +9,8 @@ import {
 
 const SCRIPT_BODY = /(?<=<script>\n)[\s\S]*(?=<\/script>)/;
 
+const withoutScript = (html: string) => html.replace(SCRIPT_BODY, "");
+
 describe("the intentional divergences", () => {
 	it("are exactly the approved changes", () => {
 		expect(INTENTIONAL_DIVERGENCES.map(({name}) => name)).toStrictEqual([
@@ -26,7 +28,6 @@ describe("the intentional divergences", () => {
 	});
 
 	it("edit only the original's script", () => {
-		const withoutScript = (html: string) => html.replace(SCRIPT_BODY, "");
 		expect(withoutScript(readExpectedHtml())).toBe(withoutScript(readOriginalHtml()));
 		expect(readExpectedHtml() === readOriginalHtml()).toBe(false);
 	});

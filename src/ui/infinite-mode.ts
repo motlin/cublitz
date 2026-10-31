@@ -109,7 +109,7 @@ export function infWin(): void {
 	run!.streak = m <= par ? run!.streak + 1 : 0;
 	run!.bestStreak = Math.max(run!.bestStreak, run!.streak);
 	run!.n++;
-	writeRun(run!);
+	writeRun(run);
 	const rating = infRating(run!);
 	if (run!.cleared > best.cleared || run!.score > best.score || (run!.effs.length >= 3 && rating > best.rating)) {
 		best = {
@@ -139,7 +139,7 @@ export function initInfinite(): void {
 		run!.effs.push(0);
 		run!.streak = 0;
 		run!.n++;
-		writeRun(run!);
+		writeRun(run);
 		$("infNote").textContent = "Skipped. That canvas counts as 0 toward your rating.";
 		setTimeout(() => {
 			$("infNote").textContent = "";

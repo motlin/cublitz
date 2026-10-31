@@ -12,7 +12,7 @@ const setup = (source: LevelSource, overrides: Partial<State> = {}) => {
 };
 const milestoneOf = (source: LevelSource, path: string, overrides: Partial<State> = {}) => {
 	const {level, state} = setup(source, overrides);
-	return {level, state, m: nextMilestone(level, state, path) as Milestone};
+	return {level, state, m: nextMilestone(level, state, path)!};
 };
 
 describe("preFace", () => {
@@ -27,18 +27,18 @@ describe("preFace", () => {
 	});
 });
 
-describe("nextMilestone", () => {
-	const base = (state: State, overrides: Partial<Milestone> = {}) => ({
-		i: 0,
-		d: "E",
-		x: 1,
-		y: 0,
-		path: "E",
-		prev: state,
-		paints: [],
-		...overrides,
-	});
+const base = (state: State, overrides: Partial<Milestone> = {}) => ({
+	i: 0,
+	d: "E",
+	x: 1,
+	y: 0,
+	path: "E",
+	prev: state,
+	paints: [],
+	...overrides,
+});
 
+describe("nextMilestone", () => {
 	it("goal: the winning roll", () => {
 		const {m, state} = milestoneOf({map: ["SX"]}, "E");
 		expect(m).toStrictEqual({...base(state), type: "goal"});
@@ -132,12 +132,12 @@ describe("nextMilestone", () => {
 	});
 });
 
-describe("hintTexts", () => {
-	const textFor = (source: LevelSource, path: string, overrides: Partial<State> = {}) => {
-		const {level, state, m} = milestoneOf(source, path, overrides);
-		return hintTexts(level, state, m);
-	};
+const textFor = (source: LevelSource, path: string, overrides: Partial<State> = {}) => {
+	const {level, state, m} = milestoneOf(source, path, overrides);
+	return hintTexts(level, state, m);
+};
 
+describe("hintTexts", () => {
 	it("goal with no needs", () => {
 		expect(textFor({map: ["SX"]}, "E")).toStrictEqual([
 			"Head for the target.",

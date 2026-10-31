@@ -1,7 +1,8 @@
 import {expect, test} from "@playwright/test";
 import {atLevel, engine, type Pair, withPair} from "./harness/pair.ts";
 
-const text = (pair: Pair, selector: string): Promise<string | null> => pair.legacy.locator(selector).textContent();
+const text = async (pair: Pair, selector: string): Promise<string | null> =>
+	pair.legacy.locator(selector).textContent();
 const openEditor = async (pair: Pair): Promise<void> => {
 	await pair.click("#titleEdit");
 };
@@ -25,7 +26,7 @@ const CLIPBOARDS: [string, () => void][] = [
 	[
 		"rejects",
 		() => {
-			navigator.clipboard.writeText = () => Promise.reject(new Error("denied"));
+			navigator.clipboard.writeText = async () => Promise.reject(new Error("denied"));
 		},
 	],
 	[
@@ -88,8 +89,8 @@ for (const [name, setup, first] of AUDIO) {
 
 // The solver gives up once it has seen too many states. Real ones take many seconds to reach, so its
 // set of seen states reports a huge size instead. The harness's own sets already exist by then.
-const makeSolverGiveUp = (pair: Pair): Promise<unknown> =>
-	pair.step("the solver's limit will be hit at once", (page) =>
+const makeSolverGiveUp = async (pair: Pair): Promise<unknown> =>
+	pair.step("the solver's limit will be hit at once", async (page) =>
 		page.evaluate(() => {
 			window.Set = class extends Set {
 				override get size(): number {
@@ -136,7 +137,7 @@ test("pointercancel ends painting in the editor", async ({browser}) => {
 			await page.mouse.move(to.x, to.y);
 			await page.mouse.up();
 		});
-		const {grid} = JSON.parse(painted.storage["cubist-editor-draft-v1"] as string) as {grid: unknown[][]};
+		const {grid} = JSON.parse(painted.storage["cubist-editor-draft-v1"]!) as {grid: unknown[][]};
 		expect(grid[1]?.slice(0, 3)).toStrictEqual([{t: "floor"}, null, null]);
 	});
 });
@@ -159,7 +160,7 @@ test("focus moves without scrolling, to the tip's button and the next-canvas but
 		expect(opened.focusCalls).toContainEqual(["tipOk", {preventScroll: true}]);
 		await pair.dismissTips();
 		const level = engine.parseLevel(JSON.parse(JSON.stringify(engine.generateInfinite(SEED, 0))));
-		const won = await pair.roll(engine.solve(level, engine.initState(level), 400000) as string);
+		const won = await pair.roll(engine.solve(level, engine.initState(level), 400000)!);
 		expect(won.focusCalls).toStrictEqual([["winNext", {preventScroll: true}]]);
 	});
 });
@@ -183,8 +184,8 @@ test("a win with fewer cleared but more points still raises the best score", asy
 		await pair.click("#titleInf");
 		await pair.dismissTips();
 		const level = engine.parseLevel(JSON.parse(JSON.stringify(engine.generateInfinite(SEED, 0))));
-		const won = await pair.roll(engine.solve(level, engine.initState(level), 400000) as string);
-		expect(JSON.parse(won.storage["cublitz-infinite-best-v1"] as string)).toStrictEqual({
+		const won = await pair.roll(engine.solve(level, engine.initState(level), 400000)!);
+		expect(JSON.parse(won.storage["cublitz-infinite-best-v1"]!)).toStrictEqual({
 			cleared: 5,
 			score: 100,
 			rating: 0,

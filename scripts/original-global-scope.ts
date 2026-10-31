@@ -7,18 +7,16 @@ import {parseAst} from "vite";
 
 export type TopLevelKind = "let" | "const" | "function";
 
-type Statement = {
-	type: string;
-	start: number;
-	end: number;
-	id?: {name: string} | null;
-	kind?: string;
-	declarations?: Declarator[];
-};
+type Span = {start: number; end: number};
 type Declarator = {
-	id: {type: string; name?: string; start: number; end: number};
-	init: {start: number; end: number} | null;
+	id: Span & {name: string};
+	init: Span | null;
 };
+// The parser's shape for what these scripts hold at the top level: every binding there is a plain name.
+type Statement =
+	| (Span & {type: "FunctionDeclaration"; id: {name: string}})
+	| (Span & {type: "VariableDeclaration"; kind: string; declarations: Declarator[]})
+	| (Span & {type: "OtherStatement"});
 
 const parse = (script: string): Statement[] =>
 	(parseAst(script, {sourceType: "script"}) as unknown as {body: Statement[]}).body;
@@ -26,9 +24,9 @@ const parse = (script: string): Statement[] =>
 export function topLevelNames(script: string): Map<string, TopLevelKind> {
 	const names = new Map<string, TopLevelKind>();
 	for (const statement of parse(script)) {
-		if (statement.type === "FunctionDeclaration") names.set(statement.id!.name, "function");
+		if (statement.type === "FunctionDeclaration") names.set(statement.id.name, "function");
 		else if (statement.type === "VariableDeclaration") {
-			for (const {id} of statement.declarations!) names.set(id.name!, statement.kind as TopLevelKind);
+			for (const {id} of statement.declarations) names.set(id.name, statement.kind as TopLevelKind);
 		}
 	}
 	return names;
@@ -51,7 +49,7 @@ export function keepOriginalGlobalScope(bundle: string, original: Map<string, To
 	for (const statement of statements) {
 		if (statement.type === "FunctionDeclaration") {
 			const text = bundle.slice(statement.start, statement.end);
-			if (original.get(statement.id!.name) === "function") functions.set(statement.id!.name, text);
+			if (original.get(statement.id.name) === "function") functions.set(statement.id.name, text);
 			else privateFunctions.push(text);
 			skipTo(statement, "");
 		} else if (statement.type === "VariableDeclaration") {
@@ -59,8 +57,8 @@ export function keepOriginalGlobalScope(bundle: string, original: Map<string, To
 				throw new Error(
 					`Expected the bundler to write vars, got: ${bundle.slice(statement.start, statement.end)}`,
 				);
-			const parts = statement.declarations!.map(({id, init}) => {
-				const name = id.name!;
+			const parts = statement.declarations.map(({id, init}) => {
+				const {name} = id;
 				vars.add(name);
 				if (original.get(name) !== "let") return `var ${bundle.slice(id.start, init?.end ?? id.end)};`;
 				return init ? `${name} = ${bundle.slice(init.start, init.end)};` : "";

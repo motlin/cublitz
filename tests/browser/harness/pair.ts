@@ -100,11 +100,11 @@ export class Pair {
 	}
 
 	get legacy(): Page {
-		return (this.sides[0] as Side).page;
+		return this.sides[0]!.page;
 	}
 
 	get dist(): Page {
-		return (this.sides[1] as Side).page;
+		return this.sides[1]!.page;
 	}
 
 	get pages(): Page[] {
@@ -113,16 +113,16 @@ export class Pair {
 
 	/** Runs an action on both pages, lets each settle, then compares everything the harness can see. */
 	async step(name: string, action: Action): Promise<Snapshot> {
-		await Promise.all(this.pages.map((page) => action(page)));
+		await Promise.all(this.pages.map(async (page) => action(page)));
 		return this.compare(name);
 	}
 
-	click(selector: string, name = `click ${selector}`): Promise<Snapshot> {
-		return this.step(name, (page) => page.locator(selector).click());
+	async click(selector: string, name = `click ${selector}`): Promise<Snapshot> {
+		return this.step(name, async (page) => page.locator(selector).click());
 	}
 
-	press(key: string, name = `press ${key}`): Promise<Snapshot> {
-		return this.step(name, (page) => page.keyboard.press(key));
+	async press(key: string, name = `press ${key}`): Promise<Snapshot> {
+		return this.step(name, async (page) => page.keyboard.press(key));
 	}
 
 	/** Rolls one key per direction, comparing after every roll. */
@@ -145,18 +145,24 @@ export class Pair {
 		return titles;
 	}
 
-	fireParkedTimers(): Promise<Snapshot> {
-		return this.step("fire parked long timers", (page) => page.evaluate(() => window.__harness.fireParked()));
+	async fireParkedTimers(): Promise<Snapshot> {
+		return this.step("fire parked long timers", async (page) =>
+			page.evaluate(() => {
+				window.__harness.fireParked();
+			}),
+		);
 	}
 
-	tickIntervals(count: number): Promise<Snapshot> {
-		return this.step(`tick intervals x${count}`, (page) =>
-			page.evaluate((n) => window.__harness.tickIntervals(n), count),
+	async tickIntervals(count: number): Promise<Snapshot> {
+		return this.step(`tick intervals x${count}`, async (page) =>
+			page.evaluate((n) => {
+				window.__harness.tickIntervals(n);
+			}, count),
 		);
 	}
 
 	/** Changes the viewport and delivers the resize event the game listens for. */
-	resize(width: number, height: number): Promise<Snapshot> {
+	async resize(width: number, height: number): Promise<Snapshot> {
 		return this.step(`resize to ${width}x${height}`, async (page) => {
 			await page.setViewportSize({width, height});
 			await page.evaluate(() => window.dispatchEvent(new Event("resize")));
@@ -167,8 +173,8 @@ export class Pair {
 	 * Chromium can take a moment to raster them afresh, so a mismatch gets a few delayed retakes before it counts.
 	 * The original compared with itself mismatches the same way. */
 	async expectSameScreenshot(name: string): Promise<void> {
-		const shoot = () =>
-			Promise.all(this.pages.map((page) => page.screenshot({animations: "disabled", fullPage: true})));
+		const shoot = async () =>
+			Promise.all(this.pages.map(async (page) => page.screenshot({animations: "disabled", fullPage: true})));
 		let [legacy, dist] = (await shoot()) as [Buffer, Buffer];
 		for (let retake = 0; retake < 5 && !dist.equals(legacy); retake++) {
 			await this.legacy.waitForTimeout(400);
@@ -181,7 +187,7 @@ export class Pair {
 		expect(dist.equals(legacy), `screenshot "${name}" differs`).toBe(true);
 	}
 
-	reload(): Promise<Snapshot> {
+	async reload(): Promise<Snapshot> {
 		return this.step("reload", async (page) => {
 			await page.reload({waitUntil: "load"});
 			await afterLoad(page, this.mobile);
@@ -192,14 +198,14 @@ export class Pair {
 	async close(): Promise<void> {
 		const [legacy, dist] = this.sides as [Side, Side];
 		expect(dist.externalRequests, "external requests").toStrictEqual(legacy.externalRequests);
-		await Promise.all(this.sides.map((side) => side.context.close()));
+		await Promise.all(this.sides.map(async (side) => side.context.close()));
 	}
 
 	private async compare(name: string): Promise<Snapshot> {
 		this.steps++;
 		const [legacy, dist] = (await Promise.all(
 			this.pages.map(async (page) => {
-				await page.evaluate(() => window.__harness.settled());
+				await page.evaluate(async () => window.__harness.settled());
 				return page.evaluate(() => window.__harness.capture());
 			}),
 		)) as [Snapshot, Snapshot];
@@ -207,7 +213,7 @@ export class Pair {
 			const changed = Object.keys(legacy.hashes).filter((key) => legacy.hashes[key] !== dist.hashes[key]);
 			if (changed.length > 0) {
 				const [fullLegacy, fullDist] = await Promise.all(
-					this.pages.map((page) => page.evaluate(() => window.__harness.full())),
+					this.pages.map(async (page) => page.evaluate(() => window.__harness.full())),
 				);
 				for (const key of changed) {
 					expect((fullDist as Record<string, unknown>)[key], `step "${name}" section ${key}`).toStrictEqual(
@@ -225,7 +231,7 @@ export class Pair {
 export async function withPair(
 	browser: Browser,
 	options: PairOptions,
-	script: (pair: Pair) => Promise<void>,
+	script: (pair: Pair) => Promise<void> | void,
 ): Promise<void> {
 	const pair = await Pair.open(browser, options);
 	await script(pair);

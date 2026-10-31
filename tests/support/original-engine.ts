@@ -56,6 +56,11 @@ export const loadOriginalEngine = (): OriginalEngine => engineFrom(readOriginalH
 /** The same, with the intentional divergences applied: what the shipped modules have to match. */
 export const loadExpectedEngine = (): OriginalEngine => engineFrom(readExpectedHtml());
 
+// genInf yields to the browser between batches of tries; here the next batch can simply run.
+const runNow = (step: () => void): void => {
+	step();
+};
+
 function engineFrom(html: string): OriginalEngine {
 	const source = [
 		between(html, "const LEVELS = [", "const COLORS = {"),
@@ -78,7 +83,5 @@ function engineFrom(html: string): OriginalEngine {
 		`return { LEVELS, parseLevel, initState, tryMove, stateKey, solve, generateInfinite, roll, solidColor, workColor,
 			openColors, nextMilestone, hintTexts, encodeLevel, decodeLevel, infRng, infCandidate, infTry, infRating, infRank };`,
 	].join("\n");
-	// genInf yields to the browser between batches of tries; here the next batch can simply run.
-	const runNow = (step: () => void): void => step();
 	return new Function("setTimeout", source)(runNow) as OriginalEngine;
 }

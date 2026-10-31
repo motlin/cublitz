@@ -91,9 +91,11 @@ export function installInstruments(options: InstrumentOptions): void {
 	const frames = new Set<number>();
 	let nextVirtualId = 1_000_000_000;
 
-	window.setTimeout = ((handler: () => void, delay = 0, ...args: unknown[]) => {
+	window.setTimeout = ((handler: (...a: unknown[]) => void, delay = 0, ...args: unknown[]) => {
 		timers.push(["timeout", delay]);
-		const run = () => (handler as (...a: unknown[]) => void)(...args);
+		const run = () => {
+			handler(...args);
+		};
 		if (delay >= LONG_TIMER_MS) {
 			const id = nextVirtualId++;
 			parked.set(id, {run, delay});
@@ -194,18 +196,27 @@ export function installInstruments(options: InstrumentOptions): void {
 		set value(v: number) {
 			record(`${owner}.${name}=`, v);
 		},
-		setValueAtTime: (...args: number[]) => record(`${owner}.${name}.setValueAtTime`, ...args),
-		exponentialRampToValueAtTime: (...args: number[]) =>
-			record(`${owner}.${name}.exponentialRampToValueAtTime`, ...args),
+		setValueAtTime: (...args: number[]) => {
+			record(`${owner}.${name}.setValueAtTime`, ...args);
+		},
+		exponentialRampToValueAtTime: (...args: number[]) => {
+			record(`${owner}.${name}.exponentialRampToValueAtTime`, ...args);
+		},
 	});
 	const node = (kind: string, params: string[]) => {
 		const id = `${kind}#${nodeCount++}`;
 		record("create", id);
 		const self: Record<string, unknown> = {
 			__id: id,
-			connect: (other: {__id: string}) => record(`${id}.connect`, other.__id),
-			start: (t: number) => record(`${id}.start`, t),
-			stop: (t: number) => record(`${id}.stop`, t),
+			connect: (other: {__id: string}) => {
+				record(`${id}.connect`, other.__id);
+			},
+			start: (t: number) => {
+				record(`${id}.start`, t);
+			},
+			stop: (t: number) => {
+				record(`${id}.stop`, t);
+			},
 		};
 		for (const p of params) self[p] = param(id, p);
 		return self;
@@ -218,7 +229,7 @@ export function installInstruments(options: InstrumentOptions): void {
 		constructor() {
 			record("new AudioContext");
 		}
-		resume() {
+		async resume() {
 			record("resume");
 			this.state = "running";
 			return Promise.resolve();
@@ -231,18 +242,28 @@ export function installInstruments(options: InstrumentOptions): void {
 		}
 		createOscillator() {
 			const osc = node("osc", ["frequency"]);
-			Object.defineProperty(osc, "type", {set: (v: string) => record(`${String(osc["__id"])}.type=`, v)});
+			Object.defineProperty(osc, "type", {
+				set: (v: string) => {
+					record(`${String(osc["__id"])}.type=`, v);
+				},
+			});
 			return osc;
 		}
 		createBiquadFilter() {
 			const f = node("filter", ["frequency", "Q"]);
-			Object.defineProperty(f, "type", {set: (v: string) => record(`${String(f["__id"])}.type=`, v)});
+			Object.defineProperty(f, "type", {
+				set: (v: string) => {
+					record(`${String(f["__id"])}.type=`, v);
+				},
+			});
 			return f;
 		}
 		createBufferSource() {
 			const s = node("source", []);
 			Object.defineProperty(s, "buffer", {
-				set: (b: {__data: Float32Array}) => record(`${String(s["__id"])}.buffer`, hash(b.__data.join())),
+				set: (b: {__data: Float32Array}) => {
+					record(`${String(s["__id"])}.buffer`, hash(b.__data.join()));
+				},
 			});
 			return s;
 		}
@@ -273,8 +294,11 @@ export function installInstruments(options: InstrumentOptions): void {
 				(window as unknown as {__hotSnapshot: unknown}).__hotSnapshot = fn;
 			},
 		};
-		if (useReady) hot["ready"] = (start: (d: unknown) => void) => start(data);
-		window.claude = {hot} as never;
+		if (useReady)
+			hot["ready"] = (start: (d: unknown) => void) => {
+				start(data);
+			};
+		window.claude = {hot};
 	}
 
 	// ---- Reading the page ----
@@ -310,7 +334,7 @@ export function installInstruments(options: InstrumentOptions): void {
 		if (isPlumbing(el)) return "";
 		const attrs = [...el.attributes]
 			.map((at) => `${at.name}=${JSON.stringify(at.value)}`)
-			.sort()
+			.toSorted()
 			.join(" ");
 		const rootLike = el.tagName === "BODY" || el.tagName === "HEAD" || el.tagName === "HTML";
 		const kids = [...el.childNodes].map((k) => serialize(k, rootLike)).join("");
@@ -318,7 +342,7 @@ export function installInstruments(options: InstrumentOptions): void {
 	};
 	const describe = (el: Element | null): string => {
 		if (!el) return "none";
-		return `${el.tagName}#${el.id}.${el.className}:${(el.textContent ?? "").slice(0, 40)}`;
+		return `${el.tagName}#${el.id}.${el.className}:${el.textContent.slice(0, 40)}`;
 	};
 	const KEY_ELEMENTS = [
 		"html",
@@ -407,7 +431,7 @@ export function installInstruments(options: InstrumentOptions): void {
 	const computedOf = (el: Element): Record<string, string> => {
 		const cs = getComputedStyle(el);
 		// Sorted because the browser lists custom properties in an order that varies between pages.
-		const names = Array.from({length: cs.length}, (_, i) => cs.item(i)).sort();
+		const names = Array.from({length: cs.length}, (_, i) => cs.item(i)).toSorted();
 		return Object.fromEntries(names.map((name) => [name, cs.getPropertyValue(name)]));
 	};
 	const cssom = (): string[] => {
@@ -472,7 +496,7 @@ export function installInstruments(options: InstrumentOptions): void {
 	let lastSections: Sections = {};
 
 	window.__harness = {
-		settled: () =>
+		settled: async () =>
 			new Promise<void>((resolve) => {
 				let quiet = 0;
 				const check = () => {
@@ -489,10 +513,15 @@ export function installInstruments(options: InstrumentOptions): void {
 		fireParked: () => {
 			const pending = [...parked.values()];
 			parked.clear();
-			pending.forEach(({run}) => run());
+			pending.forEach(({run}) => {
+				run();
+			});
 		},
 		tickIntervals: (count) => {
-			for (let i = 0; i < count; i++) [...intervals.values()].forEach((run) => run());
+			for (let i = 0; i < count; i++)
+				[...intervals.values()].forEach((run) => {
+					run();
+				});
 		},
 		full: () => lastSections,
 		audioCount: () => audioTotal,
@@ -501,7 +530,7 @@ export function installInstruments(options: InstrumentOptions): void {
 			lastSections = sectionsNow();
 			for (const [key, value] of Object.entries(lastSections)) hashes[key] = hash(JSON.stringify(value));
 			const storage: Record<string, string> = {};
-			for (const key of Object.keys(localStorage).sort()) storage[key] = localStorage.getItem(key) ?? "";
+			for (const key of Object.keys(localStorage).toSorted()) storage[key] = localStorage.getItem(key) ?? "";
 			const status = document.getElementById("status");
 			return {
 				hashes,

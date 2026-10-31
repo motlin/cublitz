@@ -59,7 +59,7 @@ const finishFirstCanvas = async (pair: Pair, seed: number) => {
 	await pair.click("#titleInf");
 	await pair.dismissTips();
 	const level = engine.parseLevel(JSON.parse(JSON.stringify(engine.generateInfinite(seed, 0))));
-	return pair.roll(engine.solve(level, engine.initState(level), 400000) as string);
+	return pair.roll(engine.solve(level, engine.initState(level), 400000)!);
 };
 
 test("the rating averages the last ten canvases, dropping the eleventh back", async ({browser}) => {
@@ -71,11 +71,11 @@ test("the rating averages the last ten canvases, dropping the eleventh back", as
 		{storage: {...atLevel(0), "cublitz-infinite-run-v1": JSON.stringify(run)}},
 		async (pair) => {
 			const won = await finishFirstCanvas(pair, seed);
-			const saved = JSON.parse(won.storage["cublitz-infinite-run-v1"] as string) as {effs: number[]};
+			const saved = JSON.parse(won.storage["cublitz-infinite-run-v1"]!) as {effs: number[]};
 			expect(saved.effs).toStrictEqual([...effs, 1]);
-			expect((JSON.parse(won.storage["cublitz-infinite-best-v1"] as string) as {rating: number}).rating).toBe(90);
+			expect((JSON.parse(won.storage["cublitz-infinite-best-v1"]!) as {rating: number}).rating).toBe(90);
 			const ratings = await Promise.all(
-				pair.pages.map((page) =>
+				pair.pages.map(async (page) =>
 					page.evaluate(
 						"[infRating({effs:[0,1,1,1,1,1,1,1,1,1]}), infRating({effs:[0,0,1,1,1,1,1,1,1,1,1]})]",
 					),
@@ -96,7 +96,7 @@ test("hot data for a locked level is ignored and the first open level loads", as
 		hist: [],
 	};
 	for (const useReady of [false, true]) {
-		await withPair(browser, {storage: atLevel(1), hot: {data, useReady}}, async (pair) => {
+		await withPair(browser, {storage: atLevel(1), hot: {data, useReady}}, (pair) => {
 			expect(pair.last.hud.num).toBe("Level 2 of 30");
 			expect(pair.last.errors).toStrictEqual([]);
 		});
@@ -133,7 +133,8 @@ test("the solver's default limit is 400000 states", async ({browser}) => {
 		return [path, solve.hitLimit];
 	})()`;
 	await withPair(browser, {}, async (pair) => {
-		const results = async (size: number) => Promise.all(pair.pages.map((page) => page.evaluate(solveAtSize(size))));
+		const results = async (size: number) =>
+			Promise.all(pair.pages.map(async (page) => page.evaluate(solveAtSize(size))));
 		const path = golden[0]?.path;
 		expect(await results(399_999)).toStrictEqual([
 			[path, false],

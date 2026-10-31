@@ -10,6 +10,9 @@ const at = (source: LevelSource, overrides: Partial<State> = {}) => {
 	return {level, state: {...initState(level), ...overrides}};
 };
 
+const pushInto = (behind: string, legend: LevelSource["k"] = {}) =>
+	at({map: [`S1${behind}`], k: {"1": ["box", "w"], ...legend}});
+
 describe("tryMove refusals", () => {
 	it("edge: off the board", () => {
 		const {level, state} = at({map: ["S.X"]});
@@ -77,9 +80,6 @@ describe("tryMove refusals", () => {
 			ny: 0,
 		});
 	});
-
-	const pushInto = (behind: string, legend: LevelSource["k"] = {}) =>
-		at({map: [`S1${behind}`], k: {"1": ["box", "w"], ...legend}});
 
 	it("stuck: nothing behind the box", () => {
 		const {level, state} = pushInto("");
@@ -152,30 +152,31 @@ describe("tryMove refusals", () => {
 	});
 });
 
-describe("tryMove successes", () => {
-	const success = (overrides: Partial<MoveSuccess>): MoveSuccess => ({
-		ok: true,
-		nx: 1,
-		ny: 0,
-		st: {x: 1, y: 0, f: blank(), boxes: [], sw: []},
-		painted: null,
-		washed: false,
-		pushed: -1,
-		flipped: -1,
-		goal: false,
-		won: false,
-		cell: {t: "floor"},
-		...overrides,
-	});
-	const landedAt = (f: Faces, rest: Partial<State> = {}): State => ({
-		x: 1,
-		y: 0,
-		f,
-		boxes: [],
-		sw: [],
-		...rest,
-	});
+const landedAt = (f: Faces, rest: Partial<State> = {}): State => ({
+	x: 1,
+	y: 0,
+	f,
+	boxes: [],
+	sw: [],
+	...rest,
+});
 
+const success = (overrides: Partial<MoveSuccess>): MoveSuccess => ({
+	ok: true,
+	nx: 1,
+	ny: 0,
+	st: {x: 1, y: 0, f: blank(), boxes: [], sw: []},
+	painted: null,
+	washed: false,
+	pushed: -1,
+	flipped: -1,
+	goal: false,
+	won: false,
+	cell: {t: "floor"},
+	...overrides,
+});
+
+describe("tryMove successes", () => {
 	it("rolls onto floor, turning the faces", () => {
 		const {level, state} = at({map: ["S."]}, {f: {...blank(), t: "r"}});
 		expect(tryMove(level, state, "E")).toStrictEqual(success({st: landedAt({...blank(), e: "r"})}));

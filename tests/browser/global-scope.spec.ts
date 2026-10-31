@@ -32,7 +32,7 @@ const DESCRIBE = `(() => {
 const lexicalNames = async (page: Page): Promise<string[]> => {
 	const session = await page.context().newCDPSession(page);
 	const {names} = (await session.send("Runtime.globalLexicalScopeNames" as never)) as unknown as {names: string[]};
-	return names.sort();
+	return names.toSorted();
 };
 
 // The instruments add a __harness property on window, on both sides.
@@ -42,11 +42,11 @@ const WINDOW_SURFACE = `Object.getOwnPropertyNames(window).map((name) => {
 })`;
 
 const expectSameScope = async (pair: Pair, name: string): Promise<void> => {
-	const [legacyWindow, distWindow] = await Promise.all(pair.pages.map((page) => page.evaluate(WINDOW_SURFACE)));
+	const [legacyWindow, distWindow] = await Promise.all(pair.pages.map(async (page) => page.evaluate(WINDOW_SURFACE)));
 	expect(distWindow, `${name}: window`).toStrictEqual(legacyWindow);
 	const [legacyLexical, distLexical] = await Promise.all(pair.pages.map(lexicalNames));
 	expect(distLexical, `${name}: global lexical names`).toStrictEqual(legacyLexical);
-	const [legacyValues, distValues] = await Promise.all(pair.pages.map((page) => page.evaluate(DESCRIBE)));
+	const [legacyValues, distValues] = await Promise.all(pair.pages.map(async (page) => page.evaluate(DESCRIBE)));
 	expect(distValues, `${name}: values`).toStrictEqual(legacyValues);
 };
 
@@ -77,7 +77,7 @@ test("uncaught errors read the same when a saved run is malformed", async ({brow
 	const storage = {...atLevel(1), "cublitz-infinite-run-v1": '{"seed":1,"n":2.5,"effs":"abc","score":0}'};
 	await withPair(browser, {storage}, async (pair) => {
 		await pair.click("#titleInf");
-		const skipped = await pair.step("skip throws", (page) =>
+		const skipped = await pair.step("skip throws", async (page) =>
 			page.evaluate(() => document.getElementById("infSkip")?.click()),
 		);
 		expect(skipped.errors).toStrictEqual([
@@ -145,11 +145,11 @@ test("window.claude.hot is read as many times as the original reads it", async (
 				counts.hot++;
 				return {};
 			},
-		} as never;
+		};
 	};
 	await withPair(browser, {setup}, async (pair) => {
 		const [legacy, dist] = await Promise.all(
-			pair.pages.map((page) => page.evaluate(() => (window as unknown as {__counts: unknown}).__counts)),
+			pair.pages.map(async (page) => page.evaluate(() => (window as unknown as {__counts: unknown}).__counts)),
 		);
 		expect(dist).toStrictEqual(legacy);
 	});

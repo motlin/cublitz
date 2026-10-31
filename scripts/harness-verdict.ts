@@ -1,3 +1,5 @@
+import {stripVTControlCharacters} from "node:util";
+
 // Reads a Playwright JSON report. A non-zero exit alone proves nothing: "No tests found", a port already in use and
 // a browser that will not start all exit non-zero too, and would otherwise count as a caught mutant.
 type Result = {status: string; error?: {message: string}};
@@ -13,8 +15,7 @@ const allSpecs = (suites: Suite[] = []): Spec[] =>
 	suites.flatMap((suite) => [...(suite.specs ?? []), ...allSpecs(suite.suites)]);
 const resultsOf = (spec: Spec): Result[] => spec.tests.flatMap((t) => t.results);
 
-const firstLine = (message: string): string =>
-	(message.replace(/\u001b\[[0-9;]*m/g, "").split("\n")[0] ?? "").slice(0, 160);
+const firstLine = (message: string): string => (stripVTControlCharacters(message).split("\n")[0] ?? "").slice(0, 160);
 
 export function verdict(exitCode: number | null, report: PlaywrightReport | null): Verdict {
 	if (!report) return {kind: "invalid", detail: "no report was written"};

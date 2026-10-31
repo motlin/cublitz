@@ -4,13 +4,13 @@ import {atLevel, type Pair, PINNED_NOW, withPair} from "./harness/pair.ts";
 const cell = (x: number, y: number) => `#edGrid [data-x="${x}"][data-y="${y}"]`;
 const tool = (name: string) => `#edTools [data-tool="${name}"]`;
 const color = (name: string) => `#edColors [data-color="${name}"]`;
-const value = (page: Page, selector: string) => page.locator(selector).inputValue();
+const value = async (page: Page, selector: string) => page.locator(selector).inputValue();
 const encode = (level: unknown) => `CUBLITZ:${Buffer.from(JSON.stringify(level)).toString("base64")}`;
 const UNTITLED = {name: "Untitled", map: ["........", "........", "S......X", "........", "........"], k: {}};
 
-const openEditor = (pair: Pair) => pair.click("#titleEdit");
+const openEditor = async (pair: Pair) => pair.click("#titleEdit");
 const importCode = async (pair: Pair, code: string, name: string) => {
-	await pair.step(`type ${name}`, (page) => page.locator("#edImportText").fill(code));
+	await pair.step(`type ${name}`, async (page) => page.locator("#edImportText").fill(code));
 	return pair.click("#edImport", `import ${name}`);
 };
 
@@ -45,7 +45,7 @@ test("every tile tool, color and white gate face", async ({browser}) => {
 			await pair.click(tool(name));
 			await pair.click(cell(x, y), `place ${name}`);
 		}
-		const expected = JSON.parse(pair.last.storage["cubist-editor-draft-v1"] as string) as {grid: unknown[][]};
+		const expected = JSON.parse(pair.last.storage["cubist-editor-draft-v1"]!) as {grid: unknown[][]};
 		expect(expected.grid[3]?.[1]).toStrictEqual({t: "wgate", f: "b"});
 		expect(expected.grid[0]?.[6]).toStrictEqual({t: "door", c: "r"});
 		await pair.reload();
@@ -69,7 +69,7 @@ test("drag painting, resizing to the limits, name and target needs", async ({bro
 			}
 			await page.mouse.up();
 		});
-		const dragged = JSON.parse(pair.last.storage["cubist-editor-draft-v1"] as string) as {grid: unknown[][]};
+		const dragged = JSON.parse(pair.last.storage["cubist-editor-draft-v1"]!) as {grid: unknown[][]};
 		expect(dragged.grid[1]?.slice(0, 6)).toStrictEqual([{t: "floor"}, null, null, null, null, {t: "floor"}]);
 		for (let i = 0; i < 11; i++) await pair.click('[data-resize="1,0"]', `more columns ${i}`);
 		for (let i = 0; i < 8; i++) await pair.click('[data-resize="0,1"]', `more rows ${i}`);
@@ -80,11 +80,11 @@ test("drag painting, resizing to the limits, name and target needs", async ({bro
 		expect(await pair.legacy.locator("#edCols").textContent()).toBe("3");
 		expect(await pair.legacy.locator("#edRows").textContent()).toBe("3");
 		await pair.click("#edNew");
-		await pair.step("rename", (page) => page.locator("#edName").fill("My <level> & co"));
+		await pair.step("rename", async (page) => page.locator("#edName").fill("My <level> & co"));
 		for (const face of ["t", "b", "n", "s", "e", "w"]) {
-			await pair.step(`need ${face}`, (page) => page.locator(`#need-${face}`).selectOption("g"));
+			await pair.step(`need ${face}`, async (page) => page.locator(`#need-${face}`).selectOption("g"));
 		}
-		await pair.step("clear one need", (page) => page.locator("#need-b").selectOption(""));
+		await pair.step("clear one need", async (page) => page.locator("#need-b").selectOption(""));
 		await pair.click("#edCheck", "unsolvable level");
 		expect(await pair.legacy.locator("#edResult").textContent()).toBe(
 			"No solution. No sequence of rolls reaches a target that satisfies its needs.",
@@ -114,7 +114,9 @@ test("share code round trip, older prefixes, raw JSON and bad codes", async ({br
 		expect(code).toBe(encode(UNTITLED));
 		await pair.click("#edCopy");
 		expect(await pair.legacy.locator("#edCodeNote").textContent()).toBe("Copied.");
-		await pair.step("read the clipboard", (page) => page.evaluate(() => navigator.clipboard.readText()));
+		await pair.step("read the clipboard", async (page) =>
+			page.evaluate(async () => navigator.clipboard.readText()),
+		);
 
 		const level = {
 			name: "Rôund trip",
@@ -124,7 +126,7 @@ test("share code round trip, older prefixes, raw JSON and bad codes", async ({br
 		};
 		const roundTrip = encode(level).replace(
 			/^CUBLITZ:.*/,
-			`CUBLITZ:${btoa(unescape(encodeURIComponent(JSON.stringify(level))))}`,
+			`CUBLITZ:${Buffer.from(JSON.stringify(level)).toString("base64")}`,
 		);
 		await importCode(pair, roundTrip, "a new code");
 		expect(await pair.legacy.locator("#edImportNote").textContent()).toBe("Loaded “Rôund trip”.");
@@ -168,7 +170,7 @@ test("save, test play to a win, edit, play from the list, delete", async ({brows
 
 		const saved = await pair.click("#edSave");
 		const id = `L${PINNED_NOW.toString(36)}`;
-		expect(JSON.parse(saved.storage["cubist-my-levels-v1"] as string)).toStrictEqual([
+		expect(JSON.parse(saved.storage["cubist-my-levels-v1"]!)).toStrictEqual([
 			{id, level: UNTITLED, saved: PINNED_NOW},
 		]);
 		expect(await pair.legacy.locator("#edResult").textContent()).toBe(
@@ -176,7 +178,7 @@ test("save, test play to a win, edit, play from the list, delete", async ({brows
 		);
 		expect(await pair.legacy.locator("#edSave").textContent()).toBe("Save changes");
 
-		await pair.step("rename", (page) => page.locator("#edName").fill("Renamed"));
+		await pair.step("rename", async (page) => page.locator("#edName").fill("Renamed"));
 		await pair.click("#edSave", "save changes");
 		await pair.click("#edNew");
 		await pair.click(`#edList [data-act="edit"]`);
@@ -194,13 +196,13 @@ test("built-in levels open as remixes, locked ones are disabled", async ({browse
 	await withPair(browser, {storage: atLevel(9)}, async (pair) => {
 		await openEditor(pair);
 		expect(await pair.legacy.locator("#edStock option:not([disabled])").count()).toBe(11);
-		await pair.step("open level 10", (page) => page.locator("#edStock").selectOption("9"));
+		await pair.step("open level 10", async (page) => page.locator("#edStock").selectOption("9"));
 		expect(await value(pair.legacy, "#edName")).toBe("Box Step remix");
 		await pair.click("#edCheck");
 		expect(await pair.legacy.locator("#edResult").textContent()).toBe(
 			"Solvable in 24 moves. That becomes the par.",
 		);
-		await pair.step("open level 1", (page) => page.locator("#edStock").selectOption("0"));
+		await pair.step("open level 1", async (page) => page.locator("#edStock").selectOption("0"));
 		await pair.click("#edTest");
 		await pair.click("#modePlay");
 	});
