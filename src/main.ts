@@ -4,6 +4,7 @@ import { beaten, eraseProgress, loadProgress, loadReducedMotion, progress, reduc
 import { clearTipsSeen, readBest, readColors, readDraft, readMine, readMuted, readRun, readTipsSeen, writeBest, writeColors, writeDraft, writeMine, writeMuted, writeRun, writeTipsSeen } from './ui/storage.ts';
 import { cap, COLORS, esc, GLYPH, WGLYPH } from './ui/text.ts';
 import { initSound, SFX } from './ui/sfx.ts';
+import { initPalette } from './ui/palette.ts';
 // The game's page code, still as the original script wrote it. The pure rules live in core/.
 import { FACES, DIRS, roll, solidColor, workColor } from './core/cube.ts';
 import { nextMilestone, hintTexts } from './core/hints.ts';
@@ -1072,68 +1073,7 @@ $('edList').addEventListener('click', e => {
   }
 });
 
-// ---------- Paint colors ----------
-const VAR = { r:'--red', o:'--orange', y:'--yellow', g:'--green', c:'--cyan', b:'--blue', p:'--purple' };
-const rootCS = getComputedStyle(document.documentElement);
-const DEFAULT_HEX = {}; for (const k in VAR) DEFAULT_HEX[k] = rootCS.getPropertyValue(VAR[k]).trim().toLowerCase();
-let custom = readColors();
-let palSel = 'r';
-const hexOf = k => custom[k] || DEFAULT_HEX[k];
-const toRGB = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
-const toHex = rgb => '#' + rgb.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
-function applyColors() {
-  for (const k in VAR) {
-    if (custom[k]) document.documentElement.style.setProperty(VAR[k], custom[k]);
-    else document.documentElement.style.removeProperty(VAR[k]);
-  }
-  $('palDots').innerHTML = Object.keys(VAR).map(k => `<i style="background:${COLORS[k]}"></i>`).join('');
-}
-function saveColors() { writeColors(custom); }
-function setColor(k, hex) {
-  hex = hex.toLowerCase();
-  if (hex === DEFAULT_HEX[k]) delete custom[k]; else custom[k] = hex;
-  applyColors(); saveColors(); renderPalette(true);
-}
-function renderPalette(keepFocus) {
-  $('palSwatches').innerHTML = Object.keys(VAR).map(k =>
-    `<button type="button" data-k="${k}" aria-pressed="${k === palSel}" aria-label="${CNAME[k]}" class="${custom[k] ? 'changed' : ''}" style="--pc:${COLORS[k]}">${GLYPH[k]}</button>`).join('');
-  const hex = hexOf(palSel), [r, g, b] = toRGB(hex);
-  $('palette').style.setProperty('--pc', COLORS[palSel]);
-  $('palName').textContent = cap(CNAME[palSel]);
-  const set = (id, v) => { const el = $(id); if (!keepFocus || document.activeElement !== el) el.value = v; };
-  set('palPick', hex); set('palHex', hex);
-  set('palR', r); set('palG', g); set('palB', b); set('palRn', r); set('palGn', g); set('palBn', b);
-  $('palResetOne').disabled = !custom[palSel];
-  $('palResetAll').disabled = !Object.keys(custom).length;
-}
-function openPalette(open) {
-  $('palette').hidden = !open;
-  $('palBtn').setAttribute('aria-expanded', open);
-  if (open) renderPalette();
-}
-$('palBtn').onclick = () => openPalette($('palette').hidden);
-$('palClose').onclick = () => { openPalette(false); $('palBtn').focus({ preventScroll:true }); };
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('palette').hidden) { openPalette(false); $('palBtn').focus({ preventScroll:true }); } });
-document.addEventListener('pointerdown', e => {
-  if (!$('palette').hidden && !e.target.closest('#palette, #palBtn')) openPalette(false);
-});
-$('palSwatches').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { palSel = b.dataset.k; renderPalette(); } });
-$('palPick').addEventListener('input', e => setColor(palSel, e.target.value));
-const fromChannels = (src) => {
-  const v = id => Number($(id).value) || 0;
-  const rgb = src === 'n' ? [v('palRn'), v('palGn'), v('palBn')] : [v('palR'), v('palG'), v('palB')];
-  setColor(palSel, toHex(rgb));
-};
-['palR', 'palG', 'palB'].forEach(id => $(id).addEventListener('input', () => fromChannels('r')));
-['palRn', 'palGn', 'palBn'].forEach(id => $(id).addEventListener('input', () => fromChannels('n')));
-$('palHex').addEventListener('input', e => {
-  let v = e.target.value.trim(); if (!v.startsWith('#')) v = '#' + v;
-  if (/^#[0-9a-fA-F]{6}$/.test(v)) setColor(palSel, v);
-});
-$('palHex').addEventListener('blur', () => renderPalette());
-$('palResetOne').onclick = () => { delete custom[palSel]; applyColors(); saveColors(); renderPalette(); };
-$('palResetAll').onclick = () => { custom = {}; applyColors(); saveColors(); renderPalette(); };
-applyColors();
+initPalette();
 
 // ---------- Title screen ----------
 function renderTitle() {
