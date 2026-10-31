@@ -5,6 +5,7 @@ import { clearTipsSeen, readBest, readColors, readDraft, readMine, readMuted, re
 import { cap, COLORS, esc, GLYPH, WGLYPH } from './ui/text.ts';
 import { initSound, SFX } from './ui/sfx.ts';
 import { initPalette } from './ui/palette.ts';
+import { blankGrid, draftFromLevel, edCellHTML, edToLevel as gridToLevel, newEditor } from './ui/editor-grid.ts';
 // The game's page code, still as the original script wrote it. The pure rules live in core/.
 import { FACES, DIRS, roll, solidColor, workColor } from './core/cube.ts';
 import { nextMilestone, hintTexts } from './core/hints.ts';
@@ -833,71 +834,21 @@ const TOOLS = [
 const COLORED = ['paint', 'gate', 'switch', 'button', 'box', 'door'];
 let ED = null, tool = 'floor', ecolor = 'r', wface = 'b', painting = false, lastCheck = null;
 
-function blankGrid(cols, rows) { return Array.from({ length:rows }, () => Array.from({ length:cols }, () => ({ t:'floor' }))); }
-function newEditor() {
-  const g = blankGrid(8, 5);
-  g[2][0] = { t:'start' }; g[2][7] = { t:'goal' };
-  return { id:null, name:'Untitled', cols:8, rows:5, grid:g, need:{} };
-}
 function loadIntoEditor(L, name, id) {
-  const P = parseLevel(JSON.parse(JSON.stringify({ map:L.map, k:L.k, need:L.need })));
-  const grid = [];
-  for (let y = 0; y < P.rows; y++) {
-    grid[y] = [];
-    for (let x = 0; x < P.cols; x++) {
-      const c = P.cells[y][x];
-      grid[y][x] = !c ? null : c.t === 'floor' ? { t:'floor' } : c.t === 'wash' ? { t:'wash' } : c.t === 'wgate' ? { t:'wgate', f:c.f } : { t:c.t, c:c.c };
-    }
-  }
-  grid[P.sy][P.sx] = { t:'start' };
-  P.boxes0.forEach(b => { grid[b.y][b.x] = { t:'box', c:b.c }; });
-  ED = { id, name, cols:P.cols, rows:P.rows, grid, need:{ ...(L.need || {}) } };
+  ED = draftFromLevel(L, name, id);
   lastCheck = null;
   saveDraft();
 }
+const edToLevel = () => gridToLevel(ED);
 const saveDraft = () => writeDraft(ED), loadDraft = readDraft, mine = readMine, setMine = writeMine;
 
-// Editor grid -> level data the game understands
-function edToLevel() {
-  const POOL = '1234567890@#$%&*+=~^!?<>[](){}|;:,_/';
-  const k = {}, rev = {}; let starts = 0, goals = 0;
-  const map = ED.grid.map(row => row.map(c => {
-    if (!c) return ' ';
-    if (c.t === 'floor') return '.';
-    if (c.t === 'start') { starts++; return 'S'; }
-    if (c.t === 'goal') { goals++; return 'X'; }
-    if (c.t === 'paint') return c.c;
-    if (c.t === 'gate') return c.c.toUpperCase();
-    if (c.t === 'wgate' && c.f === 'b') return 'W';
-    if (c.t === 'wash') return 'Z';
-    const param = c.t === 'wgate' ? c.f : c.c;
-    const key = c.t + param;
-    if (!rev[key]) { const ch = POOL[Object.keys(rev).length]; rev[key] = ch; k[ch] = [c.t, param]; }
-    return rev[key];
-  }).join('').replace(/\s+$/, ''));
-  const need = {}; for (const f of FACES) if (ED.need[f]) need[f] = ED.need[f];
-  const L = { name:ED.name.trim() || 'Untitled', map, k };
-  if (Object.keys(need).length) L.need = need;
-  if (starts !== 1) return { error:starts ? 'Place only one start.' : 'Place a start tile.' };
-  if (!goals) return { error:'Place at least one target.' };
-  return { level:L };
-}
-
-
-function edCellHTML(c) {
-  if (!c) return '<div class="ec void"></div>';
-  if (c.t === 'wash') return '<div class="ec wash"><b>✦</b></div>';
-  if (c.t === 'wgate') return `<div class="ec wgate wg-${c.f}">${WGLYPH[c.f] ? `<b>${WGLYPH[c.f]}</b>` : ''}</div>`;
-  const style = c.c ? ` style="--pc:${COLORS[c.c]}"` : (c.t === 'goal' && ED.need.t ? ` style="--pc:${COLORS[ED.need.t]}"` : '');
-  return `<div class="ec ${c.t}"${style}></div>`;
-}
 function renderEditor() {
   if (!ED) return;
   const wrap = $('edGridWrap');
   const size = Math.max(22, Math.min(42, Math.floor(((wrap.clientWidth || 560) - 8) / ED.cols) - 2));
   const g = $('edGrid');
   g.style.setProperty('--ec', size + 'px'); g.style.setProperty('--cols', ED.cols);
-  g.innerHTML = ED.grid.map((row, y) => row.map((c, x) => edCellHTML(c).replace('<div class="ec', `<div data-x="${x}" data-y="${y}" class="ec`)).join('')).join('');
+  g.innerHTML = ED.grid.map((row, y) => row.map((c, x) => edCellHTML(c, ED.need).replace('<div class="ec', `<div data-x="${x}" data-y="${y}" class="ec`)).join('')).join('');
   $('edName').value = ED.name;
   $('edCols').textContent = ED.cols; $('edRows').textContent = ED.rows;
   for (const f of FACES) $('need-' + f).value = ED.need[f] || '';
