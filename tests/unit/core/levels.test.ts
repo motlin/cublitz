@@ -24,6 +24,15 @@ describe("LEVELS", () => {
 		expect(JSON.stringify(LEVELS)).toBe(JSON.stringify(loadExpectedEngine().LEVELS));
 	});
 
+	it("has Two Sides say what is true of that level, which has no paint remover", () => {
+		const twoSides = LEVELS[22];
+		expect([twoSides?.name, twoSides?.tip]).toStrictEqual([
+			"Two Sides",
+			"West bare for the first wall, top bare for the second. Nothing here takes paint off.",
+		]);
+		expect(twoSides?.map.join("").includes("Z")).toBe(false);
+	});
+
 	it("solves every level to the golden result", () => {
 		expect(solved).toStrictEqual(golden);
 	});

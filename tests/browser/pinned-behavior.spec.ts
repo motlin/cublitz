@@ -103,6 +103,26 @@ test("hot data for a locked level is ignored and the first open level loads", as
 	}
 });
 
+test("the white gates tip and level 23's tip no longer say that paint never comes off", async ({browser}) => {
+	const seenExceptWhiteGates = {roll: true, paint: true, gate: true, need: true, switch: true, button: true};
+	const storage = {...atLevel(22), "cubist-tips-seen-v1": JSON.stringify(seenExceptWhiteGates)};
+	await withPair(browser, {storage}, async (pair) => {
+		const opened = await pair.click("#titlePlay");
+		expect([opened.hud.name, opened.tip.title]).toStrictEqual(["Two Sides", "White gates"]);
+		const shown = await Promise.all(
+			pair.pages.map(async (page) => [
+				await page.locator("#tipBody").textContent(),
+				await page.locator("#lvTip").textContent(),
+			]),
+		);
+		const expected = [
+			"White gates want a bare, unpainted side. A plain one needs a bare face down. One with an arrow needs the side it points to still bare when you land, and one with a ring needs a bare top. Paint stays on until a paint remover wipes it, so every puddle you cross uses up a white face. A solid cube can never get through.",
+			"West bare for the first wall, top bare for the second. Nothing here takes paint off.",
+		];
+		expect(shown).toStrictEqual([expected, expected]);
+	});
+});
+
 // A search that really reaches 400000 states takes many seconds, so the set of seen states reports its size.
 test("the solver's default limit is 400000 states", async ({browser}) => {
 	const solveAtSize = (size: number): string => `(() => {

@@ -149,7 +149,7 @@ const SOURCES: LevelSource[] = [
   " bbb  ",
   " bbb  ",
   " b.b4X"]},
- {"name":"Two Sides","tip":"West bare for the first wall, top bare for the second. Paint never comes off.","k":{"1":["wgate",
+ {"name":"Two Sides","tip":"West bare for the first wall, top bare for the second. Nothing here takes paint off.","k":{"1":["wgate",
   "t"],"5":["wgate",
   "w"]},"par":11,"map":[
   "S.g5gg1X",

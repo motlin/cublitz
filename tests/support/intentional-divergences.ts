@@ -10,6 +10,16 @@ export const INTENTIONAL_DIVERGENCES: IntentionalDivergence[] = [
 		from: "  if (!on || !run) return;\n  const rating = infRating();",
 		to: "  if (!on || !run) return;\n  $('infSkip').disabled = S.won;\n  const rating = infRating();",
 	},
+	{
+		name: "The white gates tip says a paint remover takes paint off",
+		from: "Paint never comes off, so every puddle",
+		to: "Paint stays on until a paint remover wipes it, so every puddle",
+	},
+	{
+		name: "Level 23's tip says nothing on that level takes paint off",
+		from: "top bare for the second. Paint never comes off.",
+		to: "top bare for the second. Nothing here takes paint off.",
+	},
 ];
 
 export function withIntentionalDivergences(html: string): string {

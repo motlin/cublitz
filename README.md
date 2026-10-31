@@ -29,6 +29,8 @@ Apart from the intentional divergences below, the shipped game must not change: 
 The shipped game differs from `legacy/original.html` in exactly these ways, which the owner approved:
 
 - Skip canvas is disabled on the infinite win card
+- The white gates tip says a paint remover takes paint off
+- Level 23's tip says nothing on that level takes paint off
 
 `tests/support/intentional-divergences.ts` holds each one as an exact edit to the original's text. The harness applies those edits to an in-memory copy of the original and compares `dist/` against that copy, so any other difference still fails. A unit test checks the list above against that file.
 

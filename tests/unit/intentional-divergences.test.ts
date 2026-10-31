@@ -13,6 +13,8 @@ describe("the intentional divergences", () => {
 	it("are exactly the approved changes", () => {
 		expect(INTENTIONAL_DIVERGENCES.map(({name}) => name)).toStrictEqual([
 			"Skip canvas is disabled on the infinite win card",
+			"The white gates tip says a paint remover takes paint off",
+			"Level 23's tip says nothing on that level takes paint off",
 		]);
 	});
 

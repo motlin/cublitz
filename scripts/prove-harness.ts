@@ -274,6 +274,18 @@ const MUTATIONS: Mutation[] = [
 		grep: "Skip canvas is disabled on the win card",
 	},
 	{
+		name: "intentional divergence: the white gates tip goes back to the original",
+		from: "Paint stays on until a paint remover wipes it, so every puddle",
+		to: "Paint never comes off, so every puddle",
+		grep: "no longer say that paint never comes off",
+	},
+	{
+		name: "intentional divergence: level 23's tip goes back to the original",
+		from: "top bare for the second. Nothing here takes paint off.",
+		to: "top bare for the second. Paint never comes off.",
+		grep: "no longer say that paint never comes off",
+	},
+	{
 		name: "solver: the default limit is 300000",
 		from: "limit = 4e5",
 		to: "limit = 3e5",

@@ -50,7 +50,7 @@ const TIPS: Record<TipKey, Tip> = {
 			["wgate", "n"],
 			["wgate", "t"],
 		],
-		body: "White gates want a bare, unpainted side. A plain one needs a bare face down. One with an arrow needs the side it points to still bare when you land, and one with a ring needs a bare top. Paint never comes off, so every puddle you cross uses up a white face. A solid cube can never get through.",
+		body: "White gates want a bare, unpainted side. A plain one needs a bare face down. One with an arrow needs the side it points to still bare when you land, and one with a ring needs a bare top. Paint stays on until a paint remover wipes it, so every puddle you cross uses up a white face. A solid cube can never get through.",
 	},
 	wash: {
 		title: "Paint remover",
