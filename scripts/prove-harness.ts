@@ -10,14 +10,14 @@ type Mutation = {name: string; from: string; to: string; grep: string};
 const MUTATIONS: Mutation[] = [
 	{
 		name: "rule: gates judge the top face instead of the bottom",
-		from: "if (cell.t === 'gate' && nf.b !== cell.c)",
-		to: "if (cell.t === 'gate' && nf.t !== cell.c)",
+		from: 'if (cell.t === "gate" && nf.b !== cell.c)',
+		to: 'if (cell.t === "gate" && nf.t !== cell.c)',
 		grep: "level 3 Blue Fence",
 	},
 	{
 		name: "rule: infinite mode draws a different seed stream",
-		from: "R = infRng(run.seed + n * 7919)",
-		to: "R = infRng(run.seed + n * 7920)",
+		from: "infRng(seed + n * 7919)",
+		to: "infRng(seed + n * 7920)",
 		grep: "a pinned seed plays",
 	},
 	{
@@ -40,26 +40,26 @@ const MUTATIONS: Mutation[] = [
 	},
 	{
 		name: "timing: roll animation is 171ms",
-		from: "{duration:170,",
-		to: "{duration:171,",
+		from: "duration: 170,",
+		to: "duration: 171,",
 		grep: "level 1 First Roll",
 	},
 	{
 		name: "sound: undo blip is a different pitch",
-		from: "tone(560, 0.08,",
-		to: "tone(561, 0.08,",
+		from: "tone(560, .08,",
+		to: "tone(561, .08,",
 		grep: "undo and restart",
 	},
 	{
 		name: "storage: sound key renamed",
-		from: "const KEY = 'cubist-sound-v1'",
-		to: "const KEY = 'cublitz-sound-v1'",
+		from: 'const KEY = "cubist-sound-v1"',
+		to: 'const KEY = "cublitz-sound-v1"',
 		grep: "sound: toggle",
 	},
 	{
 		name: "share code: prefix changed",
-		from: "const encodeLevel = L => 'CUBLITZ:'",
-		to: "const encodeLevel = L => 'CUBLITZ2:'",
+		from: '"CUBLITZ:" + btoa',
+		to: '"CUBLITZ2:" + btoa',
 		grep: "share code round trip",
 	},
 	{

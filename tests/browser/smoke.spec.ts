@@ -1,8 +1,8 @@
 import {createHash} from "node:crypto";
-import {readFileSync} from "node:fs";
+import {readdirSync, readFileSync} from "node:fs";
 import {expect, test} from "@playwright/test";
 import type {InfiniteGolden, SolveGolden} from "../support/golden.ts";
-import {BASE_URL, LEGACY_PATH, withPair} from "./harness/pair.ts";
+import {BASE_URL, DIST_PATH, LEGACY_PATH, withPair} from "./harness/pair.ts";
 
 const readGolden = <T>(name: string): T => JSON.parse(readFileSync(new URL(`../golden/${name}`, import.meta.url), "utf8")) as T;
 
@@ -11,6 +11,17 @@ test("the legacy artifact is the source file, byte for byte", async ({request}) 
 	expect(createHash("sha256").update(body).digest("hex")).toBe(
 		"a52a636cfe3705e3cc10d3bc6fe06f3b6a8b9b60fe3035d38f2e2181fd889fdb",
 	);
+});
+
+test("dist is one page, the original byte for byte outside the body of its classic inline script", async ({request}) => {
+	const scriptBody = /(?<=<script>\n)[\s\S]*(?=<\/script>)/;
+	const [legacy, dist] = await Promise.all(
+		[LEGACY_PATH, DIST_PATH].map(async (path) => (await request.get(BASE_URL + path)).text()),
+	);
+	expect(dist.replace(scriptBody, "")).toBe((legacy as string).replace(scriptBody, ""));
+	expect(scriptBody.test(dist as string)).toBe(true);
+	const distDir = process.env["CUBLITZ_DIST_DIR"] ?? "dist";
+	expect(readdirSync(distDir)).toStrictEqual(["index.html"]);
 });
 
 // These read the original's own globals in a real browser, so Node's reading of the script and
