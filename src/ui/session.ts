@@ -2,7 +2,7 @@ import {LEVELS} from "../core/levels.ts";
 import type {Level, State} from "../core/types.ts";
 import {type Progress, readProgress, writeProgress} from "./storage.ts";
 
-/** The level being played. lvl is -1 for a level from the editor and -2 in infinite mode. */
+/** The level being played. lvl is -1 for a level from the editor, -2 in infinite mode and -3 for a level from a shared link. */
 export type Session = {
 	lvl: number;
 	L: Level;

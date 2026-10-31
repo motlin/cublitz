@@ -2,7 +2,7 @@ import {blank} from "./cube.ts";
 import type {Box, Cell, Face, Level, LevelSource, Paint, State} from "./types.ts";
 
 // Map chars: ' ' void, '.' floor, 'S' start, 'X' target, lowercase color letter = puddle, uppercase = gate.
-const PAINTS = "rgbyopc";
+export const PAINTS = "rgbyopc";
 const isPaint = (ch: string): ch is Paint => PAINTS.includes(ch);
 const isGate = (ch: string): boolean => PAINTS.toUpperCase().includes(ch);
 

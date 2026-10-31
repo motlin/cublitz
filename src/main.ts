@@ -11,6 +11,7 @@ import {initPalette} from "./ui/palette.ts";
 import {loadLevel} from "./ui/play.ts";
 import {beaten, loadProgress, loadReducedMotion, S, unlocked} from "./ui/session.ts";
 import {initSound} from "./ui/sfx.ts";
+import {openSharedLink} from "./ui/shared-link.ts";
 import {initSolution} from "./ui/solution.ts";
 import {initTips} from "./ui/tips.ts";
 import {initTitle} from "./ui/title.ts";
@@ -36,13 +37,15 @@ initSound();
 loadEditorDraft();
 window.claude?.hot?.snapshot?.(() => (S && S.lvl >= 0 ? {lvl: S.lvl, st: S.st, hist: S.hist, mode} : {mode}));
 function start(data?: HotData): void {
-	if (data && typeof data.lvl === "number" && LEVELS[data.lvl] && unlocked(data.lvl) && data.st && data.st.boxes)
-		loadLevel(data.lvl, data);
+	const restoring =
+		data && typeof data.lvl === "number" && LEVELS[data.lvl] && unlocked(data.lvl) && data.st && data.st.boxes;
+	if (restoring) loadLevel(data.lvl!, data);
 	else {
 		const firstOpen = LEVELS.findIndex((L) => !beaten(L));
 		loadLevel(firstOpen < 0 ? 0 : firstOpen);
 	}
 	setMode("title");
+	if (!restoring) openSharedLink(location.search);
 }
 // Each read of the hooks stays as the original wrote it. An uncaught error names the expression that failed,
 // and a host's accessor on hot sees every read.

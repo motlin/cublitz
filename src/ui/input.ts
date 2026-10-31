@@ -4,9 +4,9 @@ import {renderBoard} from "./board.ts";
 import {$} from "./dom.ts";
 import {renderEditor} from "./editor.ts";
 import {hint} from "./hint.ts";
-import {loadInfLevel} from "./infinite-mode.ts";
+import {campaignLvl, loadInfLevel} from "./infinite-mode.ts";
 import {mode, setMode} from "./modes.ts";
-import {loadLevel, move, restart, undo} from "./play.ts";
+import {loadLevel, move, restart, SHARED, undo} from "./play.ts";
 import {S} from "./session.ts";
 import {dismissTip, tipOpen} from "./tips.ts";
 
@@ -40,7 +40,13 @@ export function initInput(): void {
 	$("hintBtn").onclick = () => hint();
 	$("winRetry").onclick = restart;
 	$("winNext").onclick = () =>
-		S.lvl === -2 ? loadInfLevel() : S.lvl < 0 ? setMode("edit") : loadLevel(Math.min(S.lvl + 1, LEVELS.length - 1));
+		S.lvl === -2
+			? loadInfLevel()
+			: S.lvl === SHARED
+				? loadLevel(campaignLvl)
+				: S.lvl < 0
+					? setMode("edit")
+					: loadLevel(Math.min(S.lvl + 1, LEVELS.length - 1));
 	document
 		.querySelectorAll<HTMLElement>(".dpad button")
 		.forEach((b) => b.addEventListener("click", () => move(b.dataset["d"] as Direction)));

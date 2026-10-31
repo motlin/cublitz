@@ -49,6 +49,7 @@ test("importing every ui module touches nothing in the browser", async () => {
 		"play.ts",
 		"session.ts",
 		"sfx.ts",
+		"shared-link.ts",
 		"solution.ts",
 		"storage.ts",
 		"text.ts",

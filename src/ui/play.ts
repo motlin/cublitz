@@ -30,6 +30,9 @@ const TILT: Record<Direction, string> = {
 	S: "rotateX(-14deg)",
 };
 
+/** S.lvl for a level from a shared link. */
+export const SHARED = -3;
+
 export type Snapshot = {st?: State; hist?: State[]};
 
 let queued: Direction | null = null;
@@ -53,8 +56,17 @@ export function startLevel(source: LevelSource, i: number, snap?: Snapshot | nul
 	queued = null;
 	$("win").hidden = true;
 	$("lvName").textContent = L.name!;
-	$("lvNum").textContent = i >= 0 ? `Level ${i + 1} of ${LEVELS.length}` : i === -2 ? "Infinite mode" : "Your level";
-	$("lvTip").textContent = L.tip || (i < 0 ? "Testing a level from the editor." : "");
+	$("lvNum").textContent =
+		i >= 0
+			? `Level ${i + 1} of ${LEVELS.length}`
+			: i === -2
+				? "Infinite mode"
+				: i === SHARED
+					? "Shared level"
+					: "Your level";
+	$("lvTip").textContent =
+		L.tip ||
+		(i === SHARED ? "Someone shared this level with you." : i < 0 ? "Testing a level from the editor." : "");
 	$("par").textContent = domValue(L.par ?? "?");
 	$("backEdit").hidden = i !== -1;
 	$("winRetry").hidden = false;
@@ -246,17 +258,21 @@ function win(): void {
 	$("winTitle").textContent = S.usedSolution ? "Solved" : par && m <= par ? "Perfect roll" : "Dry and done";
 	$("winScore").textContent = par ? `${m} moves · par ${par}` : `${m} moves`;
 	const last = S.lvl === LEVELS.length - 1;
-	$("winNote").textContent = custom
-		? "Your level works. Head back to the editor to tweak or save it."
-		: last
-			? "That was the last canvas. Replay any level to chase par, or build your own in the editor."
-			: S.usedSolution
-				? "You followed the solution this time. Replay it from memory when you are ready."
-				: m <= par!
-					? "You matched the shortest solution."
-					: `Par is ${par}. Replay to tighten it up.`;
+	$("winNote").textContent =
+		S.lvl === SHARED
+			? "You cleared a shared level. Keep rolling in the main game."
+			: custom
+				? "Your level works. Head back to the editor to tweak or save it."
+				: last
+					? "That was the last canvas. Replay any level to chase par, or build your own in the editor."
+					: S.usedSolution
+						? "You followed the solution this time. Replay it from memory when you are ready."
+						: m <= par!
+							? "You matched the shortest solution."
+							: `Par is ${par}. Replay to tighten it up.`;
 	$("winNext").hidden = last && !custom;
-	$("winNext").firstChild!.textContent = custom ? "Back to editor " : "Next level ";
+	$("winNext").firstChild!.textContent =
+		S.lvl === SHARED ? "Play the game " : custom ? "Back to editor " : "Next level ";
 	$("win").hidden = false;
 	setStatus("<b>Cleared.</b>");
 	(last && !custom ? $("winRetry") : $("winNext")).focus({preventScroll: true});
