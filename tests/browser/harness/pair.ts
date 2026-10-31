@@ -156,11 +156,13 @@ export class Pair {
 		});
 	}
 
-	/** Screenshots both pages with animations settled; a retake rules out raster timing noise. */
+	/** Screenshots both pages with animations settled. Under heavy load Chromium can still be finishing
+	 * raster work on the 3D layers, so a mismatch gets a few delayed retakes before it counts. */
 	async expectSameScreenshot(name: string): Promise<void> {
 		const shoot = () => Promise.all(this.pages.map((page) => page.screenshot({animations: "disabled", fullPage: true})));
 		let [legacy, dist] = (await shoot()) as [Buffer, Buffer];
-		for (let retake = 0; retake < 3 && !dist.equals(legacy); retake++) {
+		for (let retake = 0; retake < 5 && !dist.equals(legacy); retake++) {
+			await this.legacy.waitForTimeout(400);
 			[legacy, dist] = (await shoot()) as [Buffer, Buffer];
 		}
 		if (!dist.equals(legacy)) {

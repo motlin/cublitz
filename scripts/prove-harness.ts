@@ -27,7 +27,7 @@ const MUTATIONS: Mutation[] = [
 		grep: "level 2 First Coat",
 	},
 	{
-		name: "CSS value: status text changes size",
+		name: "CSS value: status line gains an outline",
 		from: ".status {",
 		to: ".status { outline: 1px solid red;",
 		grep: "screenshots match at desktop",
