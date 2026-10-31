@@ -38,8 +38,8 @@ const READS: [string, string, () => unknown, unknown][] = [
 	["colors", storage.STORAGE_KEYS.colors, storage.readColors, {}],
 	["run", storage.STORAGE_KEYS.infiniteRun, storage.readRun, null],
 	["best", storage.STORAGE_KEYS.infiniteBest, storage.readBest, EMPTY_BEST],
-	["draft", storage.STORAGE_KEYS.draft, storage.readDraft, null],
-	["mine", storage.STORAGE_KEYS.mine, storage.readMine, []],
+	["draft", storage.STORAGE_KEYS.draft, storage.loadDraft, null],
+	["mine", storage.STORAGE_KEYS.mine, storage.mine, []],
 ];
 
 test.each(READS)("%s falls back when absent, unparsable, falsy or blocked", (_name, key, read, fallback) => {
@@ -64,9 +64,9 @@ test("a value that parses is not validated, whatever its shape", () => {
 
 test("a draft only needs a truthy grid", () => {
 	stub({[storage.STORAGE_KEYS.draft]: '{"name":"no grid"}'});
-	expect(storage.readDraft()).toBe(null);
+	expect(storage.loadDraft()).toBe(null);
 	stub({[storage.STORAGE_KEYS.draft]: '{"grid":1}'});
-	expect(storage.readDraft()).toStrictEqual({grid: 1});
+	expect(storage.loadDraft()).toStrictEqual({grid: 1});
 });
 
 test("writes keep the original formats", () => {
@@ -78,11 +78,11 @@ test("writes keep the original formats", () => {
 		storage.writeProgress({"First Roll": 4}),
 		storage.writeTipsSeen({roll: true}),
 		storage.writeColors({r: "#000000"}),
-		storage.writeRun(run),
-		storage.writeBest({cleared: 1, score: 2, rating: 3}),
 		storage.writeDraft(draft),
-		storage.writeMine([{id: "a", level, saved: 9}]),
-	]).toStrictEqual([true, true, true, true, true, true, true]);
+		storage.setMine([{id: "a", level, saved: 9}]),
+	]).toStrictEqual([true, true, true, true, true]);
+	storage.writeRun(run);
+	storage.writeBest({cleared: 1, score: 2, rating: 3});
 	storage.writeMuted(true);
 	expect(Object.fromEntries(data)).toStrictEqual({
 		"cubist-progress-v2": '{"First Roll":4}',
@@ -113,7 +113,7 @@ test("clearing the tips removes only their key", () => {
 
 test("blocked storage reports failed writes and never throws", () => {
 	blocked();
-	expect([storage.writeProgress({}), storage.writeMine([]), storage.readMuted()]).toStrictEqual([false, false, false]);
+	expect([storage.writeProgress({}), storage.setMine([]), storage.readMuted()]).toStrictEqual([false, false, false]);
 	expect(() => {
 		storage.clearTipsSeen();
 		storage.writeMuted(true);

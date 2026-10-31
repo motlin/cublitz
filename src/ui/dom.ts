@@ -128,10 +128,10 @@ export const targetInput = (e: Event): HTMLInputElement => e.target as HTMLInput
 export const targetSelect = (e: Event): HTMLSelectElement => e.target as HTMLSelectElement;
 
 export type HotData = {lvl?: number; st?: State; hist?: State[]; mode?: string};
-type GameWindow = Window &
-	typeof globalThis & {
+declare global {
+	/** The two extras the game looks for: claude.ai's hot-reload hooks and Safari's old audio name. */
+	interface Window {
 		claude?: {hot?: {snapshot?: (take: () => HotData) => void; ready?: (start: (data?: HotData) => void) => void; data?: HotData}};
 		webkitAudioContext?: typeof AudioContext;
-	};
-/** The window with the two extras the game looks for: claude.ai's hot-reload hooks and Safari's old audio name. */
-export const gameWindow = (): GameWindow => window as GameWindow;
+	}
+}

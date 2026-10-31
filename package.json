@@ -12,7 +12,7 @@
 		"typecheck": "tsc --noEmit",
 		"lint": "oxlint .",
 		"test:unit": "vitest run",
-		"test:browser": "playwright test",
+		"test:browser": "vite build && playwright test",
 		"golden": "node scripts/generate-golden.ts",
 		"prove-harness": "node scripts/prove-harness.ts",
 		"deploy": "wrangler pages deploy --branch main"

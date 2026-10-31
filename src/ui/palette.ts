@@ -6,7 +6,7 @@ import {cap, COLORS, GLYPH} from "./text.ts";
 
 // Paint colors
 const VAR: Record<Paint, string> = {r: "--red", o: "--orange", y: "--yellow", g: "--green", c: "--cyan", b: "--blue", p: "--purple"};
-const PAINTS = Object.keys(VAR) as Paint[];
+const PALETTE_PAINTS = Object.keys(VAR) as Paint[];
 const DEFAULT_HEX: Partial<Record<Paint, string>> = {};
 let custom: CustomColors = {};
 let palSel: Paint = "r";
@@ -16,22 +16,25 @@ export const toRGB = (h: string): number[] => [1, 3, 5].map((i) => parseInt(h.sl
 export const toHex = (rgb: number[]): string => "#" + rgb.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("");
 
 function applyColors(): void {
-	for (const k of PAINTS) {
+	for (const k of PALETTE_PAINTS) {
 		if (custom[k]) document.documentElement.style.setProperty(VAR[k], custom[k]);
 		else document.documentElement.style.removeProperty(VAR[k]);
 	}
-	$("palDots").innerHTML = PAINTS.map((k) => `<i style="background:${COLORS[k]}"></i>`).join("");
+	$("palDots").innerHTML = PALETTE_PAINTS.map((k) => `<i style="background:${COLORS[k]}"></i>`).join("");
+}
+function saveColors(): void {
+	writeColors(custom);
 }
 function setColor(k: Paint, hex: string): void {
 	hex = hex.toLowerCase();
 	if (hex === DEFAULT_HEX[k]) delete custom[k];
 	else custom[k] = hex;
 	applyColors();
-	writeColors(custom);
+	saveColors();
 	renderPalette(true);
 }
 function renderPalette(keepFocus?: boolean): void {
-	$("palSwatches").innerHTML = PAINTS.map((k) => `<button type="button" data-k="${k}" aria-pressed="${k === palSel}" aria-label="${CNAME[k]}" class="${custom[k] ? "changed" : ""}" style="--pc:${COLORS[k]}">${GLYPH[k]}</button>`).join("");
+	$("palSwatches").innerHTML = PALETTE_PAINTS.map((k) => `<button type="button" data-k="${k}" aria-pressed="${k === palSel}" aria-label="${CNAME[k]}" class="${custom[k] ? "changed" : ""}" style="--pc:${COLORS[k]}">${GLYPH[k]}</button>`).join("");
 	const hex = hexOf(palSel),
 		[r, g, b] = toRGB(hex);
 	$("palette").style.setProperty("--pc", COLORS[palSel]);
@@ -62,9 +65,10 @@ const fromChannels = (src: "r" | "n"): void => {
 	setColor(palSel, toHex(rgb));
 };
 
+let rootCS: CSSStyleDeclaration;
 export function initPalette(): void {
-	const rootCS = getComputedStyle(document.documentElement);
-	for (const k of PAINTS) DEFAULT_HEX[k] = rootCS.getPropertyValue(VAR[k]).trim().toLowerCase();
+	rootCS = getComputedStyle(document.documentElement);
+	for (const k of PALETTE_PAINTS) DEFAULT_HEX[k] = rootCS.getPropertyValue(VAR[k]).trim().toLowerCase();
 	custom = readColors();
 	$("palBtn").onclick = () => openPalette($("palette").hidden);
 	$("palClose").onclick = () => {
@@ -99,13 +103,13 @@ export function initPalette(): void {
 	$("palResetOne").onclick = () => {
 		delete custom[palSel];
 		applyColors();
-		writeColors(custom);
+		saveColors();
 		renderPalette();
 	};
 	$("palResetAll").onclick = () => {
 		custom = {};
 		applyColors();
-		writeColors(custom);
+		saveColors();
 		renderPalette();
 	};
 	applyColors();

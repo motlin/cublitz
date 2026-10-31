@@ -28,6 +28,12 @@ place of its inline script. A small plugin in `vite.config.ts` writes `dist/` wi
 their elements and the bundle as a classic inline script in the same spot, so `dist/` is one file that
 differs from the original only inside its `<script>` tag. Vite's own output would minify the CSS and defer
 it and the script to external files. The bundle has to stay a sloppy classic script like the original.
+
+The original's top-level names are also the page's global scope, which anything using the console or a
+page script can see. `scripts/original-global-scope.ts` keeps that scope exactly: the build reads the names
+and kinds from `legacy/original.html`, leaves those global and moves every other helper into a private
+function. The build fails if the bundle lacks one of them.
+
 `just dev` runs the modules directly, in strict mode, so a malformed saved value can behave differently there.
 
 ## The contract

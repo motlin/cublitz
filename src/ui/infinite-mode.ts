@@ -96,25 +96,24 @@ export function renderInfCard(): void {
 export function infWin(): void {
 	const L = S.L,
 		m = Math.max(1, S.rolls || 0),
-		par = L.par!,
-		r = run!;
+		par = L.par!;
 	const eff = Math.min(1, par / m),
 		pts = Math.round(100 * eff);
-	r.effs.push(eff);
-	r.score += pts;
-	r.cleared++;
-	r.streak = m <= par ? r.streak + 1 : 0;
-	r.bestStreak = Math.max(r.bestStreak, r.streak);
-	r.n++;
-	writeRun(r);
-	const rating = infRating(r);
-	if (r.cleared > best.cleared || r.score > best.score || (r.effs.length >= 3 && rating > best.rating)) {
-		best = {cleared: Math.max(best.cleared, r.cleared), score: Math.max(best.score, r.score), rating: r.effs.length >= 3 ? Math.max(best.rating, rating) : best.rating};
+	run!.effs.push(eff);
+	run!.score += pts;
+	run!.cleared++;
+	run!.streak = m <= par ? run!.streak + 1 : 0;
+	run!.bestStreak = Math.max(run!.bestStreak, run!.streak);
+	run!.n++;
+	writeRun(run!);
+	const rating = infRating(run!);
+	if (run!.cleared > best.cleared || run!.score > best.score || (run!.effs.length >= 3 && rating > best.rating)) {
+		best = {cleared: Math.max(best.cleared, run!.cleared), score: Math.max(best.score, run!.score), rating: run!.effs.length >= 3 ? Math.max(best.rating, rating) : best.rating};
 		writeBest(best);
 	}
 	$("winTitle").textContent = m <= par ? "Perfect roll" : "Cleared";
 	$("winScore").textContent = `${m} rolls · par ${par} · +${pts} points`;
-	$("winNote").textContent = r.effs.length < 3 ? `Clear ${3 - r.effs.length} more to get your first rank.` : `Rank: ${infRank(r)} (rating ${rating}, from your last ${Math.min(10, r.effs.length)} canvases).`;
+	$("winNote").textContent = run!.effs.length < 3 ? `Clear ${3 - run!.effs.length} more to get your first rank.` : `Rank: ${infRank(run!)} (rating ${rating}, from your last ${Math.min(10, run!.effs.length)} canvases).`;
 	$("winRetry").hidden = true;
 	$("winNext").hidden = false;
 	$("winNext").firstChild!.textContent = "Next canvas ";
@@ -126,11 +125,10 @@ export function initInfinite(): void {
 	best = readBest();
 	$("infSkip").onclick = () => {
 		if (S.busy) return;
-		const r = run!;
-		r.effs.push(0);
-		r.streak = 0;
-		r.n++;
-		writeRun(r);
+		run!.effs.push(0);
+		run!.streak = 0;
+		run!.n++;
+		writeRun(run!);
 		$("infNote").textContent = "Skipped. That canvas counts as 0 toward your rating.";
 		setTimeout(() => {
 			$("infNote").textContent = "";

@@ -16,6 +16,9 @@ export let hintState: HintState | null = null;
 
 const mKey = (m: Milestone | null): string => (m ? [m.type, "c" in m ? m.c : undefined, m.x, m.y].join(":") : "");
 
+function clearTrail(): void {
+	scheduleOverlays();
+}
 export function clearHint(keepState?: boolean): void {
 	$("hintBox").hidden = true;
 	if (!keepState) hintState = null;
@@ -27,7 +30,7 @@ export const clearHintState = (): void => {
 /** Drops the trail while undoing: the next press has to plan again from there. */
 export function forgetHintPosition(): void {
 	if (hintState) {
-		scheduleOverlays();
+		clearTrail();
 		hintState.at = null;
 	}
 }
@@ -71,7 +74,7 @@ export function hint(more?: boolean): void {
 // Called after each successful roll
 export function hintAfterMove(r: MoveSuccess): string | undefined {
 	if (!hintState) return;
-	scheduleOverlays();
+	clearTrail();
 	const m = hintState.m,
 		st = S.st;
 	let done = false;

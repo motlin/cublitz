@@ -1,5 +1,6 @@
 import {LEVELS} from "./core/levels.ts";
-import {gameWindow, type HotData} from "./ui/dom.ts";
+import {initBoardElement} from "./ui/board.ts";
+import type {HotData} from "./ui/dom.ts";
 import {initEditor, loadEditorDraft} from "./ui/editor.ts";
 import {initHints} from "./ui/hint.ts";
 import {initInfinite} from "./ui/infinite-mode.ts";
@@ -18,6 +19,7 @@ import {initTitle} from "./ui/title.ts";
 // It follows the original script from top to bottom. Listeners on one target fire in the order they were
 // added, and the document's keydown listeners in input, palette and title depend on that order.
 loadProgress();
+initBoardElement();
 loadReducedMotion();
 initTips();
 initSolution();
@@ -32,7 +34,7 @@ initTitle();
 initSound();
 
 loadEditorDraft();
-gameWindow().claude?.hot?.snapshot?.(() => (S && S.lvl >= 0 ? {lvl: S.lvl, st: S.st, hist: S.hist, mode} : {mode}));
+window.claude?.hot?.snapshot?.(() => (S && S.lvl >= 0 ? {lvl: S.lvl, st: S.st, hist: S.hist, mode} : {mode}));
 function start(data?: HotData): void {
 	if (data && typeof data.lvl === "number" && LEVELS[data.lvl] && unlocked(data.lvl) && data.st && data.st.boxes) loadLevel(data.lvl, data);
 	else {
@@ -41,6 +43,7 @@ function start(data?: HotData): void {
 	}
 	setMode("title");
 }
-const hot = gameWindow().claude?.hot;
-if (hot?.ready) hot.ready(start);
-else start(hot?.data ?? {});
+// Each read of the hooks stays as the original wrote it. An uncaught error names the expression that failed,
+// and a host's accessor on hot sees every read.
+// oxlint-disable-next-line no-unused-expressions
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});

@@ -33,7 +33,7 @@ const readObject = <T>(key: string): T => {
 		return {} as T;
 	}
 };
-const readOr = <T>(key: string, fallback: T): T => {
+const loadJSON = <T>(key: string, fallback: T): T => {
 	try {
 		return (JSON.parse(localStorage.getItem(key)!) || fallback) as T;
 	} catch {
@@ -47,6 +47,10 @@ const write = (key: string, value: unknown): boolean => {
 	} catch {
 		return false;
 	}
+};
+
+const saveJSON = (key: string, value: unknown): void => {
+	write(key, value);
 };
 
 export const readProgress = (): Progress => readObject(STORAGE_KEYS.progress);
@@ -65,12 +69,12 @@ export const clearTipsSeen = (): void => {
 export const readColors = (): CustomColors => readObject(STORAGE_KEYS.colors);
 export const writeColors = (colors: CustomColors): boolean => write(STORAGE_KEYS.colors, colors);
 
-export const readRun = (): SavedRun | null => readOr<SavedRun | null>(STORAGE_KEYS.infiniteRun, null);
-export const writeRun = (run: SavedRun | null): boolean => write(STORAGE_KEYS.infiniteRun, run);
-export const readBest = (): BestRun => readOr<BestRun>(STORAGE_KEYS.infiniteBest, {cleared: 0, rating: 0, score: 0});
-export const writeBest = (best: BestRun): boolean => write(STORAGE_KEYS.infiniteBest, best);
+export const readRun = (): SavedRun | null => loadJSON<SavedRun | null>(STORAGE_KEYS.infiniteRun, null);
+export const writeRun = (run: SavedRun | null): void => saveJSON(STORAGE_KEYS.infiniteRun, run);
+export const readBest = (): BestRun => loadJSON<BestRun>(STORAGE_KEYS.infiniteBest, {cleared: 0, rating: 0, score: 0});
+export const writeBest = (best: BestRun): void => saveJSON(STORAGE_KEYS.infiniteBest, best);
 
-export const readDraft = (): EditorDraft | null => {
+export function loadDraft(): EditorDraft | null {
 	try {
 		const draft = JSON.parse(localStorage.getItem(STORAGE_KEYS.draft)!) as EditorDraft | null;
 		if (draft && draft.grid) return draft;
@@ -78,11 +82,15 @@ export const readDraft = (): EditorDraft | null => {
 		// An unreadable draft is the same as no draft.
 	}
 	return null;
-};
+}
 export const writeDraft = (draft: EditorDraft): boolean => write(STORAGE_KEYS.draft, draft);
 
-export const readMine = (): SavedLevel[] => readOr<SavedLevel[]>(STORAGE_KEYS.mine, []);
-export const writeMine = (list: SavedLevel[]): boolean => write(STORAGE_KEYS.mine, list);
+export function mine(): SavedLevel[] {
+	return loadJSON<SavedLevel[]>(STORAGE_KEYS.mine, []);
+}
+export function setMine(list: SavedLevel[]): boolean {
+	return write(STORAGE_KEYS.mine, list);
+}
 
 export const readMuted = (): boolean => {
 	try {

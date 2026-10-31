@@ -5,8 +5,8 @@ import {type Progress, readProgress, writeProgress} from "./storage.ts";
 /** The level being played. lvl is -1 for a level from the editor and -2 in infinite mode. */
 export type Session = {lvl: number; L: Level; st: State; hist: State[]; busy: boolean; won: boolean; rolls: number; usedSolution?: boolean};
 
-/** Unset only until the page has booted, which is why a few callers still check it. */
-export let S!: Session;
+/** Null only until the page has booted, which is why a few callers still check it. */
+export let S: Session = null as unknown as Session;
 export const setSession = (session: Session): void => {
 	S = session;
 };
@@ -15,9 +15,9 @@ export let progress: Progress = {};
 export const loadProgress = (): void => {
 	progress = readProgress();
 };
-export const saveProgress = (): void => {
+export function saveProgress(): void {
 	writeProgress(progress);
-};
+}
 export const eraseProgress = (): void => {
 	progress = {};
 	saveProgress();

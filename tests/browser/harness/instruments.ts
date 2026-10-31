@@ -23,6 +23,8 @@ export type Snapshot = {
 	audio: unknown[];
 	timers: unknown[];
 	animations: unknown[];
+	prevented: string[];
+	focusCalls: unknown[];
 	errors: string[];
 };
 
@@ -38,8 +40,6 @@ type Harness = {
 declare global {
 	interface Window {
 		__harness: Harness;
-		webkitAudioContext?: unknown;
-		claude?: unknown;
 	}
 }
 
@@ -48,6 +48,8 @@ export function installInstruments(options: InstrumentOptions): void {
 	const timers: unknown[] = [];
 	const animations: unknown[] = [];
 	const errors: string[] = [];
+	const prevented: string[] = [];
+	const focusCalls: unknown[] = [];
 	let audioTotal = 0;
 
 	// ---- Math.random and Date are pinned ----
@@ -140,6 +142,18 @@ export function installInstruments(options: InstrumentOptions): void {
 		return realAnimate.call(this, keyframes, timing);
 	};
 
+	// ---- Whether the game swallowed an event and how it moved focus, neither of which always shows ----
+	const realPreventDefault = Event.prototype.preventDefault;
+	Event.prototype.preventDefault = function () {
+		prevented.push(`${this.type}${this instanceof KeyboardEvent ? ` ${this.key}` : ""}`);
+		realPreventDefault.call(this);
+	};
+	const realFocus = HTMLElement.prototype.focus;
+	HTMLElement.prototype.focus = function (focusOptions) {
+		focusCalls.push([this.id, focusOptions ?? null]);
+		realFocus.call(this, focusOptions);
+	};
+
 	// ---- Web Audio: a recording stand-in, so every call sequence and argument is compared and
 	// currentTime does not depend on the wall clock ----
 	const record = (...entry: unknown[]) => {
@@ -209,7 +223,7 @@ export function installInstruments(options: InstrumentOptions): void {
 		}
 	}
 	(window as unknown as {AudioContext: unknown}).AudioContext = RecordingAudioContext;
-	window.webkitAudioContext = RecordingAudioContext;
+	window.webkitAudioContext = RecordingAudioContext as unknown as typeof AudioContext;
 
 	// The browser delivers resize events at moments that differ between pages, for example around
 	// mobile emulation and full-page screenshots. Only the events a script dispatches reach the game.
@@ -230,7 +244,7 @@ export function installInstruments(options: InstrumentOptions): void {
 			},
 		};
 		if (useReady) hot["ready"] = (start: (d: unknown) => void) => start(data);
-		window.claude = {hot};
+		window.claude = {hot} as never;
 	}
 
 	// ---- Reading the page ----
@@ -399,6 +413,8 @@ export function installInstruments(options: InstrumentOptions): void {
 				audio: drain(audio),
 				timers: drain(timers),
 				animations: drain(animations),
+				prevented: drain(prevented) as string[],
+				focusCalls: drain(focusCalls),
 				errors: errors.slice(),
 			};
 		},

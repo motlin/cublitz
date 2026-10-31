@@ -5,12 +5,12 @@ import {CNAME, FNAME} from "../core/names.ts";
 import {decodeLevel, encodeLevel} from "../core/share.ts";
 import {solve} from "../core/solver.ts";
 import type {Face, Level, LevelSource, Paint, PieceColor} from "../core/types.ts";
-import {$, domValue, needSelect, targetElement, targetInput, targetSelect} from "./dom.ts";
+import {$, domValue, type ElementById, needSelect, targetElement, targetInput, targetSelect} from "./dom.ts";
 import {blankGrid, draftFromLevel, edCellHTML, edToLevel, newEditor} from "./editor-grid.ts";
 import {setMode} from "./modes.ts";
 import {startLevel} from "./play.ts";
 import {unlocked} from "./session.ts";
-import {type EditorCell, type EditorDraft, readDraft, readMine, writeDraft, writeMine} from "./storage.ts";
+import {type EditorCell, type EditorDraft, loadDraft, mine, setMine, writeDraft} from "./storage.ts";
 import {cap, COLORS, esc, GLYPH, WGLYPH} from "./text.ts";
 
 // Editor
@@ -32,7 +32,7 @@ const TOOLS: [Tool, string][] = [
 	["door", "Door"],
 ];
 const COLORED: Tool[] = ["paint", "gate", "switch", "button", "box", "door"];
-const PAINT_COLORS = [..."roygcbp"] as Paint[]; // white only exists as switches, buttons, boxes and doors
+const PAINT_COLORS = "roygcbp"; // white only exists as switches, buttons, boxes and doors
 let ED: EditorDraft | null = null;
 let tool: Tool = "floor";
 let ecolor: PieceColor = "r";
@@ -42,13 +42,16 @@ let lastCheck: Check | null = null;
 let armedDelete: string | null = null;
 
 export const editorId = (): string | null => ED!.id;
+function saveDraft(): void {
+	writeDraft(ED!);
+}
 export const loadEditorDraft = (): void => {
-	ED = readDraft() || newEditor();
+	ED = loadDraft() || newEditor();
 };
 export function loadIntoEditor(L: LevelSource, name: string, id: string | null): void {
 	ED = draftFromLevel(L, name, id);
 	lastCheck = null;
-	writeDraft(ED);
+	saveDraft();
 }
 
 export function renderEditor(): void {
@@ -93,7 +96,7 @@ function renderCheck(): void {
 }
 function changed(): void {
 	lastCheck = null;
-	writeDraft(ED!);
+	saveDraft();
 	renderEditor();
 }
 
@@ -143,7 +146,7 @@ export function renderStock(): void {
 	$("edStock").innerHTML = '<option value="">Open a built-in level…</option>' + LEVELS.map((L, i) => (unlocked(i) ? `<option value="${i}">${i + 1}. ${L.name}</option>` : `<option value="${i}" disabled>${i + 1}. Locked</option>`)).join("");
 }
 function renderMine(): void {
-	const list = readMine(),
+	const list = mine(),
 		el = $("edList");
 	if (!list.length) {
 		el.innerHTML = '<p class="muted">Levels you save appear here. They live in this browser only, so use share codes to move them around.</p>';
@@ -159,6 +162,7 @@ function renderMine(): void {
 		.join("");
 }
 
+let needSel: ElementById<"edNeed">;
 export function initEditor(): void {
 	$("edGrid").addEventListener("pointerdown", (e) => {
 		const p = cellFromEvent(e);
@@ -216,7 +220,7 @@ export function initEditor(): void {
 	$("edName").addEventListener("input", (e) => {
 		const draft = ED!;
 		draft.name = targetInput(e).value;
-		writeDraft(draft);
+		saveDraft();
 		const r = edToLevel(draft);
 		if (r.level) $("edCode").value = encodeLevel(r.level);
 	});
@@ -226,7 +230,8 @@ export function initEditor(): void {
 			resize(dc, dr);
 		}),
 	);
-	$("edNeed").innerHTML = FACES.map((f) => `<label for="need-${f}">${cap(FNAME[f])}<select id="need-${f}"><option value="">Any</option>${PAINT_COLORS.map((c) => `<option value="${c}">${cap(CNAME[c])}</option>`).join("")}</select></label>`).join("");
+	needSel = $("edNeed");
+	needSel.innerHTML = FACES.map((f) => `<label for="need-${f}">${cap(FNAME[f])}<select id="need-${f}"><option value="">Any</option>${([...PAINT_COLORS] as Paint[]).map((c) => `<option value="${c}">${cap(CNAME[c])}</option>`).join("")}</select></label>`).join("");
 	FACES.forEach((f) =>
 		needSelect(f).addEventListener("change", (e) => {
 			const v = targetSelect(e).value as Paint | "";
@@ -269,15 +274,15 @@ export function initEditor(): void {
 			return;
 		}
 		const level = r.level!;
-		const list = readMine();
+		const list = mine();
 		const id = draft.id || "L" + Date.now().toString(36);
 		const entry = {id, level, saved: Date.now()};
 		const i = list.findIndex((x) => x.id === id);
 		if (i >= 0) list[i] = entry;
 		else list.unshift(entry);
-		const ok = writeMine(list);
+		const ok = setMine(list);
 		if (ok) draft.id = id;
-		writeDraft(draft);
+		saveDraft();
 		lastCheck = {ok, html: ok ? `<b>Saved.</b> “${level.name}” is in your levels on this browser.` : "<b>Couldn’t save.</b> This browser is blocking storage. Copy the share code instead."};
 		renderEditor();
 	};
@@ -329,7 +334,7 @@ export function initEditor(): void {
 	$("edList").addEventListener("click", (e) => {
 		const b = targetElement(e).closest("button");
 		if (!b) return;
-		const list = readMine(),
+		const list = mine(),
 			x = list.find((i) => i.id === b.dataset["id"]);
 		if (!x) return;
 		if (b.dataset["act"] === "edit") {
@@ -352,7 +357,7 @@ export function initEditor(): void {
 				renderMine();
 				return;
 			}
-			writeMine(list.filter((i) => i.id !== x.id));
+			setMine(list.filter((i) => i.id !== x.id));
 			armedDelete = null;
 			if (ED!.id === x.id) ED!.id = null;
 			renderEditor();

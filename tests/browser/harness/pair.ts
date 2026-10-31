@@ -20,6 +20,8 @@ export type PairOptions = {
 	mobile?: boolean;
 	storage?: Record<string, string>;
 	hot?: InstrumentOptions["hot"];
+	/** Runs in both pages after the instruments and before the game, to change what the browser offers. */
+	setup?: () => void;
 };
 
 /** localStorage that opens level `index` from the title's Play button, with the tutorial already seen. */
@@ -83,6 +85,7 @@ export class Pair {
 				else await route.abort();
 			});
 			await context.addInitScript(installInstruments, instruments);
+			if (options.setup) await context.addInitScript(options.setup);
 			const page = await context.newPage();
 			await page.goto(BASE_URL + path, {waitUntil: "load"});
 			await afterLoad(page, options.mobile ?? false);

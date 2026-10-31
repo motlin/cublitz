@@ -1,4 +1,3 @@
-import {gameWindow} from "./dom.ts";
 import {readMuted, writeMuted} from "./storage.ts";
 
 // Sound effects, synthesized with Web Audio (no files)
@@ -13,7 +12,7 @@ let muted = false;
 function ensure(): AudioContext | null {
 	if (!ctx) {
 		try {
-			ctx = new (gameWindow().AudioContext || gameWindow().webkitAudioContext!)();
+			ctx = new (window.AudioContext || window.webkitAudioContext!)();
 			master = ctx.createGain();
 			master.gain.value = 0.55;
 			const comp = ctx.createDynamicsCompressor();
@@ -149,19 +148,26 @@ export const SFX = {
 			// A sound that fails to start never gets in the way of the game.
 		}
 	},
+	ensure,
+	get muted(): boolean {
+		return muted;
+	},
+	setMuted(m: boolean): void {
+		muted = m;
+		writeMuted(m);
+	},
 };
 
 function renderSoundBtns(): void {
 	document.querySelectorAll(".soundbtn").forEach((b) => {
-		b.setAttribute("aria-pressed", String(!muted));
-		b.querySelector(".lbl")!.textContent = muted ? "Sound off" : "Sound on";
+		b.setAttribute("aria-pressed", String(!SFX.muted));
+		b.querySelector(".lbl")!.textContent = SFX.muted ? "Sound off" : "Sound on";
 	});
 }
 function toggleSound(): void {
-	muted = !muted;
-	writeMuted(muted);
+	SFX.setMuted(!SFX.muted);
 	renderSoundBtns();
-	if (!muted) SFX.play("click");
+	if (!SFX.muted) SFX.play("click");
 }
 
 export function initSound(): void {
@@ -171,7 +177,7 @@ export function initSound(): void {
 		addEventListener(
 			ev,
 			() => {
-				if (!muted) ensure();
+				if (!SFX.muted) SFX.ensure();
 			},
 			{capture: true},
 		),

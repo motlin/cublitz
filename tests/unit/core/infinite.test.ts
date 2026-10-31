@@ -43,13 +43,13 @@ describe("infRelaxed", () => {
 });
 
 describe("infCandidate and infTry", () => {
-	const levelNumbers = [0, 2, 4, 6, 8, 10, 12, 14];
+	const levelNumbers = [0, 2, 4, 6, 8, 10, 12, 14, 20, 33];
 
 	it("draws the same candidates as the original at every tier, for many draws", () => {
 		const draw = (candidate: (R: () => number, n: number) => unknown, rng: (seed: number) => () => number) =>
 			levelNumbers.flatMap((n) => {
 				const R = rng(n + 1);
-				return Array.from({length: 40}, () => candidate(R, n));
+				return Array.from({length: 800}, () => candidate(R, n));
 			});
 		expect(draw(infCandidate, infRng)).toStrictEqual(draw(original.infCandidate, original.infRng));
 	});
@@ -68,6 +68,12 @@ describe("infCandidate and infTry", () => {
 });
 
 describe("infSearch", () => {
+	it("generates what the original generates, across seeds and deep into a run", () => {
+		const pairs = [[4, 8], [9, 10], [77, 15]] as const;
+		const generated = pairs.map(([seed, n]) => JSON.parse(JSON.stringify(generate(seed, n))) as unknown);
+		expect(generated).toStrictEqual(pairs.map(([seed, n]) => JSON.parse(JSON.stringify(original.generateInfinite(seed, n))) as unknown));
+	});
+
 	it("generates every golden level from its seed", () => {
 		const generated = golden.map(({seed, n}) => JSON.parse(JSON.stringify(generate(seed, n))) as unknown);
 		expect(generated).toStrictEqual(golden.map((entry) => entry.level));

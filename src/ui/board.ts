@@ -1,7 +1,7 @@
 import {FACES, solidColor, workColor} from "../core/cube.ts";
 import {doorOpen, openColors, pressed} from "../core/rules.ts";
 import type {Cell, Face, Level, Need, PieceColor} from "../core/types.ts";
-import {$} from "./dom.ts";
+import {$, type ElementById} from "./dom.ts";
 import {hintState, renderHint} from "./hint.ts";
 import {buildProbes, scheduleOverlays} from "./overlays.ts";
 import {S} from "./session.ts";
@@ -47,11 +47,14 @@ function makeBlock(cls: string, w: number, h: number, color: string): [HTMLEleme
 	return [el, top];
 }
 
+let board: ElementById<"board">;
+export function initBoardElement(): void {
+	board = $("board");
+}
 export function renderBoard(): void {
 	const L = S.L;
 	const c = cellSize(L);
 	document.documentElement.style.setProperty("--c", c + "px");
-	const board = $("board");
 	board.innerHTML = "";
 	tiles = {};
 	boxEls = [];
