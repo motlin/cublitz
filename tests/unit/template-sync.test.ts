@@ -1,4 +1,4 @@
-import {readFileSync} from "node:fs";
+import {existsSync, readFileSync} from "node:fs";
 import {expect, it} from "vite-plus/test";
 import viteConfig from "../../vite.config.ts";
 
@@ -90,6 +90,10 @@ it("carries the template's lint settings and adds the project's overrides after 
 		options: {typeAware: true, typeCheck: true},
 		lastOverrideFiles: [["src/**/*.ts"], ["tests/**/*.ts"], ["scripts/**/*.ts", "*.config.ts"]],
 	});
+});
+
+it("keeps the lint settings in vite.config.ts with no stale oxlint config beside it", () => {
+	expect(existsSync(new URL("../../.oxlintrc.json", import.meta.url))).toBe(false);
 });
 
 it("names the Vite process and the harness server after the project", () => {
