@@ -1,15 +1,16 @@
 import {writeFileSync} from "node:fs";
 import {type Browser, type BrowserContext, expect, type Page, test} from "@playwright/test";
-import {loadOriginalEngine} from "../../support/original-engine.ts";
+import {loadExpectedEngine} from "../../support/original-engine.ts";
 import {keyFor} from "../../support/paths.ts";
 import {installInstruments, type InstrumentOptions, type Snapshot} from "./instruments.ts";
 
 export const BASE_URL = `http://127.0.0.1:${process.env["CUBLITZ_PORT"] ?? "4817"}`;
 export const LEGACY_PATH = "/legacy/original.html";
+export const EXPECTED_PATH = "/legacy/expected.html";
 export const DIST_PATH = "/";
 export const DESKTOP = {width: 1280, height: 800};
 export const MOBILE = {width: 390, height: 844};
-export const engine = loadOriginalEngine();
+export const engine = loadExpectedEngine();
 const LEVEL_NAMES = engine.LEVELS.map((level) => level.name ?? "");
 
 export const PINNED_NOW = Date.UTC(2026, 0, 2, 3, 4, 5);
@@ -46,7 +47,8 @@ async function afterLoad(page: Page, mobile: boolean): Promise<void> {
 type Side = {label: string; context: BrowserContext; page: Page; externalRequests: string[]};
 type Action = (page: Page) => Promise<unknown>;
 
-/** The same scripted session against legacy/original.html and dist/, compared after every step. */
+/** The same scripted session against the original, with only its intentional divergences applied, and dist/, compared
+ * after every step. */
 export class Pair {
 	last!: Snapshot;
 	steps = 0;
@@ -91,7 +93,7 @@ export class Pair {
 			await afterLoad(page, options.mobile ?? false);
 			return {label, context, page, externalRequests};
 		};
-		const sides = await Promise.all([openSide("legacy", LEGACY_PATH), openSide("dist", DIST_PATH)]);
+		const sides = await Promise.all([openSide("legacy", EXPECTED_PATH), openSide("dist", DIST_PATH)]);
 		const pair = new Pair(sides, options.mobile ?? false);
 		await pair.compare("page load");
 		return pair;

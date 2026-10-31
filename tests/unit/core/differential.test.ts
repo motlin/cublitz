@@ -7,9 +7,9 @@ import {decodeLevel, encodeLevel} from "../../../src/core/share.ts";
 import {solve} from "../../../src/core/solver.ts";
 import type {Direction, Level, LevelSource, State} from "../../../src/core/types.ts";
 import type {OriginalEngine, State as OriginalState} from "../../support/original-engine.ts";
-import {loadOriginalEngine} from "../../support/original-engine.ts";
+import {loadExpectedEngine} from "../../support/original-engine.ts";
 
-const original: OriginalEngine = loadOriginalEngine();
+const original: OriginalEngine = loadExpectedEngine();
 const DIRECTIONS: Direction[] = ["N", "S", "E", "W"];
 const asOriginal = (state: State) => state as unknown as OriginalState;
 const STATES_PER_LEVEL = 150;

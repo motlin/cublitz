@@ -5,7 +5,7 @@ import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {expect, test} from "@playwright/test";
 import type {InfiniteGolden, SolveGolden} from "../support/golden.ts";
-import {BASE_URL, DIST_PATH, LEGACY_PATH, withPair} from "./harness/pair.ts";
+import {BASE_URL, DIST_PATH, EXPECTED_PATH, LEGACY_PATH, withPair} from "./harness/pair.ts";
 
 const readGolden = <T>(name: string): T =>
 	JSON.parse(readFileSync(new URL(`../golden/${name}`, import.meta.url), "utf8")) as T;
@@ -88,7 +88,7 @@ for (const seed of [1, 4, 9, 77, 2024, 31337]) {
 			}
 			return out;
 		})()`;
-		await page.goto(BASE_URL + LEGACY_PATH);
+		await page.goto(BASE_URL + EXPECTED_PATH);
 		const original = await page.evaluate(generate);
 		await page.goto(BASE_URL + DIST_PATH);
 		expect(await page.evaluate(generate)).toStrictEqual(original);

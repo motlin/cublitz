@@ -4,7 +4,7 @@ import {initState} from "../../../src/core/level.ts";
 import {LEVELS} from "../../../src/core/levels.ts";
 import {solve} from "../../../src/core/solver.ts";
 import type {SolveGolden} from "../../support/golden.ts";
-import {loadOriginalEngine} from "../../support/original-engine.ts";
+import {loadExpectedEngine} from "../../support/original-engine.ts";
 
 const golden = JSON.parse(readFileSync(new URL("../../golden/solve.json", import.meta.url), "utf8")) as SolveGolden[];
 
@@ -21,7 +21,7 @@ describe("LEVELS", () => {
 	});
 
 	it("is the original's data, parsed, in the same order and with the same key order", () => {
-		expect(JSON.stringify(LEVELS)).toBe(JSON.stringify(loadOriginalEngine().LEVELS));
+		expect(JSON.stringify(LEVELS)).toBe(JSON.stringify(loadExpectedEngine().LEVELS));
 	});
 
 	it("solves every level to the golden result", () => {

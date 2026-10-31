@@ -1,10 +1,12 @@
 import {readFile} from "node:fs/promises";
 import {createServer} from "node:http";
 import {extname, join, normalize, resolve} from "node:path";
+import {readExpectedHtml} from "../../support/intentional-divergences.ts";
 
 process.title = "cublitz-harness";
 
-// Serves the untouched original next to a build, so the two can be compared from one origin scheme.
+// Serves the untouched original and a build from one origin scheme, plus the page the build is compared with: the
+// original with the intentional divergences applied, made in memory so that legacy/ is never written.
 const root = resolve(import.meta.dirname, "../../..");
 const distDir = resolve(process.env["CUBLITZ_DIST_DIR"] ?? join(root, "dist"));
 const port = Number(process.env["CUBLITZ_PORT"] ?? "4817");
@@ -19,6 +21,11 @@ const TYPES: Record<string, string> = {
 
 createServer(async (request, response) => {
 	const pathname = normalize(new URL(request.url ?? "/", "http://x").pathname);
+	if (pathname === "/legacy/expected.html") {
+		response.writeHead(200, {"content-type": "text/html; charset=utf-8", "cache-control": "no-store"});
+		response.end(readExpectedHtml());
+		return;
+	}
 	const file =
 		pathname === "/legacy/original.html"
 			? join(root, "legacy/original.html")

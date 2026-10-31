@@ -86,6 +86,7 @@ export function renderInfCard(): void {
 	$("infCard").hidden = !on;
 	$("hintBtn").hidden = $("solBtn").hidden = on;
 	if (!on || !run) return;
+	$("infSkip").disabled = S.won;
 	const rating = infRating(run);
 	$("infRank").textContent = infRank(run);
 	$("infRating").textContent = run.effs.length < 3 ? `${3 - run.effs.length} more to get ranked` : `rating ${rating}`;

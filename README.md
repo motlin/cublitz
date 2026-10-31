@@ -22,7 +22,15 @@ The original's top-level names are also the page's global scope, which anything 
 
 ## The contract
 
-The shipped game must not change: rules, level data and order, solver results, generated levels, text, markup, CSS, animation timings, sounds, input, localStorage keys and formats (including the `cubist-*` names), share codes and font links. Only infrastructure may change. A bug in the game gets preserved and reported, not fixed.
+Apart from the intentional divergences below, the shipped game must not change: rules, level data and order, solver results, generated levels, text, markup, CSS, animation timings, sounds, input, localStorage keys and formats (including the `cubist-*` names), share codes and font links. Only infrastructure may change. Any other bug in the game gets preserved and reported, not fixed.
+
+## Intentional divergences
+
+The shipped game differs from `legacy/original.html` in exactly these ways, which the owner approved:
+
+- Skip canvas is disabled on the infinite win card
+
+`tests/support/intentional-divergences.ts` holds each one as an exact edit to the original's text. The harness applies those edits to an in-memory copy of the original and compares `dist/` against that copy, so any other difference still fails. A unit test checks the list above against that file.
 
 ## Commands
 
@@ -43,7 +51,7 @@ The toolchain is synced from `~/projects/typescript-template` on Vite+. A few th
 
 ## How the safety net works
 
-`tests/browser/` drives the same scripted session through `legacy/original.html` and the built `dist/`, side by side. After every step it compares normalized DOM, form values, focus, every element's position, the full computed style of key elements, all CSS rules, localStorage, status text, win state, text selection, history entries, and logs of Web Audio calls, timers and their cancels, scripted animations, history writes and pointer capture.
+`tests/browser/` drives the same scripted session through the expected page (`legacy/original.html` with the intentional divergences applied) and the built `dist/`, side by side. After every step it compares normalized DOM, form values, focus, every element's position, the full computed style of key elements, all CSS rules, localStorage, status text, win state, text selection, history entries, and logs of Web Audio calls, timers and their cancels, scripted animations, history writes and pointer capture.
 
 `tests/browser/harness/instruments.ts` makes that deterministic in both pages. It pins `Math.random` and `Date`, replaces `AudioContext` with a recorder, holds timers of a second or more and intervals until a script fires them, and holds back resize events the browser sends on its own. Google Fonts requests are answered with an empty stylesheet, so comparisons use fallback fonts; the links themselves are compared. The harness reads only what a player's browser exposes, so it keeps working when the script is split into modules.
 

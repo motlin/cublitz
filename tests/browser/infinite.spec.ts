@@ -111,6 +111,50 @@ test("skip, new-run arm and timeout, and a seed drawn from the pinned Math.rando
 	});
 });
 
+test("Skip canvas is disabled on the win card, and works again on the next canvas", async ({browser}) => {
+	await withPair(browser, {storage: {...atLevel(0), ...pinnedRun}}, async (pair) => {
+		await pair.click("#titleInf");
+		const skip = pair.dist.locator("#infSkip");
+		await expect(skip).toBeEnabled();
+		await pair.dismissTips();
+		const won = await pair.roll(canvas(0).path);
+		await expect(skip).toBeDisabled();
+		const saved = won.storage["cublitz-infinite-run-v1"];
+		expect(JSON.parse(saved as string)).toStrictEqual({
+			seed: SEED,
+			n: 1,
+			score: 100,
+			effs: [1],
+			cleared: 1,
+			streak: 1,
+			bestStreak: 1,
+		});
+
+		// A click on a disabled button does nothing, from the mouse or from a script.
+		const clicked = await pair.step("click skip on the win card", (page) =>
+			page.evaluate(() => document.getElementById("infSkip")?.click()),
+		);
+		expect(clicked.storage["cublitz-infinite-run-v1"]).toBe(saved);
+		expect(clicked.win.hidden).toBe(false);
+		expect(await pair.dist.locator("#infNote").textContent()).toBe("");
+
+		await pair.press("Enter", "next canvas");
+		expect(pair.last.hud.name).toBe("Canvas 2");
+		await expect(skip).toBeEnabled();
+		const skipped = await pair.click("#infSkip", "skip the next canvas");
+		expect(JSON.parse(skipped.storage["cublitz-infinite-run-v1"] as string)).toStrictEqual({
+			seed: SEED,
+			n: 2,
+			score: 100,
+			effs: [1, 0],
+			cleared: 1,
+			streak: 0,
+			bestStreak: 1,
+		});
+		expect(skipped.hud.name).toBe("Canvas 3");
+	});
+});
+
 // The first draw from the harness's pinned generator, seeded the same way as in instruments.ts.
 function seedFromPinnedRandom(): number {
 	const a = (20260102 + 0x6d2b79f5) | 0;

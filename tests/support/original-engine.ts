@@ -1,4 +1,4 @@
-import {readFileSync} from "node:fs";
+import {readExpectedHtml, readOriginalHtml} from "./intentional-divergences.ts";
 
 export type LevelSource = {
 	map: string[];
@@ -51,8 +51,12 @@ const between = (text: string, from: string, to: string): string => {
 };
 
 /** Evaluates the pure parts of the verbatim <script> from legacy/original.html, without a DOM. */
-export function loadOriginalEngine(): OriginalEngine {
-	const html = readFileSync(new URL("../../legacy/original.html", import.meta.url), "utf8");
+export const loadOriginalEngine = (): OriginalEngine => engineFrom(readOriginalHtml());
+
+/** The same, with the intentional divergences applied: what the shipped modules have to match. */
+export const loadExpectedEngine = (): OriginalEngine => engineFrom(readExpectedHtml());
+
+function engineFrom(html: string): OriginalEngine {
 	const source = [
 		between(html, "const LEVELS = [", "const COLORS = {"),
 		between(html, "const CNAME = {", "const ROT = {"),

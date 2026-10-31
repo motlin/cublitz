@@ -2,6 +2,7 @@ import {readdirSync, readFileSync} from "node:fs";
 import {join} from "node:path";
 import {parseAst} from "vite";
 import {expect, test} from "vite-plus/test";
+import {readExpectedHtml} from "../support/intentional-divergences.ts";
 
 // Every string the original script holds has to survive in the source, including messages on failure paths
 // that a browser session rarely reaches.
@@ -30,8 +31,7 @@ const sourceFiles = (dir: string): string[] =>
 const RESTRUCTURED = ["NSEW", "function", "btnsew", "bt"];
 
 test("the source holds every string in the original script", () => {
-	const html = readFileSync("legacy/original.html", "utf8");
-	const script = /(?<=<script>\n)[\s\S]*(?=<\/script>)/.exec(html)?.[0] ?? "";
+	const script = /(?<=<script>\n)[\s\S]*(?=<\/script>)/.exec(readExpectedHtml())?.[0] ?? "";
 	const original = stringsIn(script, {sourceType: "script"});
 	const source = new Set(
 		sourceFiles("src").flatMap((file) => [...stringsIn(readFileSync(file, "utf8"), {lang: "ts"})]),

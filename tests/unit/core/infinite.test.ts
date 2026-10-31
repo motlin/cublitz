@@ -12,12 +12,12 @@ import {
 } from "../../../src/core/infinite.ts";
 import type {GeneratedLevel} from "../../../src/core/infinite.ts";
 import type {InfiniteGolden} from "../../support/golden.ts";
-import {loadOriginalEngine} from "../../support/original-engine.ts";
+import {loadExpectedEngine} from "../../support/original-engine.ts";
 
 const golden = JSON.parse(
 	readFileSync(new URL("../../golden/infinite.json", import.meta.url), "utf8"),
 ) as InfiniteGolden[];
-const original = loadOriginalEngine();
+const original = loadExpectedEngine();
 const generate = (seed: number, n: number): GeneratedLevel => {
 	const batch = infSearch(seed, n);
 	for (;;) {

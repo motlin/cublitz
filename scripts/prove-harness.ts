@@ -268,6 +268,12 @@ const MUTATIONS: Mutation[] = [
 		grep: "sound: toggle|every sound effect",
 	},
 	{
+		name: "intentional divergence: Skip canvas stays usable on the win card",
+		from: '$("infSkip").disabled = S.won;',
+		to: "",
+		grep: "Skip canvas is disabled on the win card",
+	},
+	{
 		name: "solver: the default limit is 300000",
 		from: "limit = 4e5",
 		to: "limit = 3e5",
