@@ -6,6 +6,10 @@ import { cap, COLORS, esc, GLYPH, WGLYPH } from './ui/text.ts';
 import { initSound, SFX } from './ui/sfx.ts';
 import { initPalette } from './ui/palette.ts';
 import { blankGrid, draftFromLevel, edCellHTML, edToLevel as gridToLevel, newEditor } from './ui/editor-grid.ts';
+import { clearTipQueue, dismissTip, initTips, queueTips, tipOpen } from './ui/tips.ts';
+import { clearSolution, initSolution, planSolution, renderSolution, solState, solutionAfterMove, stopAutoReveal } from './ui/solution.ts';
+import { buildProbes, initOverlays, scheduleOverlays } from './ui/overlays.ts';
+import { clearHint, clearHintState, forgetHintPosition, hint, hintAfterMove, hintState, initHints, renderHint } from './ui/hint.ts';
 // The game's page code, still as the original script wrote it. The pure rules live in core/.
 import { FACES, DIRS, roll, solidColor, workColor } from './core/cube.ts';
 import { nextMilestone, hintTexts } from './core/hints.ts';
@@ -27,7 +31,7 @@ loadProgress();
 
 const board = $('board');
 let tiles = {}, cubeEl, rollerEl, shadowEl, faceEls = {}, boxEls = [], doorEls = [], queued = null;
-const C = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--c'));
+export const C = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--c'));
 
 function cellSize(L) {
   const vw = $('viewport').clientWidth || 600;
@@ -35,10 +39,10 @@ function cellSize(L) {
   return Math.max(24, Math.min(62, Math.floor(vw / span)));
 }
 
-function loadLevel(i, snap) { if (!unlocked(i)) return; startLevel(LEVELS[i], i, snap); }
+export function loadLevel(i, snap?) { if (!unlocked(i)) return; startLevel(LEVELS[i], i, snap); }
 function startLevel(L, i, snap, opts) {
-  if (typeof clearSolution === 'function' && board) clearSolution();
-  hintState = null; $('hintBox').hidden = true;
+  clearSolution();
+  clearHintState(); $('hintBox').hidden = true;
   if (!L.cells) parseLevel(L);
   setSession({ lvl:i, L, st:initState(L), hist:[], busy:false, won:false, rolls:(opts && opts.rolls) || 0 });
   if (i >= 0) { campaignLvl = i; infinite = false; }
@@ -52,7 +56,7 @@ function startLevel(L, i, snap, opts) {
   $('backEdit').hidden = i !== -1;
   $('winRetry').hidden = false;
   if (typeof renderInfCard === 'function') renderInfCard();
-  tipQueue = []; $('tip').hidden = true;
+  clearTipQueue(); $('tip').hidden = true;
   if (mode === 'play') queueTips(L);
   renderBoard();
   renderLevels();
@@ -227,7 +231,7 @@ function renderLevels() {
   });
 }
 
-function setStatus(html, warn) {
+export function setStatus(html, warn?) {
   const s = $('status'); s.innerHTML = html; s.classList.toggle('warn', !!warn);
 }
 function pulse(x, y, cls) { const t = tiles[x+','+y]; if (!t) return; t.classList.remove(cls); void t.offsetWidth; t.classList.add(cls); }
@@ -348,278 +352,18 @@ function win() {
 
 function undo() {
   if (S.busy || S.won || !S.hist.length) return;
-  if (hintState) { clearTrail(); hintState.at = null; }
+  forgetHintPosition();
   const keep = solState ? solState.revealed + 1 : 0;
   S.st = S.hist.pop();
   SFX.play('undo');
   placeCube(); renderPieces(true); renderHud(); setStatus('Undid one roll.');
   if (keep) { stopAutoReveal(); planSolution(keep); }
 }
-// ---------- Tutorial pop-ups: shown the first time a level contains something new ----------
-const TIPS = {
-  roll: { title:'Rolling', art:() => [['start'], ['arrow'], ['floor'], ['arrow'], ['goal']],
-    body:'Use the arrow keys, WASD, or swipe on a phone to roll your cube one tile at a time. Each roll tips it over an edge, so a different side ends up on the floor. It can only roll onto tiles, never off the edge. Reach the glowing target to finish the level.' },
-  paint: { title:'Wet paint', art:c => [['start'], ['arrow'], ['paint', c]],
-    body:'When your cube rolls onto a puddle, the face touching the floor gets painted that color. The paint stays on that face until another puddle covers it. The face map on the right shows every side.' },
-  gate: { title:'Color gates', art:c => [['gate', c], ['gate', c], ['gate', c]],
-    body:'You can’t pass a colored tile until you paint your cube the same color. The face that lands on the gate has to match it, and every roll turns a different face down, so count your rolls.' },
-  need: { title:'Picky targets', art:c => [['goal', c]],
-    body:'A colored target only accepts your cube with that color on top. A colored bar on one edge of the target means that side of the cube needs that color too. The face map on the right shows every side of your cube.' },
-  switch: { title:'Solid cubes and switches', art:c => [['solid', c], ['arrow'], ['switch', c], ['arrow'], ['door', c]],
-    body:'Switches only work for a cube painted completely in their color, all six faces. Once your cube is solid it glows. Roll it onto a switch of the same color to flip it, and every door of that color opens.' },
-  wgate: { title:'White gates', art:() => [['wgate', 'b'], ['wgate', 'n'], ['wgate', 't']],
-    body:'White gates want a bare, unpainted side. A plain one needs a bare face down. One with an arrow needs the side it points to still bare when you land, and one with a ring needs a bare top. Paint never comes off, so every puddle you cross uses up a white face. A solid cube can never get through.' },
-  wash: { title:'Paint remover', art:c => [['solid', c || 'r'], ['arrow'], ['wash'], ['arrow'], ['start']],
-    body:'Roll onto a paint remover and every face of your cube is wiped back to bare, all at once. Use it when puddles or a solid coat have used up the bare sides a white gate needs. It also ends a solid coat, so finish with switches and boxes first.' },
-  white: { title:'White pieces', art:() => [['start'], ['arrow'], ['switch', 'w'], ['box', 'w'], ['door', 'w']],
-    body:'A cube with no paint on any face counts as white. It doesn’t glow or act like a solid cube, but it can flip white switches, hold down white buttons and push white boxes. If you pick up paint, a paint remover makes you white again.' },
-  button: { title:'Buttons and boxes', art:c => [['solid', c], ['box', c], ['arrow'], ['button', c]],
-    body:'A button holds its doors open only while something of its color sits on it. If you step off, the door shuts. A solid cube can push a box of its own color, and a box left on the button keeps the door open for good.' },
-};
-const TIP_ORDER = ['roll', 'paint', 'gate', 'need', 'switch', 'button', 'wgate', 'wash', 'white'];
-let tipsSeen = readTipsSeen();
-let tipQueue = [], tipTotal = 0;
-function levelTips(L) {
-  const found = {};
-  for (let y = 0; y < L.rows; y++) for (let x = 0; x < L.cols; x++) {
-    const c = L.cells[y][x]; if (!c) continue;
-    if (c.t === 'paint') found.paint = found.paint || c.c;
-    if (c.t === 'gate') found.gate = found.gate || c.c;
-    if (c.t === 'wgate') found.wgate = true;
-    if (c.t === 'wash') found.wash = found.paint || 'r';
-    if (['switch', 'button', 'door'].includes(c.t) && c.c === 'w') { found.white = true; continue; }
-    if (c.t === 'switch') found.switch = found.switch || c.c;
-    if (c.t === 'button') found.button = found.button || c.c;
-  }
-  L.boxes0.forEach(b => { if (b.c === 'w') found.white = true; else found.button = found.button || b.c; });
-  if (L.need) found.need = Object.values(L.need)[0];
-  found.roll = true;
-  return TIP_ORDER.filter(k => found[k]).map(k => ({ key:k, c:found[k] }));
-}
-function queueTips(L, all) {
-  tipQueue = levelTips(L).filter(t => all || !tipsSeen[t.key]);
-  tipTotal = tipQueue.length;
-  showNextTip();
-}
-function tipArt(parts) {
-  return parts.map(([kind, c]) => {
-    if (kind === 'arrow') return '<span class="tip-arrow">→</span>';
-    if (kind === 'solid') return `<span class="tip-cube" style="--pc:${COLORS[c]}"></span>`;
-    if (kind === 'start') return '<span class="tip-cube bare"></span>';
-    if (kind === 'wash') return '<span class="ec wash" style="--ec:44px"><b>✦</b></span>';
-    if (kind === 'wgate') return `<span class="ec wgate wg-${c}" style="--ec:44px">${WGLYPH[c] ? `<b>${WGLYPH[c]}</b>` : ''}</span>`;
-    return `<span class="ec ${kind}" style="--ec:44px${c ? `;--pc:${COLORS[c]}` : ''}"></span>`;
-  }).join('');
-}
-function showNextTip() {
-  const t = tipQueue[0];
-  if (!t) { $('tip').hidden = true; return; }
-  SFX.play('tip');
-  const T = TIPS[t.key];
-  $('tipTitle').textContent = T.title;
-  $('tipBody').textContent = T.body;
-  $('tipArt').innerHTML = tipArt(T.art(t.c));
-  $('tipCount').textContent = tipTotal > 1 ? `New · ${tipTotal - tipQueue.length + 1} of ${tipTotal}` : 'New';
-  $('tipOk').textContent = tipQueue.length > 1 ? 'Next' : 'Got it';
-  $('tip').hidden = false;
-  $('tipOk').focus({ preventScroll:true });
-}
-function dismissTip() {
-  const t = tipQueue.shift();
-  if (t) { tipsSeen[t.key] = true; writeTipsSeen(tipsSeen); }
-  showNextTip();
-  if ($('tip').hidden) $('viewport').focus?.({ preventScroll:true });
-}
-$('tipOk').onclick = dismissTip;
-let resetTimer = null;
-$('resetProgress').onclick = () => {
-  const b = $('resetProgress');
-  if (!b.classList.contains('armed')) {
-    b.classList.add('armed'); b.textContent = 'Click again to erase all progress';
-    $('resetNote').hidden = false;
-    $('resetNote').textContent = 'This locks every level after the first, clears your best scores and brings back the tutorial pop-ups. Your colors and saved editor levels stay.';
-    clearTimeout(resetTimer);
-    resetTimer = setTimeout(() => { b.classList.remove('armed'); b.textContent = 'Reset all progress'; $('resetNote').hidden = true; }, 5000);
-    return;
-  }
-  clearTimeout(resetTimer);
-  eraseProgress();
-  tipsSeen = {}; clearTipsSeen();
-  b.classList.remove('armed'); b.textContent = 'Reset all progress';
-  $('resetNote').hidden = false; $('resetNote').textContent = 'Progress erased. Every level after the first is locked again.';
-  setTimeout(() => { $('resetNote').hidden = true; }, 3000);
-  loadLevel(0);
-  renderTitle();
-};
-$('tipsReplay').onclick = () => {
-  tipsSeen = {}; clearTipsSeen();
-  $('resetNote').hidden = false; $('resetNote').textContent = 'The tutorial pop-ups will show again as you reach each new thing.';
-  setTimeout(() => { $('resetNote').hidden = true; }, 3000);
-};
-const tipOpen = () => !$('tip').hidden;
+initTips();
 
-// ---------- Show solution: arrows laid down a few at a time ----------
-let solState = null; // { path, revealed, at, used }
-let solTimer = null;
-const ARROW = { N:'↑', S:'↓', E:'→', W:'←' };
-function stopAutoReveal() { clearInterval(solTimer); solTimer = null; $('solAll').textContent = 'Reveal the rest'; }
-function clearSolution() {
-  stopAutoReveal();
-  $('solBox').hidden = true;
-  solState = null;
-  scheduleOverlays();
-}
-function planSolution(keepRevealed) {
-  const at = S.st;
-  $('solText').textContent = 'Working out the solution…';
-  $('solBox').hidden = false;
-  setTimeout(() => {
-    if (S.st !== at || S.won) return;
-    const path = solve(S.L, S.st, 2500000);
-    if (!path) {
-      $('solText').innerHTML = solve.hitLimit ? '<b>Too many possibilities.</b> The solver gave up from this position. Try restarting the level.'
-        : '<b>No way out from here.</b> Undo a few rolls or restart, then ask again.';
-      ['solNext', 'solGoal', 'solAll'].forEach(id => $(id).hidden = true);
-      if (solState) solState.path = '';
-      return;
-    }
-    const revealed = Math.min(path.length, keepRevealed ?? 1);
-    solState = { path, revealed, at, used:true };
-    S.usedSolution = true;
-    ['solNext', 'solGoal', 'solAll'].forEach(id => $(id).hidden = false);
-    renderSolution();
-  }, 30);
-}
-function renderSolution() {
-  scheduleOverlays();
-  if (!solState || !solState.path) return;
-  const { path, revealed } = solState;
-  const done = revealed >= path.length;
-  $('solText').innerHTML = done
-    ? `Full solution shown: <b>${path.length} rolls</b> from where you are. Follow the arrows in number order; each one disappears as you roll it.`
-    : `Showing <b>${revealed} of ${path.length}</b> rolls. Follow the arrows in number order, or reveal more.`;
-  $('solNext').disabled = $('solGoal').disabled = $('solAll').disabled = done;
-  if (done) stopAutoReveal();
-}
-function revealMore(n) {
-  if (!solState || !solState.path) return;
-  solState.revealed = Math.min(solState.path.length, solState.revealed + n);
-  renderSolution();
-}
-function revealToNextGoal() {
-  if (!solState || !solState.path) return;
-  let st = S.st;
-  for (let i = 0; i < solState.revealed; i++) st = tryMove(S.L, st, solState.path[i]).st;
-  const m = nextMilestone(S.L, st, solState.path.slice(solState.revealed));
-  revealMore(m ? m.i + 1 : solState.path.length);
-}
-function showSolution() {
-  if (S.busy || S.won || S.lvl === -2) return;
-  clearHint();
-  if (solState && solState.at === S.st) { revealMore(1); return; }
-  planSolution(1);
-}
-// Called after each successful roll
-function solutionAfterMove(d) {
-  if (!solState) return;
-  if (solState.path && solState.path[0] === d) {
-    solState.path = solState.path.slice(1);
-    solState.revealed = Math.max(0, solState.revealed - 1);
-    solState.at = S.st;
-    if (!solState.path) { clearSolution(); return; }
-    if (solState.revealed === 0) solState.revealed = 1;
-    renderSolution();
-  } else {
-    stopAutoReveal();
-    planSolution(solState.revealed);
-  }
-}
-$('solBtn').onclick = showSolution;
-$('solNext').onclick = () => revealMore(1);
-$('solGoal').onclick = revealToNextGoal;
-$('solAll').onclick = () => {
-  if (solTimer) { stopAutoReveal(); return; }
-  $('solAll').textContent = 'Pause';
-  solTimer = setInterval(() => { if (!solState || !solState.path || solState.revealed >= solState.path.length) stopAutoReveal(); else revealMore(1); }, reduced ? 60 : 320);
-};
-$('solHide').onclick = clearSolution;
+initSolution();
 
-// ---------- Hint and solution markers drawn on a flat layer above the 3D board ----------
-// Markers used to live on the tiles themselves, so the cube, boxes and doors could hide them.
-// Now each tile center is projected to the screen and markers are drawn over everything.
-let probes = [];
-function buildProbes(L, c) {
-  probes = [];
-  for (let y = 0; y < L.rows; y++) {
-    probes[y] = [];
-    for (let x = 0; x < L.cols; x++) {
-      const p = document.createElement('i'); p.className = 'probe';
-      p.style.left = (x * c + c / 2) + 'px'; p.style.top = (y * c + c / 2) + 'px';
-      board.appendChild(p); probes[y][x] = p;
-    }
-  }
-}
-function projector() {
-  const vr = $('viewport').getBoundingClientRect();
-  const cache = new Map();
-  const at = (x, y) => {
-    const k = x + ',' + y; if (cache.has(k)) return cache.get(k);
-    const p = probes[y] && probes[y][x]; if (!p) return null;
-    const r = p.getBoundingClientRect(); const v = { x:r.left - vr.left, y:r.top - vr.top }; cache.set(k, v); return v;
-  };
-  // on-screen size of one tile near (x, y)
-  const size = (x, y) => {
-    const a = at(x, y), b = at(x + 1, y) || at(x - 1, y), d = at(x, y + 1) || at(x, y - 1);
-    const s = [b, d].filter(Boolean).map(q => Math.hypot(q.x - a.x, q.y - a.y));
-    return s.length ? Math.max(...s) : C();
-  };
-  return { at, size };
-}
-function ovEl(cls, p, s, html) {
-  const el = document.createElement('div'); el.className = 'ov ' + cls;
-  el.style.left = p.x + 'px'; el.style.top = p.y + 'px'; el.style.setProperty('--s', s + 'px');
-  if (html) el.innerHTML = html;
-  $('ovl').appendChild(el); return el;
-}
-function drawOverlays() {
-  const layer = $('ovl'); if (!layer) return;
-  layer.innerHTML = '';
-  if (!S || mode !== 'play' || !probes.length) return;
-  const P = projector(), L = S.L;
-  // Hint: highlight rings, plus the numbered route on tier 3
-  if (hintState) {
-    const { m, tier } = hintState, rings = [];
-    if (m.type === 'solid') { for (let y = 0; y < L.rows; y++) for (let x = 0; x < L.cols; x++) { const c = L.cells[y][x]; if (c && c.t === 'paint' && c.c === m.c) rings.push([x, y]); } }
-    else rings.push([m.x, m.y]);
-    if (m.type === 'button') { const b = S.st.boxes[m.box]; rings.push([b.x, b.y]); }
-    rings.forEach(([x, y]) => { const p = P.at(x, y); if (p) ovEl('ov-ring', p, P.size(x, y)); });
-    if (tier >= 3 && hintState.at === S.st) {
-      let x = S.st.x, y = S.st.y; const steps = new Map();
-      [...m.path].forEach((d, i) => { x += DIRS[d][0]; y += DIRS[d][1]; const k = x + ',' + y; if (!steps.has(k)) steps.set(k, { x, y, n:[] }); steps.get(k).n.push(i + 1); });
-      steps.forEach(({ x, y, n }) => { const p = P.at(x, y); if (p) ovEl('ov-trail' + (n.length > 1 ? ' multi' : ''), p, P.size(x, y), `<span>${n.join(' ')}</span>`); });
-    }
-  }
-  // Solution: arrows on the tile each roll lands on, pointing the way you roll
-  if (solState && solState.path) {
-    const { path, revealed } = solState, cells = new Map();
-    let x = S.st.x, y = S.st.y;
-    for (let i = 0; i < revealed; i++) {
-      const d = path[i], px = x, py = y; x += DIRS[d][0]; y += DIRS[d][1];
-      const a = P.at(px, py), b = P.at(x, y);
-      const ang = a && b ? Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI : 0;
-      const k = x + ',' + y; if (!cells.has(k)) cells.set(k, { x, y, steps:[] });
-      cells.get(k).steps.push({ n:i + 1, ang });
-    }
-    cells.forEach(({ x, y, steps }) => {
-      const p = P.at(x, y); if (!p) return;
-      ovEl('ov-sol' + (steps.length > 1 ? ' multi' : ''), p, P.size(x, y), steps.map(s =>
-        `<span class="sa${s.n === 1 ? ' now' : ''}${s.n === revealed ? ' newest' : ''}"><i style="transform:rotate(${s.ang.toFixed(1)}deg)">→</i><b>${s.n}</b></span>`).join(''));
-    });
-  }
-}
-let ovRaf = 0;
-function scheduleOverlays() { cancelAnimationFrame(ovRaf); ovRaf = requestAnimationFrame(drawOverlays); }
-try { new ResizeObserver(scheduleOverlays).observe($('viewport')); } catch (e) {}
+initOverlays();
 
 // ---------- Infinite mode: endless generated levels, scored against par ----------
 let infinite = false, campaignLvl = 0, infNext = null, infGenToken = 0;
@@ -713,62 +457,7 @@ $('infNew').onclick = () => {
 };
 $('titleInf').onclick = () => { SFX.play('start'); startInfinite(); };
 
-// ---------- Hints: next goal, then how, then a route to that goal ----------
-let hintState = null; // { m, tier, at }
-const mKey = m => m ? [m.type, m.c, m.x, m.y].join(':') : '';
-
-function clearHint(keepState) {
-  $('hintBox').hidden = true;
-  if (!keepState) hintState = null;
-  scheduleOverlays();
-}
-function clearTrail() { scheduleOverlays(); }
-function renderHint() {
-  const { m, tier } = hintState, L = S.L;
-  scheduleOverlays();
-  const [what, how] = hintTexts(L, S.st, m);
-  $('hintStep').textContent = `Hint ${tier} of 3`;
-  $('hintText').innerHTML = esc(what) + (tier >= 2 ? `<br><span class="how">${esc(how)}</span>` : '') +
-    (tier >= 3 ? `<br><span class="how">The numbers on the board show a ${m.path.length}-roll route to it.</span>` : '');
-  $('hintMore').hidden = tier >= 3;
-  $('hintMore').textContent = tier === 1 ? 'How do I do that?' : 'Show me a route';
-  $('hintBox').hidden = false;
-}
-function hint(more) {
-  if (S.busy || S.won || S.lvl === -2) return;
-  if (solState) clearSolution();
-  if (hintState && hintState.at === S.st) { hintState.tier = Math.min(3, hintState.tier + 1); renderHint(); return; }
-  setStatus('Thinking…');
-  const at = S.st;
-  setTimeout(() => {
-    if (S.st !== at || S.won) return;
-    const sol = solve(S.L, S.st, 1500000);
-    if (!sol) { clearHint(); setStatus(solve.hitLimit ? '<b>Too many possibilities.</b> The hint gave up on this one.' : '<b>Stuck.</b> No way to finish from here. Undo or restart.', true); return; }
-    const m = nextMilestone(S.L, S.st, sol);
-    const same = hintState && mKey(hintState.m) === mKey(m);
-    SFX.play('hint');
-    hintState = { m, tier: same ? Math.min(3, hintState.tier + (more ? 1 : 0)) : 1, at };
-    setStatus('');
-    renderHint();
-  }, 30);
-}
-// Called after each successful roll
-function hintAfterMove(r) {
-  if (!hintState) return;
-  clearTrail();
-  const m = hintState.m, st = S.st;
-  let done = false;
-  if (m.type === 'gate' || m.type === 'door' || m.type === 'wgate' || m.type === 'wash') done = st.x === m.x && st.y === m.y;
-  else if (m.type === 'switch') done = r.flipped >= 0 && r.nx === m.x && r.ny === m.y;
-  else if (m.type === 'solid') done = solidColor(st.f) === m.c;
-  else if (m.type === 'button') done = st.boxes[m.box].x === m.x && st.boxes[m.box].y === m.y;
-  if (done) { clearHint(); return 'That was the hinted step.'; }
-  hintState.at = null; // the next press re-plans from here
-  if (hintState.tier >= 3) { $('hintText').querySelectorAll('.how').forEach((e, i) => { if (i === 1) e.remove(); }); }
-  return '';
-}
-$('hintMore').onclick = () => hint(true);
-$('hintClose').onclick = () => clearHint();
+initHints();
 
 $('undoBtn').onclick = undo;
 const restart = () => startLevel(S.L, S.lvl, null, { rolls:S.lvl === -2 ? S.rolls : 0 });
@@ -804,7 +493,7 @@ $('viewport').addEventListener('pointerup', e => {
 let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (mode === 'play') { if (S && !S.busy) renderBoard(); } else renderEditor(); }, 120); });
 
 // ---------- Modes ----------
-let mode = 'title';
+export let mode = 'title';
 function setMode(m) {
   mode = m;
   $('titleView').hidden = m !== 'title';
@@ -1027,7 +716,7 @@ $('edList').addEventListener('click', e => {
 initPalette();
 
 // ---------- Title screen ----------
-function renderTitle() {
+export function renderTitle() {
   const beaten = LEVELS.filter(L => progress[L.name]).length;
   const next = LEVELS.findIndex((L, i) => unlocked(i) && !progress[L.name]);
   if (!beaten) { $('titlePlay').textContent = 'Play'; $('titleProgress').textContent = `${LEVELS.length} levels`; }
