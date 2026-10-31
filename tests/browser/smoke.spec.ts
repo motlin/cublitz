@@ -15,11 +15,10 @@ test("the legacy artifact is the source file, byte for byte", async ({request}) 
 
 test("dist is one page, the original byte for byte outside the body of its classic inline script", async ({request}) => {
 	const scriptBody = /(?<=<script>\n)[\s\S]*(?=<\/script>)/;
-	const [legacy, dist] = await Promise.all(
-		[LEGACY_PATH, DIST_PATH].map(async (path) => (await request.get(BASE_URL + path)).text()),
-	);
-	expect(dist.replace(scriptBody, "")).toBe((legacy as string).replace(scriptBody, ""));
-	expect(scriptBody.test(dist as string)).toBe(true);
+	const read = async (path: string): Promise<string> => (await request.get(BASE_URL + path)).text();
+	const [legacy, dist] = await Promise.all([read(LEGACY_PATH), read(DIST_PATH)]);
+	expect(dist.replace(scriptBody, "")).toBe(legacy.replace(scriptBody, ""));
+	expect(scriptBody.test(dist)).toBe(true);
 	const distDir = process.env["CUBLITZ_DIST_DIR"] ?? "dist";
 	expect(readdirSync(distDir)).toStrictEqual(["index.html"]);
 });
