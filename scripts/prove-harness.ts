@@ -68,6 +68,18 @@ const MUTATIONS: Mutation[] = [
 		to: "Math.abs(dy)) < 8)",
 		grep: "mobile viewport: swipe",
 	},
+	{
+		name: "script: a top-level name replaces a browser global",
+		from: "function renderTitle()",
+		to: "function stop() {}\nfunction renderTitle()",
+		grep: "clash with no browser global",
+	},
+	{
+		name: "script: the bundle turns strict",
+		from: "<script>\n",
+		to: '<script>\n"use strict";\n',
+		grep: "clash with no browser global",
+	},
 ];
 
 const runHarness = (distDir: string, grep: string) =>

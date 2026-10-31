@@ -23,6 +23,18 @@ test("dist is one page, the original byte for byte outside the body of its class
 	expect(readdirSync(distDir)).toStrictEqual(["index.html"]);
 });
 
+// The original is a sloppy classic script and the bundle stays one: a setting read back from localStorage as a
+// number silently ignores property writes, which strict mode would turn into a crash. A classic script's
+// top-level names land on window, so one of them matching a browser global would replace that global.
+test("the bundle is a sloppy script whose top-level names clash with no browser global", async ({page, request}) => {
+	const dist = await (await request.get(BASE_URL + DIST_PATH)).text();
+	const script = /(?<=<script>\n)[\s\S]*(?=<\/script>)/.exec(dist)?.[0] ?? "";
+	const names = [...script.matchAll(/^(?:var|let|const|class|function\*?|async function) +([\w$]+)/gm)].map((match) => match[1] as string);
+	await page.goto("about:blank");
+	const clashes = await page.evaluate((list) => list.filter((name) => name in window), names);
+	expect({strict: script.includes("use strict"), clashes, named: names.length > 100}).toStrictEqual({strict: false, clashes: [], named: true});
+});
+
 // These read the original's own globals in a real browser, so Node's reading of the script and
 // Chromium's cannot drift apart (infCandidate's random-comparator sort depends on the engine).
 test("the goldens match the original script running in the browser", async ({page}) => {

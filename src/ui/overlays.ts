@@ -1,9 +1,9 @@
 import {DIRS} from "../core/cube.ts";
 import type {Direction, Level} from "../core/types.ts";
 import {$} from "./dom.ts";
-import {C} from "../main.ts";
+import {C} from "./board.ts";
 import {hintState} from "./hint.ts";
-import {mode} from "../main.ts";
+import {mode} from "./modes.ts";
 import {S} from "./session.ts";
 import {solState} from "./solution.ts";
 

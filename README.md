@@ -13,13 +13,22 @@ the reference every test compares against. `just check` fails if its hash change
 ## Layout
 
 `src/core/` is the pure game in strict TypeScript: level data, the cube, the rules, the solver, the
-infinite generator, hint text and share codes. `src/app.js` is the rest of the original script, still
-untyped: the DOM, input, animation, sound and storage.
+infinite generator, hint text and share codes. `src/ui/` is the page in strict imperative TypeScript: the
+DOM, input, animation, sound and storage. `src/styles/` holds the CSS, and `src/main.ts` starts everything.
 
-`index.html` is the original page with `src/app.js` in place of its inline script. A small plugin in
-`vite.config.ts` writes that raw page to `dist/` with the bundle as a classic inline script in the same
-spot, so `dist/` is one file that differs from the original only inside its `<script>` tag. Vite's own
-output would minify the inline CSS and defer the script to an external file.
+The `src/ui/` modules call each other in cycles, because the game's flow is cyclic. That is safe because a
+module does nothing when imported: `src/main.ts` calls each `init` function in the original script's order,
+which also fixes the order listeners fire in. `tests/unit/ui/startup.test.ts` enforces this.
+
+Localstorage values are read back as they are and not validated, because a hand-edited value has to behave
+as it always did. The types in `src/ui/storage.ts` describe what the game writes.
+
+`index.html` is the original page with links in place of its two `<style>` elements and `src/main.ts` in
+place of its inline script. A small plugin in `vite.config.ts` writes `dist/` with the stylesheets back in
+their elements and the bundle as a classic inline script in the same spot, so `dist/` is one file that
+differs from the original only inside its `<script>` tag. Vite's own output would minify the CSS and defer
+it and the script to external files. The bundle has to stay a sloppy classic script like the original.
+`just dev` runs the modules directly, in strict mode, so a malformed saved value can behave differently there.
 
 ## The contract
 
@@ -32,7 +41,7 @@ preserved and reported, not fixed.
 
 | Command               | What it does                                                        |
 | --------------------- | ------------------------------------------------------------------- |
-| `just check`          | Type-checks and verifies the legacy artifact's hash                 |
+| `just check`          | Type-checks, lints and verifies the legacy artifact's hash          |
 | `just test`           | Runs the fast unit tests and golden checks                          |
 | `just coverage`       | Runs the unit tests and reports coverage of `src/core/`             |
 | `just test-browser`   | Builds, then runs the Playwright differential harness               |

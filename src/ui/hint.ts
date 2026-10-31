@@ -3,7 +3,7 @@ import {hintTexts, type Milestone, nextMilestone} from "../core/hints.ts";
 import {solve} from "../core/solver.ts";
 import type {MoveSuccess, State} from "../core/types.ts";
 import {$} from "./dom.ts";
-import {setStatus} from "../main.ts";
+import {setStatus} from "./hud.ts";
 import {scheduleOverlays} from "./overlays.ts";
 import {S} from "./session.ts";
 import {SFX} from "./sfx.ts";

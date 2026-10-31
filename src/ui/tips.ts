@@ -1,11 +1,11 @@
 import type {Level, PieceColor} from "../core/types.ts";
 import {$} from "./dom.ts";
-import {loadLevel} from "../main.ts";
+import {loadLevel} from "./play.ts";
 import {eraseProgress} from "./session.ts";
 import {SFX} from "./sfx.ts";
 import {clearTipsSeen, readTipsSeen, type TipsSeen, writeTipsSeen} from "./storage.ts";
 import {COLORS, WGLYPH} from "./text.ts";
-import {renderTitle} from "../main.ts";
+import {renderTitle} from "./title.ts";
 
 // Tutorial pop-ups: shown the first time a level contains something new
 export type TipKey = "roll" | "paint" | "gate" | "need" | "switch" | "button" | "wgate" | "wash" | "white";
