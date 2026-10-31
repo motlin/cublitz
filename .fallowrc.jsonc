@@ -1,0 +1,16 @@
+{
+	"$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+	// src/**/*.mdx mirrors the Storybook stories glob in .storybook/main.ts;
+	// fallow's storybook plugin only detects *.stories.* files, not docs pages.
+	"entry": ["src/index.{ts,tsx,js,jsx}", "src/main.{ts,tsx,js,jsx}", "src/**/*.mdx", "scripts/*.ts"],
+	"ignorePatterns": [".storybook/**"],
+	"rules": {
+		"unused-dependencies": "error",
+		// src/ui/ is cyclic by design; README.md says why that is safe.
+		"circular-dependencies": "off",
+		// tests/support/original-engine.ts types the original script with the same names as src/core/.
+		"duplicate-exports": "off",
+		// The browser specs reach Pair through a fixture that fallow does not follow.
+		"unused-class-members": "off",
+	},
+}

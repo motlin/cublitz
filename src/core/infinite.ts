@@ -17,7 +17,13 @@ export type InfiniteRun = {effs: number[]};
 export function infRng(a: number): Rng { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
 const INF_FACE_CH: Record<NamedWallFace, string> = {t: "1", n: "2", s: "3", e: "4", w: "5"};
-const INF_K: Record<string, LegendEntry> = {"1": ["wgate", "t"], "2": ["wgate", "n"], "3": ["wgate", "s"], "4": ["wgate", "e"], "5": ["wgate", "w"]};
+const INF_K: Record<string, LegendEntry> = {
+	"1": ["wgate", "t"],
+	"2": ["wgate", "n"],
+	"3": ["wgate", "s"],
+	"4": ["wgate", "e"],
+	"5": ["wgate", "w"],
+};
 // Arrays rather than the original's strings, so that picks keep their types. Same order, same indexing.
 const PALETTE_ORDER: Paint[] = ["r", "o", "y", "g", "c", "b", "p"];
 const ALL_WALL_FACES: Face[] = ["b", "t", "n", "s", "e", "w"];
@@ -52,7 +58,8 @@ export function infCandidate(R: Rng, n: number): InfiniteCandidate {
 		return {x, kind: "c", c: pick(palette)};
 	});
 	walls.forEach((w) => {
-		for (let y = 0; y < H; y++) g[y]![w.x] = w.kind === "c" ? w.c.toUpperCase() : w.f === "b" ? "W" : INF_FACE_CH[w.f];
+		for (let y = 0; y < H; y++)
+			g[y]![w.x] = w.kind === "c" ? w.c.toUpperCase() : w.f === "b" ? "W" : INF_FACE_CH[w.f];
 	});
 	// puddles and the odd hole
 	const dens = 0.18 + R() * 0.22 + tier * 0.02;

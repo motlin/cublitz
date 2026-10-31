@@ -20,7 +20,12 @@ const DESCRIBE = `(() => {
 		return Object.fromEntries(Object.keys(value).map((key) => [key, describe(value[key], depth - 1)]));
 	};
 	const read = {};
-	${NAMES.filter((name) => name !== "ovRaf").map((name) => `try { read[${JSON.stringify(name)}] = describe(${name}, 6); } catch (e) { read[${JSON.stringify(name)}] = e.name; }`).join("\n")}
+	${NAMES.filter((name) => name !== "ovRaf")
+		.map(
+			(name) =>
+				`try { read[${JSON.stringify(name)}] = describe(${name}, 6); } catch (e) { read[${JSON.stringify(name)}] = e.name; }`,
+		)
+		.join("\n")}
 	return read;
 })()`;
 
@@ -45,7 +50,9 @@ const expectSameScope = async (pair: Pair, name: string): Promise<void> => {
 	expect(distValues, `${name}: values`).toStrictEqual(legacyValues);
 };
 
-test("the page's global scope is the original's, on window and as lexical names, through a session", async ({browser}) => {
+test("the page's global scope is the original's, on window and as lexical names, through a session", async ({
+	browser,
+}) => {
 	await withPair(browser, {storage: atLevel(1)}, async (pair) => {
 		await expectSameScope(pair, "at load");
 		await pair.click("#titlePlay");
@@ -59,7 +66,9 @@ test("the page's global scope is the original's, on window and as lexical names,
 test("the scope's probes see what the reports saw: LEVELS and S are lexical and mine is on window", async ({page}) => {
 	for (const path of [LEGACY_PATH, DIST_PATH]) {
 		await page.goto(BASE_URL + path);
-		const seen = await page.evaluate(`[typeof window.LEVELS, typeof window.S, typeof window.mine, typeof window.saveDraft, typeof window.write, typeof LEVELS, typeof S]`);
+		const seen = await page.evaluate(
+			`[typeof window.LEVELS, typeof window.S, typeof window.mine, typeof window.saveDraft, typeof window.write, typeof LEVELS, typeof S]`,
+		);
 		expect(seen).toStrictEqual(["undefined", "undefined", "function", "function", "undefined", "object", "object"]);
 	}
 });
@@ -68,8 +77,13 @@ test("uncaught errors read the same when a saved run is malformed", async ({brow
 	const storage = {...atLevel(1), "cublitz-infinite-run-v1": '{"seed":1,"n":2.5,"effs":"abc","score":0}'};
 	await withPair(browser, {storage}, async (pair) => {
 		await pair.click("#titleInf");
-		const skipped = await pair.step("skip throws", (page) => page.evaluate(() => document.getElementById("infSkip")?.click()));
-		expect(skipped.errors).toStrictEqual(["error: Uncaught TypeError: last.reduce is not a function", "error: Uncaught TypeError: run.effs.push is not a function"]);
+		const skipped = await pair.step("skip throws", (page) =>
+			page.evaluate(() => document.getElementById("infSkip")?.click()),
+		);
+		expect(skipped.errors).toStrictEqual([
+			"error: Uncaught TypeError: last.reduce is not a function",
+			"error: Uncaught TypeError: run.effs.push is not a function",
+		]);
 	});
 });
 
@@ -134,7 +148,9 @@ test("window.claude.hot is read as many times as the original reads it", async (
 		} as never;
 	};
 	await withPair(browser, {setup}, async (pair) => {
-		const [legacy, dist] = await Promise.all(pair.pages.map((page) => page.evaluate(() => (window as unknown as {__counts: unknown}).__counts)));
+		const [legacy, dist] = await Promise.all(
+			pair.pages.map((page) => page.evaluate(() => (window as unknown as {__counts: unknown}).__counts)),
+		);
 		expect(dist).toStrictEqual(legacy);
 	});
 });

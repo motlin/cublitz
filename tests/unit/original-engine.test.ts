@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it} from "vite-plus/test";
 import {loadOriginalEngine} from "../support/original-engine.ts";
 
 describe("loadOriginalEngine", () => {
@@ -16,7 +16,12 @@ describe("loadOriginalEngine", () => {
 
 	it("reports a blocked move the way the original does", () => {
 		const level = engine.parseLevel({map: ["S.X"]});
-		expect(engine.tryMove(level, engine.initState(level), "W")).toStrictEqual({ok: false, why: "edge", nx: -1, ny: 0});
+		expect(engine.tryMove(level, engine.initState(level), "W")).toStrictEqual({
+			ok: false,
+			why: "edge",
+			nx: -1,
+			ny: 0,
+		});
 	});
 
 	it("generates the same infinite level for the same seed", () => {

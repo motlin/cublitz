@@ -215,8 +215,8 @@ const MUTATIONS: Mutation[] = [
 	},
 	{
 		name: "input: the M key toggles sound with Alt held",
-		from: '!e.metaKey && !e.ctrlKey && !e.altKey && !/INPUT',
-		to: '!e.metaKey && !e.ctrlKey && !/INPUT',
+		from: "!e.metaKey && !e.ctrlKey && !e.altKey && !/INPUT",
+		to: "!e.metaKey && !e.ctrlKey && !/INPUT",
 		grep: "M key with Alt",
 	},
 	{
@@ -289,7 +289,10 @@ const runHarness = (distDir: string, grep: string): {status: number | null; repo
 		maxBuffer: 1 << 28,
 		env: {...process.env, CUBLITZ_DIST_DIR: distDir, CUBLITZ_PORT: "4818", PLAYWRIGHT_JSON_OUTPUT_NAME: reportFile},
 	});
-	return {status, report: existsSync(reportFile) ? (JSON.parse(readFileSync(reportFile, "utf8")) as PlaywrightReport) : null};
+	return {
+		status,
+		report: existsSync(reportFile) ? (JSON.parse(readFileSync(reportFile, "utf8")) as PlaywrightReport) : null,
+	};
 };
 
 let survived = 0;
@@ -299,9 +302,11 @@ try {
 	cpSync("dist", control, {recursive: true});
 	const baseline = runHarness(control, selected.map((m) => m.grep).join("|"));
 	const baselineVerdict = verdict(baseline.status, baseline.report);
-	if (baselineVerdict.kind !== "passed") throw new Error(`The unmutated copy does not pass: ${JSON.stringify(baselineVerdict)}`);
+	if (baselineVerdict.kind !== "passed")
+		throw new Error(`The unmutated copy does not pass: ${JSON.stringify(baselineVerdict)}`);
 	const unmatched = selected.filter((m) => !grepMatchedPassingTest(baseline.report as PlaywrightReport, m.grep));
-	if (unmatched.length > 0) throw new Error(`These greps select no passing test: ${unmatched.map((m) => m.grep).join(", ")}`);
+	if (unmatched.length > 0)
+		throw new Error(`These greps select no passing test: ${unmatched.map((m) => m.grep).join(", ")}`);
 	console.log("control: the unmutated copy passes, and each grep below selects a test that passed");
 
 	for (const [i, mutation] of selected.entries()) {
@@ -309,8 +314,12 @@ try {
 		cpSync("dist", copy, {recursive: true});
 		const file = join(copy, "index.html");
 		const html = readFileSync(file, "utf8");
-		if (html.split(mutation.from).length !== 2) throw new Error(`"${mutation.from}" must occur exactly once in dist/index.html`);
-		writeFileSync(file, html.replace(mutation.from, () => mutation.to));
+		if (html.split(mutation.from).length !== 2)
+			throw new Error(`"${mutation.from}" must occur exactly once in dist/index.html`);
+		writeFileSync(
+			file,
+			html.replace(mutation.from, () => mutation.to),
+		);
 		const {status, report} = runHarness(copy, mutation.grep);
 		const result = verdict(status, report);
 		if (result.kind === "caught") console.log(`caught   ${mutation.name} -> ${result.detail}`);
@@ -327,5 +336,9 @@ try {
 	rmSync(scratch, {recursive: true, force: true});
 }
 const clean = survived === 0 && invalid === 0;
-console.log(clean ? `All ${selected.length} mutations were caught.` : `${survived} mutations survived and ${invalid} runs were invalid.`);
+console.log(
+	clean
+		? `All ${selected.length} mutations were caught.`
+		: `${survived} mutations survived and ${invalid} runs were invalid.`,
+);
 process.exit(clean ? 0 : 1);

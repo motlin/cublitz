@@ -31,7 +31,9 @@ export function planSolution(keepRevealed?: number): void {
 		if (S.st !== at || S.won) return;
 		const path = solve(S.L, S.st, 2500000);
 		if (!path) {
-			$("solText").innerHTML = solve.hitLimit ? "<b>Too many possibilities.</b> The solver gave up from this position. Try restarting the level." : "<b>No way out from here.</b> Undo a few rolls or restart, then ask again.";
+			$("solText").innerHTML = solve.hitLimit
+				? "<b>Too many possibilities.</b> The solver gave up from this position. Try restarting the level."
+				: "<b>No way out from here.</b> Undo a few rolls or restart, then ask again.";
 			(["solNext", "solGoal", "solAll"] as const).forEach((id) => ($(id).hidden = true));
 			if (solState) solState.path = "";
 			return;
@@ -48,7 +50,9 @@ export function renderSolution(): void {
 	if (!solState || !solState.path) return;
 	const {path, revealed} = solState;
 	const done = revealed >= path.length;
-	$("solText").innerHTML = done ? `Full solution shown: <b>${path.length} rolls</b> from where you are. Follow the arrows in number order; each one disappears as you roll it.` : `Showing <b>${revealed} of ${path.length}</b> rolls. Follow the arrows in number order, or reveal more.`;
+	$("solText").innerHTML = done
+		? `Full solution shown: <b>${path.length} rolls</b> from where you are. Follow the arrows in number order; each one disappears as you roll it.`
+		: `Showing <b>${revealed} of ${path.length}</b> rolls. Follow the arrows in number order, or reveal more.`;
 	$("solNext").disabled = $("solGoal").disabled = $("solAll").disabled = done;
 	if (done) stopAutoReveal();
 }
@@ -60,7 +64,8 @@ function revealMore(n: number): void {
 function revealToNextGoal(): void {
 	if (!solState || !solState.path) return;
 	let st = S.st;
-	for (let i = 0; i < solState.revealed; i++) st = (tryMove(S.L, st, solState.path[i] as Direction) as MoveSuccess).st;
+	for (let i = 0; i < solState.revealed; i++)
+		st = (tryMove(S.L, st, solState.path[i] as Direction) as MoveSuccess).st;
 	const m = nextMilestone(S.L, st, solState.path.slice(solState.revealed));
 	revealMore(m ? m.i + 1 : solState.path.length);
 }

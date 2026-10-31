@@ -14,7 +14,19 @@ import {type EditorCell, type EditorDraft, loadDraft, mine, setMine, writeDraft}
 import {cap, COLORS, esc, GLYPH, WGLYPH} from "./text.ts";
 
 // Editor
-type Tool = "floor" | "erase" | "start" | "goal" | "paint" | "wash" | "gate" | "wgate" | "switch" | "button" | "box" | "door";
+type Tool =
+	| "floor"
+	| "erase"
+	| "start"
+	| "goal"
+	| "paint"
+	| "wash"
+	| "gate"
+	| "wgate"
+	| "switch"
+	| "button"
+	| "box"
+	| "door";
 type Check = {ok: boolean; html: string; par?: number; level?: Level};
 
 const TOOLS: [Tool, string][] = [
@@ -62,12 +74,22 @@ export function renderEditor(): void {
 	g.style.setProperty("--ec", size + "px");
 	g.style.setProperty("--cols", domValue(ED.cols));
 	const need = ED.need;
-	g.innerHTML = ED.grid.map((row, y) => row.map((c, x) => edCellHTML(c, need).replace('<div class="ec', `<div data-x="${x}" data-y="${y}" class="ec`)).join("")).join("");
+	g.innerHTML = ED.grid
+		.map((row, y) =>
+			row
+				.map((c, x) =>
+					edCellHTML(c, need).replace('<div class="ec', `<div data-x="${x}" data-y="${y}" class="ec`),
+				)
+				.join(""),
+		)
+		.join("");
 	$("edName").value = ED.name;
 	$("edCols").textContent = domValue(ED.cols);
 	$("edRows").textContent = domValue(ED.rows);
 	for (const f of FACES) needSelect(f).value = ED.need[f] || "";
-	document.querySelectorAll<HTMLElement>("#edTools button").forEach((b) => b.setAttribute("aria-pressed", domValue(b.dataset["tool"] === tool)));
+	document
+		.querySelectorAll<HTMLElement>("#edTools button")
+		.forEach((b) => b.setAttribute("aria-pressed", domValue(b.dataset["tool"] === tool)));
 	if (ecolor === "w" && (tool === "paint" || tool === "gate")) ecolor = "r";
 	document.querySelectorAll<HTMLButtonElement>("#edColors button").forEach((b) => {
 		b.setAttribute("aria-pressed", domValue(b.dataset["color"] === ecolor));
@@ -76,7 +98,9 @@ export function renderEditor(): void {
 	$("edColors").classList.toggle("dim", !COLORED.includes(tool));
 	$("edColors").hidden = tool === "wgate";
 	$("edFaces").hidden = tool !== "wgate";
-	document.querySelectorAll<HTMLElement>("#edFaces button").forEach((b) => b.setAttribute("aria-pressed", domValue(b.dataset["face"] === wface)));
+	document
+		.querySelectorAll<HTMLElement>("#edFaces button")
+		.forEach((b) => b.setAttribute("aria-pressed", domValue(b.dataset["face"] === wface)));
 	const r = edToLevel(ED);
 	$("edCode").value = r.level ? encodeLevel(r.level) : "";
 	$("edCodeNote").textContent = r.level ? "Anyone with this code can import your level." : r.error;
@@ -129,7 +153,8 @@ function resize(dc: number, dr: number): void {
 	const cols = Math.max(3, Math.min(18, draft.cols + dc)),
 		rows = Math.max(3, Math.min(12, draft.rows + dr));
 	const g = blankGrid(cols, rows);
-	for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) if (y < draft.rows && x < draft.cols) g[y]![x] = draft.grid[y]![x]!;
+	for (let y = 0; y < rows; y++)
+		for (let x = 0; x < cols; x++) if (y < draft.rows && x < draft.cols) g[y]![x] = draft.grid[y]![x]!;
 	Object.assign(draft, {cols, rows, grid: g});
 	changed();
 }
@@ -139,17 +164,36 @@ function checkLevel(): Check {
 	if (r.error) return {ok: false, html: `<b>Can't check yet.</b> ${r.error}`};
 	const L = parseLevel(r.level!);
 	const sol = solve(L, initState(L), 1200000);
-	if (sol) return {ok: true, par: sol.length, level: L, html: `<b>Solvable in ${sol.length} moves.</b> That becomes the par.`};
-	return {ok: false, level: L, html: solve.hitLimit ? "<b>Too big to check.</b> The solver gave up before finding a solution. You can still test it." : "<b>No solution.</b> No sequence of rolls reaches a target that satisfies its needs."};
+	if (sol)
+		return {
+			ok: true,
+			par: sol.length,
+			level: L,
+			html: `<b>Solvable in ${sol.length} moves.</b> That becomes the par.`,
+		};
+	return {
+		ok: false,
+		level: L,
+		html: solve.hitLimit
+			? "<b>Too big to check.</b> The solver gave up before finding a solution. You can still test it."
+			: "<b>No solution.</b> No sequence of rolls reaches a target that satisfies its needs.",
+	};
 }
 export function renderStock(): void {
-	$("edStock").innerHTML = '<option value="">Open a built-in level…</option>' + LEVELS.map((L, i) => (unlocked(i) ? `<option value="${i}">${i + 1}. ${L.name}</option>` : `<option value="${i}" disabled>${i + 1}. Locked</option>`)).join("");
+	$("edStock").innerHTML =
+		'<option value="">Open a built-in level…</option>' +
+		LEVELS.map((L, i) =>
+			unlocked(i)
+				? `<option value="${i}">${i + 1}. ${L.name}</option>`
+				: `<option value="${i}" disabled>${i + 1}. Locked</option>`,
+		).join("");
 }
 function renderMine(): void {
 	const list = mine(),
 		el = $("edList");
 	if (!list.length) {
-		el.innerHTML = '<p class="muted">Levels you save appear here. They live in this browser only, so use share codes to move them around.</p>';
+		el.innerHTML =
+			'<p class="muted">Levels you save appear here. They live in this browser only, so use share codes to move them around.</p>';
 		return;
 	}
 	el.innerHTML = list
@@ -199,8 +243,20 @@ export function initEditor(): void {
 			renderEditor();
 		}
 	});
-	$("edColors").innerHTML = (Object.keys(COLORS) as PieceColor[]).map((c) => `<button type="button" data-color="${c}" aria-pressed="false" aria-label="${CNAME[c]}" style="--pc:${COLORS[c]}"><span>${GLYPH[c]}</span></button>`).join("");
-	$("edFaces").innerHTML = '<span class="ed-faces-label">Bare side needed:</span>' + (["b", "t", "n", "s", "e", "w"] as const).map((f) => `<button type="button" data-face="${f}" aria-pressed="false"><span class="ec wgate wg-${f}" style="--ec:20px">${WGLYPH[f] ? `<b>${WGLYPH[f]}</b>` : ""}</span>${cap(FNAME[f])}</button>`).join("");
+	$("edColors").innerHTML = (Object.keys(COLORS) as PieceColor[])
+		.map(
+			(c) =>
+				`<button type="button" data-color="${c}" aria-pressed="false" aria-label="${CNAME[c]}" style="--pc:${COLORS[c]}"><span>${GLYPH[c]}</span></button>`,
+		)
+		.join("");
+	$("edFaces").innerHTML =
+		'<span class="ed-faces-label">Bare side needed:</span>' +
+		(["b", "t", "n", "s", "e", "w"] as const)
+			.map(
+				(f) =>
+					`<button type="button" data-face="${f}" aria-pressed="false"><span class="ec wgate wg-${f}" style="--ec:20px">${WGLYPH[f] ? `<b>${WGLYPH[f]}</b>` : ""}</span>${cap(FNAME[f])}</button>`,
+			)
+			.join("");
 	$("edFaces").addEventListener("click", (e) => {
 		const b = targetElement(e).closest("button");
 		if (b) {
@@ -231,7 +287,10 @@ export function initEditor(): void {
 		}),
 	);
 	needSel = $("edNeed");
-	needSel.innerHTML = FACES.map((f) => `<label for="need-${f}">${cap(FNAME[f])}<select id="need-${f}"><option value="">Any</option>${([...PAINT_COLORS] as Paint[]).map((c) => `<option value="${c}">${cap(CNAME[c])}</option>`).join("")}</select></label>`).join("");
+	needSel.innerHTML = FACES.map(
+		(f) =>
+			`<label for="need-${f}">${cap(FNAME[f])}<select id="need-${f}"><option value="">Any</option>${([...PAINT_COLORS] as Paint[]).map((c) => `<option value="${c}">${cap(CNAME[c])}</option>`).join("")}</select></label>`,
+	).join("");
 	FACES.forEach((f) =>
 		needSelect(f).addEventListener("change", (e) => {
 			const v = targetSelect(e).value as Paint | "";
@@ -283,7 +342,12 @@ export function initEditor(): void {
 		const ok = setMine(list);
 		if (ok) draft.id = id;
 		saveDraft();
-		lastCheck = {ok, html: ok ? `<b>Saved.</b> “${level.name}” is in your levels on this browser.` : "<b>Couldn’t save.</b> This browser is blocking storage. Copy the share code instead."};
+		lastCheck = {
+			ok,
+			html: ok
+				? `<b>Saved.</b> “${level.name}” is in your levels on this browser.`
+				: "<b>Couldn’t save.</b> This browser is blocking storage. Copy the share code instead.",
+		};
 		renderEditor();
 	};
 	$("edNew").onclick = () => {

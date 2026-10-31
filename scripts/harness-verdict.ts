@@ -6,9 +6,11 @@ type Suite = {specs?: Spec[]; suites?: Suite[]};
 export type PlaywrightReport = {errors: {message: string}[]; suites?: Suite[]};
 export type Verdict = {kind: "passed"} | {kind: "caught"; detail: string} | {kind: "invalid"; detail: string};
 
-const INFRASTRUCTURE = /net::ERR_|ECONNREFUSED|browserType\.launch|Executable doesn't exist|Target page, context or browser has been closed/;
+const INFRASTRUCTURE =
+	/net::ERR_|ECONNREFUSED|browserType\.launch|Executable doesn't exist|Target page, context or browser has been closed/;
 
-const allSpecs = (suites: Suite[] = []): Spec[] => suites.flatMap((suite) => [...(suite.specs ?? []), ...allSpecs(suite.suites)]);
+const allSpecs = (suites: Suite[] = []): Spec[] =>
+	suites.flatMap((suite) => [...(suite.specs ?? []), ...allSpecs(suite.suites)]);
 const resultsOf = (spec: Spec): Result[] => spec.tests.flatMap((t) => t.results);
 
 const firstLine = (message: string): string =>
@@ -26,13 +28,16 @@ export function verdict(exitCode: number | null, report: PlaywrightReport | null
 	const [infrastructure] = failed;
 	if (infrastructure) return {kind: "invalid", detail: infrastructure};
 	if (results.some((r) => r.status !== "passed")) return {kind: "invalid", detail: "no test failed on an assertion"};
-	return exitCode === 0 ? {kind: "passed"} : {kind: "invalid", detail: `exit code ${exitCode} with every test passing`};
+	return exitCode === 0
+		? {kind: "passed"}
+		: {kind: "invalid", detail: `exit code ${exitCode} with every test passing`};
 }
 
 /** Whether a grep still selects a test that passed in the control run, so that a renamed test cannot go unnoticed. */
 export function grepMatchedPassingTest(control: PlaywrightReport, grep: string): boolean {
 	const pattern = new RegExp(grep);
 	return allSpecs(control.suites).some(
-		(spec) => pattern.test(`${spec.file ?? ""} ${spec.title}`) && resultsOf(spec).every((r) => r.status === "passed"),
+		(spec) =>
+			pattern.test(`${spec.file ?? ""} ${spec.title}`) && resultsOf(spec).every((r) => r.status === "passed"),
 	);
 }

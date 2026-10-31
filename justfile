@@ -3,36 +3,52 @@
 default:
     @just --list --unsorted
 
+ci := env("CI", "")
+
+export PATH := justfile_directory() / "node_modules/.bin" + ":" + env("PATH")
+
 # Install dependencies
 [group('setup')]
 install:
-    pnpm install --frozen-lockfile
+    pnpm install
 
 # Run dev server
 dev *args: install
-    pnpm exec vite {{ args }}
+    vp dev {{ args }}
 
-# Type-check, lint and confirm the legacy artifact is untouched
-check: install
-    pnpm run typecheck
-    pnpm run lint
+# Run linter
+lint: install
+    vp lint {{ if ci != "" { "--format github" } else { "--fix" } }}
+
+# Run formatter
+format: install
+    pre-commit run just-fmt --all-files
+    vp fmt {{ if ci != "" { "--check" } else { "" } }}
+
+# Run checks (format + lint + typecheck) and confirm the legacy artifact is untouched
+check *args: install
+    vp run --cache check {{ if ci != "" { "" } else { "--fix" } }} {{ args }}
     node scripts/verify-legacy.ts
 
-# Run the fast unit tests and golden checks
+# Run tests
 test *args: install
-    pnpm exec vitest run {{ args }}
+    vp run --cache test:run {{ args }}
 
 # Run the unit tests and report coverage of the core modules
 coverage: install
-    pnpm exec vitest run --coverage
+    node node_modules/vitest/dist/cli.js run --coverage
+
+# Type-check the project
+typecheck: install
+    vp run typecheck
+
+# Build the project
+build: install
+    vp run --cache build
 
 # Run the Playwright differential harness against a fresh build
 test-browser *args: build
     pnpm exec playwright test {{ args }}
-
-# Build the project into dist/
-build: install
-    pnpm run build
 
 # Regenerate golden files from legacy/original.html
 golden: install
@@ -45,3 +61,26 @@ prove-harness *args: build
 # Upload dist/ to the production Cloudflare Pages deployment
 deploy: build
     pnpm run deploy
+
+# Apply safe Fallow fixes locally, then reject remaining dead code
+fallow: install
+    {{ if ci == "" { "vp run fallow" } else { "true" } }}
+    vp run fallow:ci
+
+# vp run fallow:ci
+fallow-check: install
+    vp run fallow:ci
+
+# Run pre-commit hooks on all files (same as CI's pre-commit job)
+pre-commit: install
+    pre-commit run --all-files
+
+# Run all pre-commit checks
+[arg("quick", long, value="true", help="Skip tests")]
+verify quick="": check build fallow pre-commit
+    {{ if quick != "true" { "just test" } else { "true" } }}
+    @echo "All pre-commit checks passed!"
+
+# Deprecated alias for `verify`
+[arg("quick", long, value="true", help="Skip tests")]
+precommit quick="": (verify quick)

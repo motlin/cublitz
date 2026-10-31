@@ -35,7 +35,11 @@ export function initTitle(): void {
 	$("titleEdit").onclick = () => setMode("edit");
 	document.querySelector("header .brand")!.addEventListener("click", () => setMode("title"));
 	document.addEventListener("keydown", (e) => {
-		if (mode === "title" && (e.key === "Enter" || e.key === " ") && !/BUTTON|INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || "")) {
+		if (
+			mode === "title" &&
+			(e.key === "Enter" || e.key === " ") &&
+			!/BUTTON|INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || "")
+		) {
 			e.preventDefault();
 			$("titlePlay").click();
 		}

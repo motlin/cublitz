@@ -8,7 +8,7 @@ export type InstrumentOptions = {
 	hot: {data?: unknown; useReady?: boolean} | null;
 };
 
-export type Sections = Record<string, unknown>;
+type Sections = Record<string, unknown>;
 
 export type Snapshot = {
 	hashes: Record<string, number>;
@@ -195,7 +195,8 @@ export function installInstruments(options: InstrumentOptions): void {
 			record(`${owner}.${name}=`, v);
 		},
 		setValueAtTime: (...args: number[]) => record(`${owner}.${name}.setValueAtTime`, ...args),
-		exponentialRampToValueAtTime: (...args: number[]) => record(`${owner}.${name}.exponentialRampToValueAtTime`, ...args),
+		exponentialRampToValueAtTime: (...args: number[]) =>
+			record(`${owner}.${name}.exponentialRampToValueAtTime`, ...args),
 	});
 	const node = (kind: string, params: string[]) => {
 		const id = `${kind}#${nodeCount++}`;
@@ -320,15 +321,87 @@ export function installInstruments(options: InstrumentOptions): void {
 		return `${el.tagName}#${el.id}.${el.className}:${(el.textContent ?? "").slice(0, 40)}`;
 	};
 	const KEY_ELEMENTS = [
-		"html", "body", ".app", "#topbar", ".brand", ".brand h1", ".brand .tag", ".hdr-right", "#levels", ".lvbtn",
-		".lvbtn.cur", ".lvbtn.done", ".lvbtn.locked", "#modePlay", ".soundbtn", "#palBtn", "#palette", "#palSwatches",
-		"#titleView", ".title-name", ".title-name span", "#titlePlay", "#titleInf", "#titleProgress", "#tcube", ".tf-t",
-		"#playView", "#stage", "#lvName", "#lvNum", "#lvTip", "#status", "#viewport", "#board", ".tile", ".tile.paint",
-		".tile.gate", ".tile.goal", ".tile.door", ".tile.switch", ".tile.button", ".tile.wgate", ".tile.wash", ".cube",
-		".roller", ".face.f-t", ".face.f-b", ".shadow", ".crate", ".door-block", "#dpad", "#dpad button", "#net", ".nf",
-		"#needBox", "#moves", "#par", "#undoBtn", "#resetBtn", "#hintBtn", "#solBtn", "#hintBox", "#solBox", ".ov-sol",
-		".ov-ring", ".ov-trail", "#tip", "#tip .card", "#tipTitle", "#win", "#win .card", "#winTitle", "#infCard",
-		"#infRank", "#editView", "#edTools button", "#edColors button", "#edGrid", "#edGrid .ec", "#edResult", "#edCode",
+		"html",
+		"body",
+		".app",
+		"#topbar",
+		".brand",
+		".brand h1",
+		".brand .tag",
+		".hdr-right",
+		"#levels",
+		".lvbtn",
+		".lvbtn.cur",
+		".lvbtn.done",
+		".lvbtn.locked",
+		"#modePlay",
+		".soundbtn",
+		"#palBtn",
+		"#palette",
+		"#palSwatches",
+		"#titleView",
+		".title-name",
+		".title-name span",
+		"#titlePlay",
+		"#titleInf",
+		"#titleProgress",
+		"#tcube",
+		".tf-t",
+		"#playView",
+		"#stage",
+		"#lvName",
+		"#lvNum",
+		"#lvTip",
+		"#status",
+		"#viewport",
+		"#board",
+		".tile",
+		".tile.paint",
+		".tile.gate",
+		".tile.goal",
+		".tile.door",
+		".tile.switch",
+		".tile.button",
+		".tile.wgate",
+		".tile.wash",
+		".cube",
+		".roller",
+		".face.f-t",
+		".face.f-b",
+		".shadow",
+		".crate",
+		".door-block",
+		"#dpad",
+		"#dpad button",
+		"#net",
+		".nf",
+		"#needBox",
+		"#moves",
+		"#par",
+		"#undoBtn",
+		"#resetBtn",
+		"#hintBtn",
+		"#solBtn",
+		"#hintBox",
+		"#solBox",
+		".ov-sol",
+		".ov-ring",
+		".ov-trail",
+		"#tip",
+		"#tip .card",
+		"#tipTitle",
+		"#win",
+		"#win .card",
+		"#winTitle",
+		"#infCard",
+		"#infRank",
+		"#editView",
+		"#edTools button",
+		"#edColors button",
+		"#edGrid",
+		"#edGrid .ec",
+		"#edResult",
+		"#edCode",
 		"#edList",
 	];
 	const computedOf = (el: Element): Record<string, string> => {
@@ -369,7 +442,12 @@ export function installInstruments(options: InstrumentOptions): void {
 			rects[`${i}:${el.tagName}#${el.id}.${el.className}`] = [r.x, r.y, r.width, r.height];
 		});
 		const fields = [...document.querySelectorAll<HTMLInputElement>("input, select, textarea")].map((el) => [
-			el.id, el.value, el.checked, el.disabled, el.selectionStart, el.selectionEnd,
+			el.id,
+			el.value,
+			el.checked,
+			el.disabled,
+			el.selectionStart,
+			el.selectionEnd,
 		]);
 		return {
 			dom: serialize(document.documentElement, true).split("><").join(">\n<"),
@@ -379,7 +457,12 @@ export function installInstruments(options: InstrumentOptions): void {
 			fields,
 			selection: String(window.getSelection()),
 			focus: describe(document.activeElement),
-			scroll: [window.scrollX, window.scrollY, document.documentElement.scrollWidth, document.documentElement.scrollHeight],
+			scroll: [
+				window.scrollX,
+				window.scrollY,
+				document.documentElement.scrollWidth,
+				document.documentElement.scrollHeight,
+			],
 			viewportVars: document.documentElement.getAttribute("style") ?? "",
 		};
 	};
@@ -424,7 +507,11 @@ export function installInstruments(options: InstrumentOptions): void {
 				hashes,
 				location: location.hash,
 				storage,
-				status: {text: status?.textContent ?? "", html: status?.innerHTML ?? "", warn: status?.classList.contains("warn") ?? false},
+				status: {
+					text: status?.textContent ?? "",
+					html: status?.innerHTML ?? "",
+					warn: status?.classList.contains("warn") ?? false,
+				},
 				win: {
 					hidden: hiddenOf("win"),
 					title: textOf("winTitle"),

@@ -20,7 +20,16 @@ export type GateCell = {t: "gate"; c: Paint};
 export type SwitchCell = {t: "switch"; c: PieceColor; i: number};
 export type ButtonCell = {t: "button"; c: PieceColor};
 export type DoorCell = {t: "door"; c: PieceColor};
-export type Cell = FloorCell | GoalCell | WashCell | WhiteGateCell | PaintCell | GateCell | SwitchCell | ButtonCell | DoorCell;
+export type Cell =
+	| FloorCell
+	| GoalCell
+	| WashCell
+	| WhiteGateCell
+	| PaintCell
+	| GateCell
+	| SwitchCell
+	| ButtonCell
+	| DoorCell;
 
 /** A level's legend entry for a map character. */
 export type LegendEntry = ["wgate", Face] | ["box" | "switch" | "button" | "door", PieceColor];

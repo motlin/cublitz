@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it} from "vite-plus/test";
 import {decodeLevel, encodeLevel} from "../../../src/core/share.ts";
 
 const CODE = "CUBLITZ:eyJtYXAiOlsiUyJdfQ==";
@@ -28,7 +28,11 @@ describe("decodeLevel", () => {
 	});
 
 	it("keeps everything else in the level unchecked", () => {
-		expect(decodeLevel('{"map":[],"k":5,"extra":true}')).toStrictEqual({map: [], k: 5, extra: true});
+		expect(decodeLevel('{"map":[],"k":5,"extra":true}')).toStrictEqual({
+			map: [],
+			k: 5,
+			extra: true,
+		});
 	});
 
 	it.each([

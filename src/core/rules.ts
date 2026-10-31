@@ -1,6 +1,17 @@
 import {blank, DIRS, FACES, roll, workColor} from "./cube.ts";
 import {boxAt, cellAt, needEntries} from "./level.ts";
-import type {ButtonCell, Direction, DoorCell, Faces, Level, MoveResult, OpenColors, Paint, PieceColor, State} from "./types.ts";
+import type {
+	ButtonCell,
+	Direction,
+	DoorCell,
+	Faces,
+	Level,
+	MoveResult,
+	OpenColors,
+	Paint,
+	PieceColor,
+	State,
+} from "./types.ts";
 
 // Which colors have their doors open right now
 export function openColors(L: Level, st: State): OpenColors {
@@ -58,10 +69,12 @@ export function tryMove(L: Level, st: State, d: Direction): MoveResult {
 		boxes = st.boxes.map((b, i) => (i === bi ? {...b, x: bx, y: by} : b));
 		pushed = bi;
 		// A door the box slides into must stay open once everything has moved
-		if (bc.t === "door" && !openColors(L, {...st, x: nx, y: ny, f: nf, boxes})[bc.c]) return {ok: false, why: "door", c: bc.c, nx: bx, ny: by};
+		if (bc.t === "door" && !openColors(L, {...st, x: nx, y: ny, f: nf, boxes})[bc.c])
+			return {ok: false, why: "door", c: bc.c, nx: bx, ny: by};
 	}
 	// Doors are judged after the move: stepping off a button lets its door shut in your face
-	if (cell.t === "door" && !openColors(L, {...st, x: nx, y: ny, f: nf, boxes})[cell.c]) return {ok: false, why: "door", c: cell.c, nx, ny};
+	if (cell.t === "door" && !openColors(L, {...st, x: nx, y: ny, f: nf, boxes})[cell.c])
+		return {ok: false, why: "door", c: cell.c, nx, ny};
 	let painted: Paint | null = null;
 	if (cell.t === "paint") {
 		nf = {...nf, b: cell.c};
@@ -87,6 +100,14 @@ export function tryMove(L: Level, st: State, d: Direction): MoveResult {
 
 export function stateKey(st: State): string {
 	return (
-		st.x + "," + st.y + "," + FACES.map((k) => st.f[k] || "-").join("") + "," + st.boxes.map((b) => b.x + ":" + b.y).join(";") + "," + st.sw.join("")
+		st.x +
+		"," +
+		st.y +
+		"," +
+		FACES.map((k) => st.f[k] || "-").join("") +
+		"," +
+		st.boxes.map((b) => b.x + ":" + b.y).join(";") +
+		"," +
+		st.sw.join("")
 	);
 }

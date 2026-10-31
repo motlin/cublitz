@@ -52,7 +52,8 @@ export function initState(L: Level): State {
 }
 
 export const cellAt = (L: Level, x: number, y: number): Cell | null => (L.cells[y] || [])[x] || null;
-export const boxAt = (st: {boxes: Box[]}, x: number, y: number): number => st.boxes.findIndex((b) => b.x === x && b.y === y);
+export const boxAt = (st: {boxes: Box[]}, x: number, y: number): number =>
+	st.boxes.findIndex((b) => b.x === x && b.y === y);
 
 /** A level's needs as entries; JSON keys come back as strings, and only face names are ever stored. */
 export const needEntries = (L: LevelSource): [Face, Paint][] => Object.entries(L.need || {}) as [Face, Paint][];

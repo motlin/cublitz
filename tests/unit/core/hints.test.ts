@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it} from "vite-plus/test";
 import {blank} from "../../../src/core/cube.ts";
 import {hintTexts, nextMilestone, preFace} from "../../../src/core/hints.ts";
 import type {Milestone} from "../../../src/core/hints.ts";
@@ -17,12 +17,27 @@ const milestoneOf = (source: LevelSource, path: string, overrides: Partial<State
 
 describe("preFace", () => {
 	it("traces which face ends up where after each roll", () => {
-		expect([preFace("E", "b"), preFace("W", "b"), preFace("N", "b"), preFace("S", "b"), preFace("E", "n")]).toStrictEqual(["e", "w", "n", "s", "n"]);
+		expect([
+			preFace("E", "b"),
+			preFace("W", "b"),
+			preFace("N", "b"),
+			preFace("S", "b"),
+			preFace("E", "n"),
+		]).toStrictEqual(["e", "w", "n", "s", "n"]);
 	});
 });
 
 describe("nextMilestone", () => {
-	const base = (state: State, overrides: Partial<Milestone> = {}) => ({i: 0, d: "E", x: 1, y: 0, path: "E", prev: state, paints: [], ...overrides});
+	const base = (state: State, overrides: Partial<Milestone> = {}) => ({
+		i: 0,
+		d: "E",
+		x: 1,
+		y: 0,
+		path: "E",
+		prev: state,
+		paints: [],
+		...overrides,
+	});
 
 	it("goal: the winning roll", () => {
 		const {m, state} = milestoneOf({map: ["SX"]}, "E");
@@ -97,7 +112,10 @@ describe("nextMilestone", () => {
 	});
 
 	it("skips a push onto a button of another color", () => {
-		const {level, state} = setup({map: ["S12"], k: {"1": ["box", "w"], "2": ["button", "r"]}});
+		const {level, state} = setup({
+			map: ["S12"],
+			k: {"1": ["box", "w"], "2": ["button", "r"]},
+		});
 		expect(nextMilestone(level, state, "E")).toBe(null);
 	});
 
@@ -121,11 +139,18 @@ describe("hintTexts", () => {
 	};
 
 	it("goal with no needs", () => {
-		expect(textFor({map: ["SX"]}, "E")).toStrictEqual(["Head for the target.", "Arrive rolling east. Nothing else is required."]);
+		expect(textFor({map: ["SX"]}, "E")).toStrictEqual([
+			"Head for the target.",
+			"Arrive rolling east. Nothing else is required.",
+		]);
 	});
 
 	it("goal with needs the cube already has paint for", () => {
-		expect(textFor({map: ["SX"], need: {e: "r", b: "b"}}, "E", {f: {...blank(), t: "r", e: "b"}})).toStrictEqual([
+		expect(
+			textFor({map: ["SX"], need: {e: "r", b: "b"}}, "E", {
+				f: {...blank(), t: "r", e: "b"},
+			}),
+		).toStrictEqual([
 			"Head for the target. It wants red on east and blue on bottom.",
 			"Arrive rolling east. Just before that last roll, have red on your top face and blue on your east face.",
 		]);
@@ -134,7 +159,16 @@ describe("hintTexts", () => {
 	it("goal with needs the cube has no paint for, each color named once", () => {
 		const level = parseLevel({map: ["SX"], need: {t: "r", n: "r", s: "b"}});
 		const state = initState(level);
-		const m: Milestone = {i: 0, d: "E", x: 1, y: 0, path: "E", prev: state, paints: [], type: "goal"};
+		const m: Milestone = {
+			i: 0,
+			d: "E",
+			x: 1,
+			y: 0,
+			path: "E",
+			prev: state,
+			paints: [],
+			type: "goal",
+		};
 		expect(hintTexts(level, state, m)).toStrictEqual([
 			"Head for the target. It wants red on top, red on north and blue on south. You'll need red and blue paint for that.",
 			"Arrive rolling east. Just before that last roll, have red on your west face, red on your north face and blue on your south face.",
@@ -171,8 +205,20 @@ describe("hintTexts", () => {
 	it("gate when the cube still needs the paint", () => {
 		const level = parseLevel({map: ["SR"]});
 		const state = initState(level);
-		const m: Milestone = {i: 0, d: "E", x: 1, y: 0, path: "E", prev: state, paints: [], type: "gate", c: "r"};
-		expect(hintTexts(level, state, m)[0]).toBe("Your next goal is the highlighted red gate. You'll need red paint first.");
+		const m: Milestone = {
+			i: 0,
+			d: "E",
+			x: 1,
+			y: 0,
+			path: "E",
+			prev: state,
+			paints: [],
+			type: "gate",
+			c: "r",
+		};
+		expect(hintTexts(level, state, m)[0]).toBe(
+			"Your next goal is the highlighted red gate. You'll need red paint first.",
+		);
 	});
 
 	it("solid", () => {
@@ -192,7 +238,17 @@ describe("hintTexts", () => {
 	it("switch when the cube is not the right color yet", () => {
 		const level = parseLevel({map: ["S1"], k: {"1": ["switch", "r"]}});
 		const state = initState(level);
-		const m: Milestone = {i: 0, d: "E", x: 1, y: 0, path: "E", prev: state, paints: [], type: "switch", c: "r"};
+		const m: Milestone = {
+			i: 0,
+			d: "E",
+			x: 1,
+			y: 0,
+			path: "E",
+			prev: state,
+			paints: [],
+			type: "switch",
+			c: "r",
+		};
 		expect(hintTexts(level, state, m)).toStrictEqual([
 			"Next, flip the highlighted red switch.",
 			"It only flips for a cube that is solid red when it lands.",
@@ -209,7 +265,17 @@ describe("hintTexts", () => {
 	it("door", () => {
 		const level = parseLevel({map: ["S1"], k: {"1": ["door", "r"]}});
 		const state = initState(level);
-		const m: Milestone = {i: 0, d: "E", x: 1, y: 0, path: "E", prev: state, paints: [], type: "door", c: "r"};
+		const m: Milestone = {
+			i: 0,
+			d: "E",
+			x: 1,
+			y: 0,
+			path: "E",
+			prev: state,
+			paints: [],
+			type: "door",
+			c: "r",
+		};
 		expect(hintTexts(level, state, m)).toStrictEqual([
 			"Next, get through the highlighted red door.",
 			"It has to be open as you finish the roll onto it. A flipped red switch, or a red box sitting on a red button, keeps it open.",

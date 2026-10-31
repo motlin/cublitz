@@ -9,8 +9,8 @@ export type SolveGolden = {
 };
 export type InfiniteGolden = {seed: number; n: number; level: GeneratedLevel; path: string};
 
-export const INFINITE_SEEDS = [1, 12345, 999999999];
-export const INFINITE_LEVEL_NUMBERS = [0, 1, 2, 3, 5, 8, 14];
+const INFINITE_SEEDS = [1, 12345, 999999999];
+const INFINITE_LEVEL_NUMBERS = [0, 1, 2, 3, 5, 8, 14];
 
 // solve()'s default limit, the same call the original makes when its own limit is not raised.
 export function generateSolveGolden(engine: OriginalEngine): SolveGolden[] {

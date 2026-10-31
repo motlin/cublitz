@@ -1,0 +1,49 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "07:00"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 25
+    cooldown:
+      default-days: 7
+    labels:
+      - "dependencies"
+    # Renovate's "vite-plus monorepo" group owns vite-plus so its vite alias moves with it.
+    ignore:
+      - dependency-name: "vite-plus"
+    # Only group dependencies that must move in lockstep. typescript was a
+    # single-package group, so it gets its own PR either way -- dropped so a
+    # breaking bump is labelled by name rather than hidden behind a group.
+    groups:
+      vite-ecosystem:
+        patterns:
+          - "vite"
+          - "@vitejs/*"
+      testing:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+          - "@testing-library/*"
+          - "playwright"
+          - "@playwright/*"
+    commit-message:
+      prefix: "dependabot"
+      include: "scope"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "07:00"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 25
+    cooldown:
+      default-days: 7
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "dependabot"
+      include: "scope"

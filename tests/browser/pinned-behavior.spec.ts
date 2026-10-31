@@ -15,7 +15,10 @@ for (const modifier of ["Meta", "Control", "Alt"]) {
 			await pair.click("#titlePlay");
 			for (const key of ROLL_KEYS) {
 				const pressed = await pair.press(`${modifier}+${key}`);
-				expect({moves: pressed.hud.moves, prevented: pressed.prevented}).toStrictEqual({moves: "0", prevented: []});
+				expect({moves: pressed.hud.moves, prevented: pressed.prevented}).toStrictEqual({
+					moves: "0",
+					prevented: [],
+				});
 			}
 		});
 	});
@@ -63,18 +66,35 @@ test("the rating averages the last ten canvases, dropping the eleventh back", as
 	const seed = 12345;
 	const effs = [1, 0, ...Array<number>(8).fill(1)];
 	const run = {seed, n: 0, score: 0, effs, cleared: 10, streak: 0, bestStreak: 0};
-	await withPair(browser, {storage: {...atLevel(0), "cublitz-infinite-run-v1": JSON.stringify(run)}}, async (pair) => {
-		const won = await finishFirstCanvas(pair, seed);
-		const saved = JSON.parse(won.storage["cublitz-infinite-run-v1"] as string) as {effs: number[]};
-		expect(saved.effs).toStrictEqual([...effs, 1]);
-		expect((JSON.parse(won.storage["cublitz-infinite-best-v1"] as string) as {rating: number}).rating).toBe(90);
-		const ratings = await Promise.all(pair.pages.map((page) => page.evaluate("[infRating({effs:[0,1,1,1,1,1,1,1,1,1]}), infRating({effs:[0,0,1,1,1,1,1,1,1,1,1]})]")));
-		expect(ratings).toStrictEqual([[90, 90], [90, 90]]);
-	});
+	await withPair(
+		browser,
+		{storage: {...atLevel(0), "cublitz-infinite-run-v1": JSON.stringify(run)}},
+		async (pair) => {
+			const won = await finishFirstCanvas(pair, seed);
+			const saved = JSON.parse(won.storage["cublitz-infinite-run-v1"] as string) as {effs: number[]};
+			expect(saved.effs).toStrictEqual([...effs, 1]);
+			expect((JSON.parse(won.storage["cublitz-infinite-best-v1"] as string) as {rating: number}).rating).toBe(90);
+			const ratings = await Promise.all(
+				pair.pages.map((page) =>
+					page.evaluate(
+						"[infRating({effs:[0,1,1,1,1,1,1,1,1,1]}), infRating({effs:[0,0,1,1,1,1,1,1,1,1,1]})]",
+					),
+				),
+			);
+			expect(ratings).toStrictEqual([
+				[90, 90],
+				[90, 90],
+			]);
+		},
+	);
 });
 
 test("hot data for a locked level is ignored and the first open level loads", async ({browser}) => {
-	const data = {lvl: 20, st: {x: 0, y: 0, f: {t: "", b: "", n: "", s: "", e: "", w: ""}, boxes: [], sw: []}, hist: []};
+	const data = {
+		lvl: 20,
+		st: {x: 0, y: 0, f: {t: "", b: "", n: "", s: "", e: "", w: ""}, boxes: [], sw: []},
+		hist: [],
+	};
 	for (const useReady of [false, true]) {
 		await withPair(browser, {storage: atLevel(1), hot: {data, useReady}}, async (pair) => {
 			expect(pair.last.hud.num).toBe("Level 2 of 30");
@@ -95,8 +115,14 @@ test("the solver's default limit is 400000 states", async ({browser}) => {
 	await withPair(browser, {}, async (pair) => {
 		const results = async (size: number) => Promise.all(pair.pages.map((page) => page.evaluate(solveAtSize(size))));
 		const path = golden[0]?.path;
-		expect(await results(399_999)).toStrictEqual([[path, false], [path, false]]);
-		expect(await results(400_000)).toStrictEqual([[null, true], [null, true]]);
+		expect(await results(399_999)).toStrictEqual([
+			[path, false],
+			[path, false],
+		]);
+		expect(await results(400_000)).toStrictEqual([
+			[null, true],
+			[null, true],
+		]);
 	});
 });
 
@@ -106,7 +132,10 @@ test("confirming the reset cancels the disarm timer, so only the note's own time
 		const armed = pair.last;
 		expect(armed.timers).toStrictEqual([["timeout", 5000]]);
 		const confirmed = await pair.click("#resetProgress", "confirm");
-		expect(confirmed.timers).toStrictEqual([["clearTimeout", 5000], ["timeout", 3000]]);
+		expect(confirmed.timers).toStrictEqual([
+			["clearTimeout", 5000],
+			["timeout", 3000],
+		]);
 		await pair.fireParkedTimers();
 		expect(await pair.legacy.locator("#resetNote").isHidden()).toBe(true);
 		expect(await pair.dist.locator("#resetNote").isHidden()).toBe(true);

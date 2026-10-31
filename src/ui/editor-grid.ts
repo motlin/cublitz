@@ -24,7 +24,15 @@ export function draftFromLevel(L: LevelSource, name: string, id: string | null):
 		grid[y] = [];
 		for (let x = 0; x < P.cols; x++) {
 			const c = P.cells[y]![x];
-			grid[y]![x] = !c ? null : c.t === "floor" ? {t: "floor"} : c.t === "wash" ? {t: "wash"} : c.t === "wgate" ? {t: "wgate", f: c.f} : ({t: c.t, c: (c as {c?: PieceColor}).c} as EditorCell);
+			grid[y]![x] = !c
+				? null
+				: c.t === "floor"
+					? {t: "floor"}
+					: c.t === "wash"
+						? {t: "wash"}
+						: c.t === "wgate"
+							? {t: "wgate", f: c.f}
+							: ({t: c.t, c: (c as {c?: PieceColor}).c} as EditorCell);
 		}
 	}
 	grid[P.sy]![P.sx] = {t: "start"};
@@ -84,6 +92,10 @@ export function edCellHTML(c: EditorCell | null, need: Need): string {
 	if (c.t === "wash") return '<div class="ec wash"><b>✦</b></div>';
 	if (c.t === "wgate") return `<div class="ec wgate wg-${c.f}">${WGLYPH[c.f] ? `<b>${WGLYPH[c.f]}</b>` : ""}</div>`;
 	const color = (c as {c?: PieceColor}).c;
-	const style = color ? ` style="--pc:${COLORS[color]}"` : c.t === "goal" && need.t ? ` style="--pc:${COLORS[need.t]}"` : "";
+	const style = color
+		? ` style="--pc:${COLORS[color]}"`
+		: c.t === "goal" && need.t
+			? ` style="--pc:${COLORS[need.t]}"`
+			: "";
 	return `<div class="ec ${c.t}"${style}></div>`;
 }

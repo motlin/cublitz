@@ -40,7 +40,12 @@ export function renderHint(): void {
 	scheduleOverlays();
 	const [what, how] = hintTexts(L, S.st, m);
 	$("hintStep").textContent = `Hint ${tier} of 3`;
-	$("hintText").innerHTML = esc(what) + (tier >= 2 ? `<br><span class="how">${esc(how)}</span>` : "") + (tier >= 3 ? `<br><span class="how">The numbers on the board show a ${m.path.length}-roll route to it.</span>` : "");
+	$("hintText").innerHTML =
+		esc(what) +
+		(tier >= 2 ? `<br><span class="how">${esc(how)}</span>` : "") +
+		(tier >= 3
+			? `<br><span class="how">The numbers on the board show a ${m.path.length}-roll route to it.</span>`
+			: "");
 	$("hintMore").hidden = tier >= 3;
 	$("hintMore").textContent = tier === 1 ? "How do I do that?" : "Show me a route";
 	$("hintBox").hidden = false;
@@ -60,7 +65,12 @@ export function hint(more?: boolean): void {
 		const sol = solve(S.L, S.st, 1500000);
 		if (!sol) {
 			clearHint();
-			setStatus(solve.hitLimit ? "<b>Too many possibilities.</b> The hint gave up on this one." : "<b>Stuck.</b> No way to finish from here. Undo or restart.", true);
+			setStatus(
+				solve.hitLimit
+					? "<b>Too many possibilities.</b> The hint gave up on this one."
+					: "<b>Stuck.</b> No way to finish from here. Undo or restart.",
+				true,
+			);
 			return;
 		}
 		const m = nextMilestone(S.L, S.st, sol)!;
@@ -78,7 +88,8 @@ export function hintAfterMove(r: MoveSuccess): string | undefined {
 	const m = hintState.m,
 		st = S.st;
 	let done = false;
-	if (m.type === "gate" || m.type === "door" || m.type === "wgate" || m.type === "wash") done = st.x === m.x && st.y === m.y;
+	if (m.type === "gate" || m.type === "door" || m.type === "wgate" || m.type === "wash")
+		done = st.x === m.x && st.y === m.y;
 	else if (m.type === "switch") done = r.flipped >= 0 && r.nx === m.x && r.ny === m.y;
 	else if (m.type === "solid") done = solidColor(st.f) === m.c;
 	else if (m.type === "button") done = st.boxes[m.box]!.x === m.x && st.boxes[m.box]!.y === m.y;

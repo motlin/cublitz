@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it} from "vite-plus/test";
 import {blank, DIRS, FACES, roll, solidColor, workColor} from "../../../src/core/cube.ts";
 import type {Faces} from "../../../src/core/types.ts";
 

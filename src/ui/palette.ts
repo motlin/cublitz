@@ -5,7 +5,15 @@ import {type CustomColors, readColors, writeColors} from "./storage.ts";
 import {cap, COLORS, GLYPH} from "./text.ts";
 
 // Paint colors
-const VAR: Record<Paint, string> = {r: "--red", o: "--orange", y: "--yellow", g: "--green", c: "--cyan", b: "--blue", p: "--purple"};
+const VAR: Record<Paint, string> = {
+	r: "--red",
+	o: "--orange",
+	y: "--yellow",
+	g: "--green",
+	c: "--cyan",
+	b: "--blue",
+	p: "--purple",
+};
 const PALETTE_PAINTS = Object.keys(VAR) as Paint[];
 const DEFAULT_HEX: Partial<Record<Paint, string>> = {};
 let custom: CustomColors = {};
@@ -13,7 +21,15 @@ let palSel: Paint = "r";
 
 const hexOf = (k: Paint): string => custom[k] || DEFAULT_HEX[k]!;
 export const toRGB = (h: string): number[] => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
-export const toHex = (rgb: number[]): string => "#" + rgb.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("");
+export const toHex = (rgb: number[]): string =>
+	"#" +
+	rgb
+		.map((v) =>
+			Math.max(0, Math.min(255, Math.round(v)))
+				.toString(16)
+				.padStart(2, "0"),
+		)
+		.join("");
 
 function applyColors(): void {
 	for (const k of PALETTE_PAINTS) {
@@ -34,12 +50,18 @@ function setColor(k: Paint, hex: string): void {
 	renderPalette(true);
 }
 function renderPalette(keepFocus?: boolean): void {
-	$("palSwatches").innerHTML = PALETTE_PAINTS.map((k) => `<button type="button" data-k="${k}" aria-pressed="${k === palSel}" aria-label="${CNAME[k]}" class="${custom[k] ? "changed" : ""}" style="--pc:${COLORS[k]}">${GLYPH[k]}</button>`).join("");
+	$("palSwatches").innerHTML = PALETTE_PAINTS.map(
+		(k) =>
+			`<button type="button" data-k="${k}" aria-pressed="${k === palSel}" aria-label="${CNAME[k]}" class="${custom[k] ? "changed" : ""}" style="--pc:${COLORS[k]}">${GLYPH[k]}</button>`,
+	).join("");
 	const hex = hexOf(palSel),
 		[r, g, b] = toRGB(hex);
 	$("palette").style.setProperty("--pc", COLORS[palSel]);
 	$("palName").textContent = cap(CNAME[palSel]);
-	const set = (id: "palPick" | "palHex" | "palR" | "palG" | "palB" | "palRn" | "palGn" | "palBn", v: string | number | undefined) => {
+	const set = (
+		id: "palPick" | "palHex" | "palR" | "palG" | "palB" | "palRn" | "palGn" | "palBn",
+		v: string | number | undefined,
+	) => {
 		const el = $(id);
 		if (!keepFocus || document.activeElement !== el) el.value = domValue(v);
 	};

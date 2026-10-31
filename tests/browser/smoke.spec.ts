@@ -7,7 +7,8 @@ import {expect, test} from "@playwright/test";
 import type {InfiniteGolden, SolveGolden} from "../support/golden.ts";
 import {BASE_URL, DIST_PATH, LEGACY_PATH, withPair} from "./harness/pair.ts";
 
-const readGolden = <T>(name: string): T => JSON.parse(readFileSync(new URL(`../golden/${name}`, import.meta.url), "utf8")) as T;
+const readGolden = <T>(name: string): T =>
+	JSON.parse(readFileSync(new URL(`../golden/${name}`, import.meta.url), "utf8")) as T;
 
 test("the legacy artifact is the source file, byte for byte", async ({request}) => {
 	const body = await (await request.get(BASE_URL + LEGACY_PATH)).body();
@@ -16,7 +17,9 @@ test("the legacy artifact is the source file, byte for byte", async ({request}) 
 	);
 });
 
-test("dist is one page, the original byte for byte outside the body of its classic inline script", async ({request}) => {
+test("dist is one page, the original byte for byte outside the body of its classic inline script", async ({
+	request,
+}) => {
 	const scriptBody = /(?<=<script>\n)[\s\S]*(?=<\/script>)/;
 	const read = async (path: string): Promise<string> => (await request.get(BASE_URL + path)).text();
 	const [legacy, dist] = await Promise.all([read(LEGACY_PATH), read(DIST_PATH)]);
@@ -39,7 +42,9 @@ test("the bundle is a sloppy script", async ({request}) => {
 test("the page under test is what the current source builds", async ({request}) => {
 	const scratch = mkdtempSync(join(tmpdir(), "cublitz-fresh-"));
 	try {
-		execFileSync("pnpm", ["exec", "vite", "build", "--logLevel", "error", "--outDir", scratch, "--emptyOutDir"], {stdio: "pipe"});
+		execFileSync("pnpm", ["exec", "vp", "build", "--logLevel", "error", "--outDir", scratch, "--emptyOutDir"], {
+			stdio: "pipe",
+		});
 		const served = await (await request.get(BASE_URL + DIST_PATH)).text();
 		expect(served === readFileSync(join(scratch, "index.html"), "utf8")).toBe(true);
 	} finally {

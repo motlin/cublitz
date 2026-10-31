@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it} from "vite-plus/test";
 import {grepMatchedPassingTest, type PlaywrightReport, verdict} from "../../scripts/harness-verdict.ts";
 
 const spec = (title: string, status: string, message?: string) => ({
@@ -39,18 +39,24 @@ describe("verdict", () => {
 	});
 
 	it("is invalid when the web server could not start, even if a test also failed", () => {
-		expect(verdict(1, report([spec("t", "failed", "Error: boom")], [{message: "Error: port 4818 is already used"}]))).toStrictEqual({
+		expect(
+			verdict(1, report([spec("t", "failed", "Error: boom")], [{message: "Error: port 4818 is already used"}])),
+		).toStrictEqual({
 			kind: "invalid",
 			detail: "Error: port 4818 is already used",
 		});
 	});
 
 	it("is invalid when the only failures are infrastructure", () => {
-		expect(verdict(1, report([spec("t", "failed", "Error: page.goto: net::ERR_CONNECTION_REFUSED")]))).toStrictEqual({
+		expect(
+			verdict(1, report([spec("t", "failed", "Error: page.goto: net::ERR_CONNECTION_REFUSED")])),
+		).toStrictEqual({
 			kind: "invalid",
 			detail: "Error: page.goto: net::ERR_CONNECTION_REFUSED",
 		});
-		expect(verdict(1, report([spec("t", "failed", "Error: browserType.launch: Executable doesn't exist")]))).toStrictEqual({
+		expect(
+			verdict(1, report([spec("t", "failed", "Error: browserType.launch: Executable doesn't exist")])),
+		).toStrictEqual({
 			kind: "invalid",
 			detail: "Error: browserType.launch: Executable doesn't exist",
 		});
@@ -64,28 +70,45 @@ describe("verdict", () => {
 	});
 
 	it("is caught when one real failure sits beside an infrastructure failure", () => {
-		expect(verdict(1, report([spec("a", "failed", "Error: net::ERR_ABORTED"), spec("b", "failed", "Error: expect failed")]))).toStrictEqual({
+		expect(
+			verdict(
+				1,
+				report([spec("a", "failed", "Error: net::ERR_ABORTED"), spec("b", "failed", "Error: expect failed")]),
+			),
+		).toStrictEqual({
 			kind: "caught",
 			detail: "Error: expect failed",
 		});
 	});
 
 	it("is invalid when the exit code says failure but every test passed", () => {
-		expect(verdict(1, report([spec("t", "passed")]))).toStrictEqual({kind: "invalid", detail: "exit code 1 with every test passing"});
+		expect(verdict(1, report([spec("t", "passed")]))).toStrictEqual({
+			kind: "invalid",
+			detail: "exit code 1 with every test passing",
+		});
 	});
 
 	it("is invalid when the process was killed", () => {
-		expect(verdict(null, report([spec("t", "passed")]))).toStrictEqual({kind: "invalid", detail: "exit code null with every test passing"});
+		expect(verdict(null, report([spec("t", "passed")]))).toStrictEqual({
+			kind: "invalid",
+			detail: "exit code null with every test passing",
+		});
 	});
 
 	it("finds failures in nested suites", () => {
-		const nested: PlaywrightReport = {errors: [], suites: [{suites: [{specs: [spec("t", "failed", "Error: nested")]}]}]};
+		const nested: PlaywrightReport = {
+			errors: [],
+			suites: [{suites: [{specs: [spec("t", "failed", "Error: nested")]}]}],
+		};
 		expect(verdict(1, nested)).toStrictEqual({kind: "caught", detail: "Error: nested"});
 	});
 
 	it("strips color codes from the detail and keeps its first line, cut short", () => {
 		const message = `\u001b[31mError: ${"x".repeat(200)}\u001b[0m\nsecond line`;
-		expect(verdict(1, report([spec("t", "failed", message)]))).toStrictEqual({kind: "caught", detail: `Error: ${"x".repeat(153)}`});
+		expect(verdict(1, report([spec("t", "failed", message)]))).toStrictEqual({
+			kind: "caught",
+			detail: `Error: ${"x".repeat(153)}`,
+		});
 	});
 });
 

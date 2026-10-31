@@ -1,6 +1,7 @@
 import type {LevelSource} from "./types.ts";
 
-export const encodeLevel = (L: LevelSource): string => "CUBLITZ:" + btoa(unescape(encodeURIComponent(JSON.stringify(L))));
+export const encodeLevel = (L: LevelSource): string =>
+	"CUBLITZ:" + btoa(unescape(encodeURIComponent(JSON.stringify(L))));
 
 /** Reads a share code or raw JSON. Only `map` is checked: the rest of the level is taken on trust. */
 export function decodeLevel(s: string): LevelSource {

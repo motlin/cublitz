@@ -1,4 +1,4 @@
-import {describe, expect, it, vi} from "vitest";
+import {describe, expect, it, vi} from "vite-plus/test";
 import {initState, parseLevel} from "../../../src/core/level.ts";
 import {solve} from "../../../src/core/solver.ts";
 

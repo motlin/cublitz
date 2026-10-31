@@ -10,7 +10,7 @@ export const DIST_PATH = "/";
 export const DESKTOP = {width: 1280, height: 800};
 export const MOBILE = {width: 390, height: 844};
 export const engine = loadOriginalEngine();
-export const LEVEL_NAMES = engine.LEVELS.map((level) => level.name ?? "");
+const LEVEL_NAMES = engine.LEVELS.map((level) => level.name ?? "");
 
 export const PINNED_NOW = Date.UTC(2026, 0, 2, 3, 4, 5);
 
@@ -148,7 +148,9 @@ export class Pair {
 	}
 
 	tickIntervals(count: number): Promise<Snapshot> {
-		return this.step(`tick intervals x${count}`, (page) => page.evaluate((n) => window.__harness.tickIntervals(n), count));
+		return this.step(`tick intervals x${count}`, (page) =>
+			page.evaluate((n) => window.__harness.tickIntervals(n), count),
+		);
 	}
 
 	/** Changes the viewport and delivers the resize event the game listens for. */
@@ -163,7 +165,8 @@ export class Pair {
 	 * Chromium can take a moment to raster them afresh, so a mismatch gets a few delayed retakes before it counts.
 	 * The original compared with itself mismatches the same way. */
 	async expectSameScreenshot(name: string): Promise<void> {
-		const shoot = () => Promise.all(this.pages.map((page) => page.screenshot({animations: "disabled", fullPage: true})));
+		const shoot = () =>
+			Promise.all(this.pages.map((page) => page.screenshot({animations: "disabled", fullPage: true})));
 		let [legacy, dist] = (await shoot()) as [Buffer, Buffer];
 		for (let retake = 0; retake < 5 && !dist.equals(legacy); retake++) {
 			await this.legacy.waitForTimeout(400);
@@ -201,7 +204,9 @@ export class Pair {
 		if (JSON.stringify(legacy) !== JSON.stringify(dist)) {
 			const changed = Object.keys(legacy.hashes).filter((key) => legacy.hashes[key] !== dist.hashes[key]);
 			if (changed.length > 0) {
-				const [fullLegacy, fullDist] = await Promise.all(this.pages.map((page) => page.evaluate(() => window.__harness.full())));
+				const [fullLegacy, fullDist] = await Promise.all(
+					this.pages.map((page) => page.evaluate(() => window.__harness.full())),
+				);
 				for (const key of changed) {
 					expect((fullDist as Record<string, unknown>)[key], `step "${name}" section ${key}`).toStrictEqual(
 						(fullLegacy as Record<string, unknown>)[key],
@@ -215,7 +220,11 @@ export class Pair {
 	}
 }
 
-export async function withPair(browser: Browser, options: PairOptions, script: (pair: Pair) => Promise<void>): Promise<void> {
+export async function withPair(
+	browser: Browser,
+	options: PairOptions,
+	script: (pair: Pair) => Promise<void>,
+): Promise<void> {
 	const pair = await Pair.open(browser, options);
 	await script(pair);
 	await pair.close();

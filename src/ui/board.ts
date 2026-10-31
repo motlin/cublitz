@@ -39,10 +39,38 @@ function makeBlock(cls: string, w: number, h: number, color: string): [HTMLEleme
 		el.appendChild(f);
 		return f;
 	};
-	add("n", {width: w + "px", height: h + "px", left: 0, top: 0, transformOrigin: "50% 0", transform: "rotateX(90deg)"});
-	add("s", {width: w + "px", height: h + "px", left: 0, top: w + "px", transformOrigin: "50% 0", transform: "rotateX(90deg)"});
-	add("w", {width: h + "px", height: w + "px", left: 0, top: 0, transformOrigin: "0 50%", transform: "rotateY(-90deg)"});
-	add("e", {width: h + "px", height: w + "px", left: w + "px", top: 0, transformOrigin: "0 50%", transform: "rotateY(-90deg)"});
+	add("n", {
+		width: w + "px",
+		height: h + "px",
+		left: 0,
+		top: 0,
+		transformOrigin: "50% 0",
+		transform: "rotateX(90deg)",
+	});
+	add("s", {
+		width: w + "px",
+		height: h + "px",
+		left: 0,
+		top: w + "px",
+		transformOrigin: "50% 0",
+		transform: "rotateX(90deg)",
+	});
+	add("w", {
+		width: h + "px",
+		height: w + "px",
+		left: 0,
+		top: 0,
+		transformOrigin: "0 50%",
+		transform: "rotateY(-90deg)",
+	});
+	add("e", {
+		width: h + "px",
+		height: w + "px",
+		left: w + "px",
+		top: 0,
+		transformOrigin: "0 50%",
+		transform: "rotateY(-90deg)",
+	});
 	const top = add("t", {width: w + "px", height: w + "px", left: 0, top: 0, transform: `translateZ(${h}px)`});
 	return [el, top];
 }

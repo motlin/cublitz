@@ -1,4 +1,4 @@
-import {afterEach, expect, test, vi} from "vitest";
+import {afterEach, expect, test, vi} from "vite-plus/test";
 import * as storage from "../../../src/ui/storage.ts";
 
 const stub = (entries: Record<string, string>) => {
@@ -72,7 +72,14 @@ test("a draft only needs a truthy grid", () => {
 test("writes keep the original formats", () => {
 	const data = stub({});
 	const level = {map: ["S.X"], name: "Mine"};
-	const draft: storage.EditorDraft = {id: null, name: "Untitled", cols: 1, rows: 1, grid: [[{t: "paint", c: "r"}, null]], need: {t: "r"}};
+	const draft: storage.EditorDraft = {
+		id: null,
+		name: "Untitled",
+		cols: 1,
+		rows: 1,
+		grid: [[{t: "paint", c: "r"}, null]],
+		need: {t: "r"},
+	};
 	const run = {seed: 1, n: 2, score: 3, effs: [0.5], cleared: 4, streak: 5, bestStreak: 6};
 	expect([
 		storage.writeProgress({"First Roll": 4}),
@@ -90,7 +97,8 @@ test("writes keep the original formats", () => {
 		"cubist-colors-v1": '{"r":"#000000"}',
 		"cublitz-infinite-run-v1": '{"seed":1,"n":2,"score":3,"effs":[0.5],"cleared":4,"streak":5,"bestStreak":6}',
 		"cublitz-infinite-best-v1": '{"cleared":1,"score":2,"rating":3}',
-		"cubist-editor-draft-v1": '{"id":null,"name":"Untitled","cols":1,"rows":1,"grid":[[{"t":"paint","c":"r"},null]],"need":{"t":"r"}}',
+		"cubist-editor-draft-v1":
+			'{"id":null,"name":"Untitled","cols":1,"rows":1,"grid":[[{"t":"paint","c":"r"},null]],"need":{"t":"r"}}',
 		"cubist-my-levels-v1": '[{"id":"a","level":{"map":["S.X"],"name":"Mine"},"saved":9}]',
 		"cubist-sound-v1": "off",
 	});

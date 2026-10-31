@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it} from "vite-plus/test";
 import {hintTexts, nextMilestone} from "../../../src/core/hints.ts";
 import {initState, parseLevel} from "../../../src/core/level.ts";
 import {LEVELS} from "../../../src/core/levels.ts";
@@ -32,13 +32,17 @@ function compareWalk(level: Level, theirLevel: ReturnType<OriginalEngine["parseL
 				queue.push(mine.st);
 			}
 		}
-		results.push([JSON.stringify(openColors(level, state)), JSON.stringify(original.openColors(theirLevel, asOriginal(state)))]);
+		results.push([
+			JSON.stringify(openColors(level, state)),
+			JSON.stringify(original.openColors(theirLevel, asOriginal(state))),
+		]);
 		results.push([stateKey(state), original.stateKey(asOriginal(state))]);
 	}
 	return results;
 }
 
-const mismatches = (pairs: unknown[]) => pairs.filter((pair) => (pair as [string, string])[0] !== (pair as [string, string])[1]);
+const mismatches = (pairs: unknown[]) =>
+	pairs.filter((pair) => (pair as [string, string])[0] !== (pair as [string, string])[1]);
 
 describe("the core modules against the original script", () => {
 	it("every move, open color and state key on every level, including key order", () => {
@@ -58,7 +62,11 @@ describe("the core modules against the original script", () => {
 				const theirs = original.nextMilestone(theirLevel, asOriginal(state), path.slice(i));
 				const mineText = mine && hintTexts(level, state, mine);
 				const theirText = theirs && original.hintTexts(theirLevel, asOriginal(state), theirs);
-				out.push(JSON.stringify([mine, mineText]) === JSON.stringify([theirs, theirText]) ? "" : `${level.name} step ${i}`);
+				out.push(
+					JSON.stringify([mine, mineText]) === JSON.stringify([theirs, theirText])
+						? ""
+						: `${level.name} step ${i}`,
+				);
 				const next = tryMove(level, state, path[i] as Direction);
 				if (!next.ok) throw new Error("the solution has to work");
 				state = next.st;
@@ -99,15 +107,22 @@ describe("the core modules against the original script", () => {
 				return (error as Error).constructor.name;
 			}
 		};
-		expect(fails(parseLevel as (level: never) => unknown)).toBe(fails(original.parseLevel as (level: never) => unknown));
+		expect(fails(parseLevel as (level: never) => unknown)).toBe(
+			fails(original.parseLevel as (level: never) => unknown),
+		);
 		expect(fails(parseLevel as (level: never) => unknown)).toBe("TypeError");
 	});
 
 	it("share codes", () => {
-		const level = {map: ["S★X"], name: "Blå ★ 日本", k: {}, need: {t: "r"}, par: 2} as LevelSource;
+		const level = {
+			map: ["S★X"],
+			name: "Blå ★ 日本",
+			k: {},
+			need: {t: "r"},
+			par: 2,
+		} as LevelSource;
 		expect(encodeLevel(level)).toBe(original.encodeLevel(level));
 		const codes = [encodeLevel(level), "CUBIST:eyJtYXAiOlsiUyJdfQ==", '{"map":[]}'];
 		expect(codes.map(decodeLevel)).toStrictEqual(codes.map(original.decodeLevel));
 	});
-
 });

@@ -3,7 +3,15 @@ import {readMuted, writeMuted} from "./storage.ts";
 // Sound effects, synthesized with Web Audio (no files)
 
 type ToneOptions = {at?: number; to?: number; type?: OscillatorType; vol?: number; attack?: number};
-type NoiseOptions = {at?: number; to?: number; filter?: BiquadFilterType; freq?: number; q?: number; vol?: number; attack?: number};
+type NoiseOptions = {
+	at?: number;
+	to?: number;
+	filter?: BiquadFilterType;
+	freq?: number;
+	q?: number;
+	vol?: number;
+	attack?: number;
+};
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -94,7 +102,8 @@ const SOUNDS = {
 		tone(880, 0.16, {type: "triangle", vol: 0.12});
 		tone(1320, 0.3, {type: "triangle", vol: 0.08, at: 0.06});
 	},
-	solid: () => [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.22, {type: "triangle", vol: 0.12, at: i * 0.06})),
+	solid: () =>
+		[523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.22, {type: "triangle", vol: 0.12, at: i * 0.06})),
 	unsolid: () => {
 		tone(520, 0.16, {to: 330, type: "triangle", vol: 0.1});
 	},
@@ -184,7 +193,14 @@ export function initSound(): void {
 	);
 	document.querySelectorAll(".soundbtn").forEach((b) => b.addEventListener("click", toggleSound));
 	addEventListener("keydown", (e) => {
-		if ((e.key === "m" || e.key === "M") && !e.metaKey && !e.ctrlKey && !e.altKey && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || "")) toggleSound();
+		if (
+			(e.key === "m" || e.key === "M") &&
+			!e.metaKey &&
+			!e.ctrlKey &&
+			!e.altKey &&
+			!/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || "")
+		)
+			toggleSound();
 	});
 	renderSoundBtns();
 }

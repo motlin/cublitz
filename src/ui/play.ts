@@ -16,9 +16,19 @@ import {clearSolution, planSolution, solState, solutionAfterMove, stopAutoReveal
 import {cap} from "./text.ts";
 import {clearTipQueue, queueTips, tipOpen} from "./tips.ts";
 
-const ROT: Record<Direction, string> = {E: "rotateY(90deg)", W: "rotateY(-90deg)", N: "rotateX(90deg)", S: "rotateX(-90deg)"};
+const ROT: Record<Direction, string> = {
+	E: "rotateY(90deg)",
+	W: "rotateY(-90deg)",
+	N: "rotateX(90deg)",
+	S: "rotateX(-90deg)",
+};
 const ORIGIN: Record<Direction, string> = {E: "100% 50% 0", W: "0% 50% 0", N: "50% 0% 0", S: "50% 100% 0"};
-const TILT: Record<Direction, string> = {E: "rotateY(14deg)", W: "rotateY(-14deg)", N: "rotateX(14deg)", S: "rotateX(-14deg)"};
+const TILT: Record<Direction, string> = {
+	E: "rotateY(14deg)",
+	W: "rotateY(-14deg)",
+	N: "rotateX(14deg)",
+	S: "rotateX(-14deg)",
+};
 
 export type Snapshot = {st?: State; hist?: State[]};
 
@@ -69,17 +79,30 @@ export function move(d: Direction): void {
 	if (!r.ok) {
 		if (r.why === "wgate") {
 			pulse(r.nx, r.ny, "deny");
-			setStatus(r.f === "b" ? `<b>White gate.</b> It needs a bare face down, but rolling ${dirWord(d)} would put ${CNAME[r.has as Paint]} down.` : `<b>${cap(FNAME[r.f])} white gate.</b> Your ${FNAME[r.f]} face has to be bare when you land, but it would be ${CNAME[r.has as Paint]}.`, true);
+			setStatus(
+				r.f === "b"
+					? `<b>White gate.</b> It needs a bare face down, but rolling ${dirWord(d)} would put ${CNAME[r.has as Paint]} down.`
+					: `<b>${cap(FNAME[r.f])} white gate.</b> Your ${FNAME[r.f]} face has to be bare when you land, but it would be ${CNAME[r.has as Paint]}.`,
+				true,
+			);
 		} else if (r.why === "gate") {
 			const cn = CNAME[r.c];
 			pulse(r.nx, r.ny, "deny");
-			setStatus(`<b>${cap(cn)} gate.</b> Rolling ${dirWord(d)} would put ${r.down ? CNAME[r.down] : "a bare"} face down.`, true);
+			setStatus(
+				`<b>${cap(cn)} gate.</b> Rolling ${dirWord(d)} would put ${r.down ? CNAME[r.down] : "a bare"} face down.`,
+				true,
+			);
 		} else if (r.why === "door") {
 			const cn = CNAME[r.c];
 			setStatus(`<b>${cap(cn)} door is shut.</b> Flip a ${cn} switch or hold down a ${cn} button.`, true);
 		} else if (r.why === "box") {
 			const cn = CNAME[r.c];
-			setStatus(r.c === "w" ? "<b>White box.</b> Only a completely bare cube can push it." : `<b>${cap(cn)} box.</b> Only a cube painted solid ${cn} can push it.`, true);
+			setStatus(
+				r.c === "w"
+					? "<b>White box.</b> Only a completely bare cube can push it."
+					: `<b>${cap(cn)} box.</b> Only a cube painted solid ${cn} can push it.`,
+				true,
+			);
 		} else if (r.why === "stuck") {
 			setStatus(`<b>The box won't budge.</b> Something is in the way on the other side.`, true);
 		} else setStatus("<b>Edge.</b> Nothing to roll onto that way.", true);
@@ -87,10 +110,15 @@ export function move(d: Direction): void {
 		if (!reduced) {
 			S.busy = true;
 			rollerEl.style.transformOrigin = ORIGIN[d];
-			rollerEl.animate([{transform: "none"}, {transform: TILT[d]}, {transform: "none"}], {duration: 220, easing: "ease-out"}).finished.then(() => {
-				S.busy = false;
-				flushQueue();
-			});
+			rollerEl
+				.animate([{transform: "none"}, {transform: TILT[d]}, {transform: "none"}], {
+					duration: 220,
+					easing: "ease-out",
+				})
+				.finished.then(() => {
+					S.busy = false;
+					flushQueue();
+				});
 		}
 		return;
 	}
@@ -121,14 +149,17 @@ export function move(d: Direction): void {
 			pulse(r.nx, r.ny, "flash");
 			msg = "<b>Paint removed.</b> Every face is bare again.";
 		}
-		if (solid && solid !== wasSolid) msg = `<b>Solid ${CNAME[solid]}!</b> You can now work ${CNAME[solid]} switches, buttons and boxes.`;
+		if (solid && solid !== wasSolid)
+			msg = `<b>Solid ${CNAME[solid]}!</b> You can now work ${CNAME[solid]} switches, buttons and boxes.`;
 		else if (!solid && wasSolid) msg += ` No longer solid ${CNAME[wasSolid]}.`;
 		if (r.flipped >= 0) {
 			pulse(r.nx, r.ny, "flash");
 			msg = `Flipped the ${CNAME[(r.cell as SwitchCell).c]} switch.`;
 		}
-		if (opened.length) msg += ` ${opened.map((k) => cap(CNAME[k])).join(" and ")} door${opened.length > 1 ? "s" : ""} opened.`;
-		if (closed.length) msg += ` ${closed.map((k) => cap(CNAME[k])).join(" and ")} door${closed.length > 1 ? "s" : ""} closed.`;
+		if (opened.length)
+			msg += ` ${opened.map((k) => cap(CNAME[k])).join(" and ")} door${opened.length > 1 ? "s" : ""} opened.`;
+		if (closed.length)
+			msg += ` ${closed.map((k) => cap(CNAME[k])).join(" and ")} door${closed.length > 1 ? "s" : ""} closed.`;
 		if (r.won) SFX.play("win");
 		else if (r.flipped >= 0) SFX.play("switch");
 		else if (solid && solid !== wasSolid) SFX.play("solid");
@@ -176,7 +207,11 @@ export function move(d: Direction): void {
 		boxEls[r.pushed]!.style.transform = `translate3d(${b.x * c + off}px, ${b.y * c + off}px, 1px)`;
 	}
 	rollerEl.style.transformOrigin = ORIGIN[d];
-	anim = rollerEl.animate([{transform: "none"}, {transform: ROT[d]}], {duration: 170, easing: "cubic-bezier(.45,.05,.55,.95)", fill: "forwards"});
+	anim = rollerEl.animate([{transform: "none"}, {transform: ROT[d]}], {
+		duration: 170,
+		easing: "cubic-bezier(.45,.05,.55,.95)",
+		fill: "forwards",
+	});
 	anim.finished.then(finish);
 }
 function flushQueue(): void {
@@ -211,7 +246,15 @@ function win(): void {
 	$("winTitle").textContent = S.usedSolution ? "Solved" : par && m <= par ? "Perfect roll" : "Dry and done";
 	$("winScore").textContent = par ? `${m} moves · par ${par}` : `${m} moves`;
 	const last = S.lvl === LEVELS.length - 1;
-	$("winNote").textContent = custom ? "Your level works. Head back to the editor to tweak or save it." : last ? "That was the last canvas. Replay any level to chase par, or build your own in the editor." : S.usedSolution ? "You followed the solution this time. Replay it from memory when you are ready." : m <= par! ? "You matched the shortest solution." : `Par is ${par}. Replay to tighten it up.`;
+	$("winNote").textContent = custom
+		? "Your level works. Head back to the editor to tweak or save it."
+		: last
+			? "That was the last canvas. Replay any level to chase par, or build your own in the editor."
+			: S.usedSolution
+				? "You followed the solution this time. Replay it from memory when you are ready."
+				: m <= par!
+					? "You matched the shortest solution."
+					: `Par is ${par}. Replay to tighten it up.`;
 	$("winNext").hidden = last && !custom;
 	$("winNext").firstChild!.textContent = custom ? "Back to editor " : "Next level ";
 	$("win").hidden = false;

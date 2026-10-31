@@ -1,5 +1,5 @@
 import {readFileSync} from "node:fs";
-import {expect, it} from "vitest";
+import {expect, it} from "vite-plus/test";
 
 // infCandidate sorts with a random comparator, whose result depends on the JS engine and how far it has optimized the
 // sort. That is the original's own behavior: the same seed gives different levels on different V8 versions. So the

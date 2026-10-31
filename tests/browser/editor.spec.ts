@@ -35,7 +35,13 @@ test("every tile tool, color and white gate face", async ({browser}) => {
 			await pair.click(`#edFaces [data-face="${face}"]`);
 			await pair.click(cell(x + 1, 3), `white gate ${face}`);
 		}
-		for (const [name, x, y] of [["wash", 1, 4], ["floor", 2, 4], ["erase", 3, 4], ["goal", 4, 4], ["start", 5, 4]] as const) {
+		for (const [name, x, y] of [
+			["wash", 1, 4],
+			["floor", 2, 4],
+			["erase", 3, 4],
+			["goal", 4, 4],
+			["start", 5, 4],
+		] as const) {
 			await pair.click(tool(name));
 			await pair.click(cell(x, y), `place ${name}`);
 		}
@@ -52,7 +58,8 @@ test("drag painting, resizing to the limits, name and target needs", async ({bro
 		await openEditor(pair);
 		await pair.click(tool("erase"));
 		await pair.step("drag across a row", async (page) => {
-			const box = async (x: number) => (await page.locator(cell(x, 1)).boundingBox()) as {x: number; y: number; width: number; height: number};
+			const box = async (x: number) =>
+				(await page.locator(cell(x, 1)).boundingBox()) as {x: number; y: number; width: number; height: number};
 			const start = await box(1);
 			await page.mouse.move(start.x + 5, start.y + 5);
 			await page.mouse.down();
@@ -79,7 +86,9 @@ test("drag painting, resizing to the limits, name and target needs", async ({bro
 		}
 		await pair.step("clear one need", (page) => page.locator("#need-b").selectOption(""));
 		await pair.click("#edCheck", "unsolvable level");
-		expect(await pair.legacy.locator("#edResult").textContent()).toBe("No solution. No sequence of rolls reaches a target that satisfies its needs.");
+		expect(await pair.legacy.locator("#edResult").textContent()).toBe(
+			"No solution. No sequence of rolls reaches a target that satisfies its needs.",
+		);
 	});
 });
 
@@ -107,8 +116,16 @@ test("share code round trip, older prefixes, raw JSON and bad codes", async ({br
 		expect(await pair.legacy.locator("#edCodeNote").textContent()).toBe("Copied.");
 		await pair.step("read the clipboard", (page) => page.evaluate(() => navigator.clipboard.readText()));
 
-		const level = {name: "Rôund trip", map: ["Sr.R.X", "..1.2."], k: {"1": ["switch", "r"], "2": ["door", "r"]}, need: {t: "r"}};
-		const roundTrip = encode(level).replace(/^CUBLITZ:.*/, `CUBLITZ:${btoa(unescape(encodeURIComponent(JSON.stringify(level))))}`);
+		const level = {
+			name: "Rôund trip",
+			map: ["Sr.R.X", "..1.2."],
+			k: {"1": ["switch", "r"], "2": ["door", "r"]},
+			need: {t: "r"},
+		};
+		const roundTrip = encode(level).replace(
+			/^CUBLITZ:.*/,
+			`CUBLITZ:${btoa(unescape(encodeURIComponent(JSON.stringify(level))))}`,
+		);
 		await importCode(pair, roundTrip, "a new code");
 		expect(await pair.legacy.locator("#edImportNote").textContent()).toBe("Loaded “Rôund trip”.");
 		expect(await value(pair.legacy, "#edCode")).toBe(roundTrip);
@@ -121,7 +138,9 @@ test("share code round trip, older prefixes, raw JSON and bad codes", async ({br
 		expect(await value(pair.legacy, "#edCode")).toBe(roundTrip);
 		for (const bad of ["CUBLITZ:!!!", "not a code", '{"map":[1]}', "null"]) {
 			await importCode(pair, bad, `bad code ${bad}`);
-			expect(await pair.legacy.locator("#edImportNote").textContent()).toBe("That code didn’t work. Paste the whole thing, starting with CUBLITZ:");
+			expect(await pair.legacy.locator("#edImportNote").textContent()).toBe(
+				"That code didn’t work. Paste the whole thing, starting with CUBLITZ:",
+			);
 		}
 	});
 });
@@ -149,8 +168,12 @@ test("save, test play to a win, edit, play from the list, delete", async ({brows
 
 		const saved = await pair.click("#edSave");
 		const id = `L${PINNED_NOW.toString(36)}`;
-		expect(JSON.parse(saved.storage["cubist-my-levels-v1"] as string)).toStrictEqual([{id, level: UNTITLED, saved: PINNED_NOW}]);
-		expect(await pair.legacy.locator("#edResult").textContent()).toBe("Saved. “Untitled” is in your levels on this browser.");
+		expect(JSON.parse(saved.storage["cubist-my-levels-v1"] as string)).toStrictEqual([
+			{id, level: UNTITLED, saved: PINNED_NOW},
+		]);
+		expect(await pair.legacy.locator("#edResult").textContent()).toBe(
+			"Saved. “Untitled” is in your levels on this browser.",
+		);
 		expect(await pair.legacy.locator("#edSave").textContent()).toBe("Save changes");
 
 		await pair.step("rename", (page) => page.locator("#edName").fill("Renamed"));
@@ -174,7 +197,9 @@ test("built-in levels open as remixes, locked ones are disabled", async ({browse
 		await pair.step("open level 10", (page) => page.locator("#edStock").selectOption("9"));
 		expect(await value(pair.legacy, "#edName")).toBe("Box Step remix");
 		await pair.click("#edCheck");
-		expect(await pair.legacy.locator("#edResult").textContent()).toBe("Solvable in 24 moves. That becomes the par.");
+		expect(await pair.legacy.locator("#edResult").textContent()).toBe(
+			"Solvable in 24 moves. That becomes the par.",
+		);
 		await pair.step("open level 1", (page) => page.locator("#edStock").selectOption("0"));
 		await pair.click("#edTest");
 		await pair.click("#modePlay");

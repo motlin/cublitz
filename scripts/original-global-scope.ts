@@ -7,10 +7,21 @@ import {parseAst} from "vite";
 
 export type TopLevelKind = "let" | "const" | "function";
 
-type Statement = {type: string; start: number; end: number; id?: {name: string} | null; kind?: string; declarations?: Declarator[]};
-type Declarator = {id: {type: string; name?: string; start: number; end: number}; init: {start: number; end: number} | null};
+type Statement = {
+	type: string;
+	start: number;
+	end: number;
+	id?: {name: string} | null;
+	kind?: string;
+	declarations?: Declarator[];
+};
+type Declarator = {
+	id: {type: string; name?: string; start: number; end: number};
+	init: {start: number; end: number} | null;
+};
 
-const parse = (script: string): Statement[] => (parseAst(script, {sourceType: "script"}) as unknown as {body: Statement[]}).body;
+const parse = (script: string): Statement[] =>
+	(parseAst(script, {sourceType: "script"}) as unknown as {body: Statement[]}).body;
 
 export function topLevelNames(script: string): Map<string, TopLevelKind> {
 	const names = new Map<string, TopLevelKind>();
@@ -44,7 +55,10 @@ export function keepOriginalGlobalScope(bundle: string, original: Map<string, To
 			else privateFunctions.push(text);
 			skipTo(statement, "");
 		} else if (statement.type === "VariableDeclaration") {
-			if (statement.kind !== "var") throw new Error(`Expected the bundler to write vars, got: ${bundle.slice(statement.start, statement.end)}`);
+			if (statement.kind !== "var")
+				throw new Error(
+					`Expected the bundler to write vars, got: ${bundle.slice(statement.start, statement.end)}`,
+				);
 			const parts = statement.declarations!.map(({id, init}) => {
 				const name = id.name!;
 				vars.add(name);
@@ -56,10 +70,20 @@ export function keepOriginalGlobalScope(bundle: string, original: Map<string, To
 	}
 	rest.push(bundle.slice(from));
 
-	const missing = [...original].filter(([name, kind]) => (kind === "function" ? !functions.has(name) : !vars.has(name)));
-	if (missing.length > 0) throw new Error(`The bundle's top level must hold: ${missing.map(([name, kind]) => `${name} (${kind})`).join(", ")}`);
+	const missing = [...original].filter(([name, kind]) =>
+		kind === "function" ? !functions.has(name) : !vars.has(name),
+	);
+	if (missing.length > 0)
+		throw new Error(
+			`The bundle's top level must hold: ${missing.map(([name, kind]) => `${name} (${kind})`).join(", ")}`,
+		);
 
-	const exposed = [...original.keys()].filter((name) => functions.has(name)).map((name) => `Object.defineProperty(window, ${JSON.stringify(name)}, {value: ${functions.get(name)}, writable: true, enumerable: true});`);
+	const exposed = [...original.keys()]
+		.filter((name) => functions.has(name))
+		.map(
+			(name) =>
+				`Object.defineProperty(window, ${JSON.stringify(name)}, {value: ${functions.get(name)}, writable: true, enumerable: true});`,
+		);
 	const failed = "$$scriptFailed";
 	const failure = "$$scriptFailure";
 	// An empty pattern binds no name, so reading its key runs last, after every const has its value. That is

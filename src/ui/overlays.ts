@@ -101,7 +101,8 @@ function drawOverlays(): void {
 			});
 			steps.forEach(({x, y, n}) => {
 				const p = P.at(x, y);
-				if (p) ovEl("ov-trail" + (n.length > 1 ? " multi" : ""), p, P.size(x, y), `<span>${n.join(" ")}</span>`);
+				if (p)
+					ovEl("ov-trail" + (n.length > 1 ? " multi" : ""), p, P.size(x, y), `<span>${n.join(" ")}</span>`);
 			});
 		}
 	}
@@ -131,7 +132,12 @@ function drawOverlays(): void {
 				"ov-sol" + (steps.length > 1 ? " multi" : ""),
 				p,
 				P.size(x, y),
-				steps.map((s) => `<span class="sa${s.n === 1 ? " now" : ""}${s.n === revealed ? " newest" : ""}"><i style="transform:rotate(${s.ang.toFixed(1)}deg)">→</i><b>${s.n}</b></span>`).join(""),
+				steps
+					.map(
+						(s) =>
+							`<span class="sa${s.n === 1 ? " now" : ""}${s.n === revealed ? " newest" : ""}"><i style="transform:rotate(${s.ang.toFixed(1)}deg)">→</i><b>${s.n}</b></span>`,
+					)
+					.join(""),
 			);
 		});
 	}

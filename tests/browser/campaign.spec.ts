@@ -10,7 +10,11 @@ const LAST = golden.length - 1;
 
 // All three keyboard schemes get exercised on every level.
 const mixedKeys = (direction: string, index: number): string =>
-	index % 3 === 0 ? keyFor(direction) : index % 3 === 1 ? (WASD[direction] as string) : (WASD[direction] as string).toUpperCase();
+	index % 3 === 0
+		? keyFor(direction)
+		: index % 3 === 1
+			? (WASD[direction] as string)
+			: (WASD[direction] as string).toUpperCase();
 
 for (const {index, name, par, path} of golden) {
 	test(`level ${index + 1} ${name}: solver path to a win, with its tutorial tips`, async ({browser}) => {

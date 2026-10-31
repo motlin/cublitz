@@ -63,7 +63,8 @@ export function loadInfLevel(): void {
 	const n = run!.n;
 	const go = (lv: GeneratedLevel): void => {
 		if (!infinite || run!.n !== n) return;
-		(lv as LevelSource).tip = `Every canvas is freshly generated. Par is ${lv.par}. Undo is allowed, but every roll you make counts toward your score.`;
+		(lv as LevelSource).tip =
+			`Every canvas is freshly generated. Par is ${lv.par}. Undo is allowed, but every roll you make counts toward your score.`;
 		startLevel(lv, -2);
 		pregenerate();
 	};
@@ -91,7 +92,9 @@ export function renderInfCard(): void {
 	$("infCleared").textContent = domValue(run.cleared);
 	$("infScore").textContent = domValue(run.score);
 	$("infStreak").textContent = domValue(run.streak);
-	$("infBest").textContent = best.cleared ? `Best run: ${best.cleared} cleared, ${best.score} points${best.rating ? `, peak rating ${best.rating}` : ""}.` : "Your best run will show here.";
+	$("infBest").textContent = best.cleared
+		? `Best run: ${best.cleared} cleared, ${best.score} points${best.rating ? `, peak rating ${best.rating}` : ""}.`
+		: "Your best run will show here.";
 }
 export function infWin(): void {
 	const L = S.L,
@@ -108,12 +111,19 @@ export function infWin(): void {
 	writeRun(run!);
 	const rating = infRating(run!);
 	if (run!.cleared > best.cleared || run!.score > best.score || (run!.effs.length >= 3 && rating > best.rating)) {
-		best = {cleared: Math.max(best.cleared, run!.cleared), score: Math.max(best.score, run!.score), rating: run!.effs.length >= 3 ? Math.max(best.rating, rating) : best.rating};
+		best = {
+			cleared: Math.max(best.cleared, run!.cleared),
+			score: Math.max(best.score, run!.score),
+			rating: run!.effs.length >= 3 ? Math.max(best.rating, rating) : best.rating,
+		};
 		writeBest(best);
 	}
 	$("winTitle").textContent = m <= par ? "Perfect roll" : "Cleared";
 	$("winScore").textContent = `${m} rolls · par ${par} · +${pts} points`;
-	$("winNote").textContent = run!.effs.length < 3 ? `Clear ${3 - run!.effs.length} more to get your first rank.` : `Rank: ${infRank(run!)} (rating ${rating}, from your last ${Math.min(10, run!.effs.length)} canvases).`;
+	$("winNote").textContent =
+		run!.effs.length < 3
+			? `Clear ${3 - run!.effs.length} more to get your first rank.`
+			: `Rank: ${infRank(run!)} (rating ${rating}, from your last ${Math.min(10, run!.effs.length)} canvases).`;
 	$("winRetry").hidden = true;
 	$("winNext").hidden = false;
 	$("winNext").firstChild!.textContent = "Next canvas ";

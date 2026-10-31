@@ -3,7 +3,16 @@ import type {Level, State} from "../core/types.ts";
 import {type Progress, readProgress, writeProgress} from "./storage.ts";
 
 /** The level being played. lvl is -1 for a level from the editor and -2 in infinite mode. */
-export type Session = {lvl: number; L: Level; st: State; hist: State[]; busy: boolean; won: boolean; rolls: number; usedSolution?: boolean};
+export type Session = {
+	lvl: number;
+	L: Level;
+	st: State;
+	hist: State[];
+	busy: boolean;
+	won: boolean;
+	rolls: number;
+	usedSolution?: boolean;
+};
 
 /** Null only until the page has booted, which is why a few callers still check it. */
 export let S: Session = null as unknown as Session;

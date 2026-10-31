@@ -12,3 +12,8 @@ export function inlineStylesheets(html: string, read: (path: string) => string):
 		return page.replace(tag, () => inline(read(path)));
 	}, html);
 }
+
+// Vite+'s bundler marks each module with //#region and //#endregion lines. The page has always shipped a plain
+// path comment instead, and it stays the same bytes.
+export const plainRegionComments = (code: string): string =>
+	code.replace(/^\/\/#endregion\n/gm, "").replace(/^\/\/#region /gm, "// ");

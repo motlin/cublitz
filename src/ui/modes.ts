@@ -53,5 +53,7 @@ export function initModes(): void {
 		leaveInfinite();
 		setMode("edit");
 	};
-	addEventListener("hashchange", () => setMode(location.hash === "#editor" ? "edit" : mode === "title" ? "title" : "play"));
+	addEventListener("hashchange", () =>
+		setMode(location.hash === "#editor" ? "edit" : mode === "title" ? "title" : "play"),
+	);
 }

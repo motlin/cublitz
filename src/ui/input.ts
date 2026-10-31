@@ -10,7 +10,20 @@ import {loadLevel, move, restart, undo} from "./play.ts";
 import {S} from "./session.ts";
 import {dismissTip, tipOpen} from "./tips.ts";
 
-export const KEYMAP: Record<string, Direction> = {ArrowUp: "N", ArrowDown: "S", ArrowLeft: "W", ArrowRight: "E", w: "N", s: "S", a: "W", d: "E", W: "N", S: "S", A: "W", D: "E"};
+export const KEYMAP: Record<string, Direction> = {
+	ArrowUp: "N",
+	ArrowDown: "S",
+	ArrowLeft: "W",
+	ArrowRight: "E",
+	w: "N",
+	s: "S",
+	a: "W",
+	d: "E",
+	W: "N",
+	S: "S",
+	A: "W",
+	D: "E",
+};
 
 /** The roll a pointer drag asks for, or null when it was too short to be a swipe. */
 export function swipeDirection(dx: number, dy: number): Direction | null {
@@ -26,8 +39,11 @@ export function initInput(): void {
 	$("resetBtn").onclick = restart;
 	$("hintBtn").onclick = () => hint();
 	$("winRetry").onclick = restart;
-	$("winNext").onclick = () => (S.lvl === -2 ? loadInfLevel() : S.lvl < 0 ? setMode("edit") : loadLevel(Math.min(S.lvl + 1, LEVELS.length - 1)));
-	document.querySelectorAll<HTMLElement>(".dpad button").forEach((b) => b.addEventListener("click", () => move(b.dataset["d"] as Direction)));
+	$("winNext").onclick = () =>
+		S.lvl === -2 ? loadInfLevel() : S.lvl < 0 ? setMode("edit") : loadLevel(Math.min(S.lvl + 1, LEVELS.length - 1));
+	document
+		.querySelectorAll<HTMLElement>(".dpad button")
+		.forEach((b) => b.addEventListener("click", () => move(b.dataset["d"] as Direction)));
 
 	document.addEventListener("keydown", (e) => {
 		if (e.metaKey || e.ctrlKey || e.altKey) return;

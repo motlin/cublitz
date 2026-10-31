@@ -19,11 +19,32 @@ export const STORAGE_KEYS = {
 export type Progress = Record<string, number>;
 export type TipsSeen = Record<string, boolean>;
 export type CustomColors = Partial<Record<Paint, string>>;
-export type SavedRun = {seed: number; n: number; score: number; effs: number[]; cleared: number; streak: number; bestStreak: number};
+export type SavedRun = {
+	seed: number;
+	n: number;
+	score: number;
+	effs: number[];
+	cleared: number;
+	streak: number;
+	bestStreak: number;
+};
 export type BestRun = {cleared: number; rating: number; score: number};
 type ColoredTool = "paint" | "gate" | "switch" | "button" | "box" | "door";
-export type EditorCell = {t: "floor"} | {t: "start"} | {t: "goal"} | {t: "wash"} | {t: "wgate"; f: Face} | {[T in ColoredTool]: {t: T; c: PieceColor}}[ColoredTool];
-export type EditorDraft = {id: string | null; name: string; cols: number; rows: number; grid: (EditorCell | null)[][]; need: Need};
+export type EditorCell =
+	| {t: "floor"}
+	| {t: "start"}
+	| {t: "goal"}
+	| {t: "wash"}
+	| {t: "wgate"; f: Face}
+	| {[T in ColoredTool]: {t: T; c: PieceColor}}[ColoredTool];
+export type EditorDraft = {
+	id: string | null;
+	name: string;
+	cols: number;
+	rows: number;
+	grid: (EditorCell | null)[][];
+	need: Need;
+};
 export type SavedLevel = {id: string; level: LevelSource; saved: number};
 
 const readObject = <T>(key: string): T => {

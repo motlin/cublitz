@@ -1,9 +1,40 @@
+# See https://help.github.com/ignore-files/ for more about ignoring files.
+
+# dependencies
 /node_modules
+
+# testing
+/coverage
+
+# production
 /dist
+/storybook-static
 /test-results
 /playwright-report
 /.wrangler
-/.vite
+
+# misc
 .DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+JUSTFILE_BRANCH
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
 .envrc
+/.vite/
+
+# Local documentation and context
 .llm/
+/.claude/*
+!/.claude/commands/
+!/.claude/includes/
+/.claude/settings.local.json
+
+*storybook.log
+.fallow/
+.vitest/

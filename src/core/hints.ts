@@ -28,7 +28,15 @@ export function nextMilestone(L: Level, st0: State, sol: string): Milestone | nu
 			prev = st,
 			r = tryMove(L, st, d) as MoveSuccess;
 		st = r.st;
-		const base: MilestoneBase = {i, d, x: r.nx, y: r.ny, path: sol.slice(0, i + 1), prev, paints: [...new Set(paints)]};
+		const base: MilestoneBase = {
+			i,
+			d,
+			x: r.nx,
+			y: r.ny,
+			path: sol.slice(0, i + 1),
+			prev,
+			paints: [...new Set(paints)],
+		};
 		if (r.painted) paints.push(r.painted);
 		if (r.pushed >= 0) pushes.push({d, box: r.pushed});
 		const now = solidColor(st.f),
@@ -44,7 +52,16 @@ export function nextMilestone(L: Level, st0: State, sol: string): Milestone | nu
 			const b = st.boxes[r.pushed]!,
 				cell = cellAt(L, b.x, b.y);
 			if (cell && cell.t === "button" && cell.c === b.c)
-				return {...base, type: "button", c: b.c, x: b.x, y: b.y, box: r.pushed, firstPush: pushes.find((p) => p.box === r.pushed)!, from: st0.boxes[r.pushed]!};
+				return {
+					...base,
+					type: "button",
+					c: b.c,
+					x: b.x,
+					y: b.y,
+					box: r.pushed,
+					firstPush: pushes.find((p) => p.box === r.pushed)!,
+					from: st0.boxes[r.pushed]!,
+				};
 		}
 		if (r.cell.t === "door" && !(prev.x === r.nx && prev.y === r.ny)) {
 			const wasOpen = openColors(L, st0)[r.cell.c];
@@ -55,7 +72,8 @@ export function nextMilestone(L: Level, st0: State, sol: string): Milestone | nu
 }
 
 // Which face, before rolling d, ends up as face k after the roll
-export const preFace = (d: Direction, k: Face): Face => roll<Face>({t: "t", b: "b", n: "n", s: "s", e: "e", w: "w"}, d)[k];
+export const preFace = (d: Direction, k: Face): Face =>
+	roll<Face>({t: "t", b: "b", n: "n", s: "s", e: "e", w: "w"}, d)[k];
 const OPP: Record<Direction, string> = {N: "south", S: "north", E: "west", W: "east"};
 
 /** The hint for a milestone: first what to do next, then how to do it. */
@@ -68,7 +86,9 @@ export function hintTexts(L: Level, st: State, m: Milestone): [string, string] {
 			const missing = [...new Set(need.map(([, v]) => v))].filter((c) => !has(c)).map((c) => CNAME[c]);
 			const prep = missing.length ? ` You'll need ${list(missing)} paint for that.` : "";
 			return [
-				need.length ? `Head for the target. It wants ${list(need.map(([k, v]) => `${CNAME[v]} on ${FNAME[k]}`))}.${prep}` : `Head for the target.`,
+				need.length
+					? `Head for the target. It wants ${list(need.map(([k, v]) => `${CNAME[v]} on ${FNAME[k]}`))}.${prep}`
+					: `Head for the target.`,
 				need.length
 					? `Arrive rolling ${dirWord(m.d)}. Just before that last roll, have ${list(need.map(([k, v]) => `${CNAME[v]} on your ${FNAME[preFace(m.d, k)]} face`))}.`
 					: `Arrive rolling ${dirWord(m.d)}. Nothing else is required.`,
@@ -100,7 +120,9 @@ export function hintTexts(L: Level, st: State, m: Milestone): [string, string] {
 		case "switch":
 			return [
 				`Next, flip the highlighted ${cn} switch.`,
-				workColor(st.f) === m.c ? `You're ${howWork(m.c)} already. Roll onto it from any side.` : `It only flips for a cube that is ${howWork(m.c)} when it lands.`,
+				workColor(st.f) === m.c
+					? `You're ${howWork(m.c)} already. Roll onto it from any side.`
+					: `It only flips for a cube that is ${howWork(m.c)} when it lands.`,
 			];
 		case "button": {
 			const fp = m.firstPush;

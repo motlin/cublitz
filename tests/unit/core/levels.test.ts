@@ -1,5 +1,5 @@
 import {readFileSync} from "node:fs";
-import {describe, expect, it} from "vitest";
+import {describe, expect, it} from "vite-plus/test";
 import {initState} from "../../../src/core/level.ts";
 import {LEVELS} from "../../../src/core/levels.ts";
 import {solve} from "../../../src/core/solver.ts";
@@ -11,7 +11,13 @@ const golden = JSON.parse(readFileSync(new URL("../../golden/solve.json", import
 describe("LEVELS", () => {
 	const solved = LEVELS.map((level, index) => {
 		const path = solve(level, initState(level));
-		return {index, name: level.name ?? "", par: level.par ?? null, path, hitLimit: solve.hitLimit};
+		return {
+			index,
+			name: level.name ?? "",
+			par: level.par ?? null,
+			path,
+			hitLimit: solve.hitLimit,
+		};
 	});
 
 	it("is the original's data, parsed, in the same order and with the same key order", () => {

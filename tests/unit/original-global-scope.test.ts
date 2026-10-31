@@ -1,5 +1,5 @@
 import {createContext, runInContext} from "node:vm";
-import {describe, expect, it} from "vitest";
+import {describe, expect, it} from "vite-plus/test";
 import {keepOriginalGlobalScope, topLevelNames} from "../../scripts/original-global-scope.ts";
 
 const ORIGINAL = `
@@ -48,10 +48,23 @@ describe("keepOriginalGlobalScope", () => {
 	it("leaves exactly the original's names in global scope, each of the original's kind", () => {
 		const read = load(kept);
 		const json = (code: string): unknown => JSON.parse(read(`JSON.stringify(${code})`) as string);
-		expect(json(`["extra", "privateHelper", "kept"].map((name) => { try { eval(name); return "visible"; } catch (e) { return e.name; } })`)).toStrictEqual(["ReferenceError", "ReferenceError", "ReferenceError"]);
+		expect(
+			json(
+				`["extra", "privateHelper", "kept"].map((name) => { try { eval(name); return "visible"; } catch (e) { return e.name; } })`,
+			),
+		).toStrictEqual(["ReferenceError", "ReferenceError", "ReferenceError"]);
 		expect(json(`Object.keys(window).filter((name) => name !== "window")`)).toStrictEqual(["bump", "helper"]);
-		expect(read(`JSON.stringify(Object.getOwnPropertyDescriptor(window, "bump"))`)).toBe('{"writable":true,"enumerable":true,"configurable":false}');
-		expect(json(`[LIMIT, $, count, String(unset), typeof window.LIMIT, typeof window.count]`)).toStrictEqual([3, 10, 0, "undefined", "undefined", "undefined"]);
+		expect(read(`JSON.stringify(Object.getOwnPropertyDescriptor(window, "bump"))`)).toBe(
+			'{"writable":true,"enumerable":true,"configurable":false}',
+		);
+		expect(json(`[LIMIT, $, count, String(unset), typeof window.LIMIT, typeof window.count]`)).toStrictEqual([
+			3,
+			10,
+			0,
+			"undefined",
+			"undefined",
+			"undefined",
+		]);
 		expect(read(`try { LIMIT = 4; } catch (e) { e.name }`)).toBe("TypeError");
 	});
 
@@ -75,14 +88,26 @@ describe("keepOriginalGlobalScope", () => {
 	});
 
 	it("stays a sloppy script, where writing to a number is ignored rather than an error", () => {
-		const sloppy = keepOriginalGlobalScope(`var LIMIT = 3; var n = 1; n.x = 2; var $ = 1; var count = n.x; var unset; function bump() {} function helper() {}`, topLevelNames(ORIGINAL));
+		const sloppy = keepOriginalGlobalScope(
+			`var LIMIT = 3; var n = 1; n.x = 2; var $ = 1; var count = n.x; var unset; function bump() {} function helper() {}`,
+			topLevelNames(ORIGINAL),
+		);
 		expect(load(sloppy)("count")).toBe(undefined);
 	});
 
 	it("refuses a bundle missing one of the original's names or holding it as another kind", () => {
 		const names = topLevelNames(ORIGINAL);
-		expect(() => keepOriginalGlobalScope("var LIMIT = 3;", names)).toThrow("The bundle's top level must hold: $ (const), count (let), unset (let), bump (function), helper (function)");
-		expect(() => keepOriginalGlobalScope("var LIMIT, $, count, unset; var bump = 1; function helper() {}", names)).toThrow("The bundle's top level must hold: bump (function)");
-		expect(() => keepOriginalGlobalScope("var LIMIT, count, unset; function $() {} function bump() {} function helper() {}", names)).toThrow("The bundle's top level must hold: $ (const)");
+		expect(() => keepOriginalGlobalScope("var LIMIT = 3;", names)).toThrow(
+			"The bundle's top level must hold: $ (const), count (let), unset (let), bump (function), helper (function)",
+		);
+		expect(() =>
+			keepOriginalGlobalScope("var LIMIT, $, count, unset; var bump = 1; function helper() {}", names),
+		).toThrow("The bundle's top level must hold: bump (function)");
+		expect(() =>
+			keepOriginalGlobalScope(
+				"var LIMIT, count, unset; function $() {} function bump() {} function helper() {}",
+				names,
+			),
+		).toThrow("The bundle's top level must hold: $ (const)");
 	});
 });

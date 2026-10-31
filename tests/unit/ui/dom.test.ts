@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import {readFileSync} from "node:fs";
-import {beforeAll, expect, test} from "vitest";
+import {beforeAll, expect, test} from "vite-plus/test";
 import {$, domValue, ELEMENT_TAGS, type ElementId} from "../../../src/ui/dom.ts";
 
 beforeAll(() => {
@@ -8,7 +8,9 @@ beforeAll(() => {
 });
 
 test("every id the game looks up is in the markup with the tag its type promises", () => {
-	const found = Object.fromEntries(Object.keys(ELEMENT_TAGS).map((id) => [id, $(id as ElementId)?.tagName.toLowerCase()]));
+	const found = Object.fromEntries(
+		Object.keys(ELEMENT_TAGS).map((id) => [id, $(id as ElementId)?.tagName.toLowerCase()]),
+	);
 	expect(found).toStrictEqual(ELEMENT_TAGS);
 });
 

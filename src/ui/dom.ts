@@ -131,7 +131,13 @@ export type HotData = {lvl?: number; st?: State; hist?: State[]; mode?: string};
 declare global {
 	/** The two extras the game looks for: claude.ai's hot-reload hooks and Safari's old audio name. */
 	interface Window {
-		claude?: {hot?: {snapshot?: (take: () => HotData) => void; ready?: (start: (data?: HotData) => void) => void; data?: HotData}};
+		claude?: {
+			hot?: {
+				snapshot?: (take: () => HotData) => void;
+				ready?: (start: (data?: HotData) => void) => void;
+				data?: HotData;
+			};
+		};
 		webkitAudioContext?: typeof AudioContext;
 	}
 }

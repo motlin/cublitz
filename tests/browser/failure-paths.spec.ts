@@ -15,7 +15,9 @@ test("blocked storage: saving a level says so, and the rest of the page carries 
 	await withPair(browser, {storage: atLevel(1), setup}, async (pair) => {
 		await openEditor(pair);
 		await pair.click("#edSave");
-		expect(await text(pair, "#edResult")).toBe("Couldn’t save. This browser is blocking storage. Copy the share code instead.");
+		expect(await text(pair, "#edResult")).toBe(
+			"Couldn’t save. This browser is blocking storage. Copy the share code instead.",
+		);
 	});
 });
 
@@ -108,7 +110,10 @@ test("the hint and the solution both report when the solver gives up", async ({b
 			warn: true,
 		});
 		const solved = await pair.click("#solBtn");
-		expect(solved.solution).toStrictEqual({hidden: false, text: "Too many possibilities. The solver gave up from this position. Try restarting the level."});
+		expect(solved.solution).toStrictEqual({
+			hidden: false,
+			text: "Too many possibilities. The solver gave up from this position. Try restarting the level.",
+		});
 	});
 });
 
@@ -163,7 +168,15 @@ test("a win with fewer cleared but more points still raises the best score", asy
 	const SEED = 12345;
 	const storage = {
 		...atLevel(0),
-		"cublitz-infinite-run-v1": JSON.stringify({seed: SEED, n: 0, score: 0, effs: [], cleared: 0, streak: 0, bestStreak: 0}),
+		"cublitz-infinite-run-v1": JSON.stringify({
+			seed: SEED,
+			n: 0,
+			score: 0,
+			effs: [],
+			cleared: 0,
+			streak: 0,
+			bestStreak: 0,
+		}),
 		"cublitz-infinite-best-v1": JSON.stringify({cleared: 5, score: 50, rating: 0}),
 	};
 	await withPair(browser, {storage}, async (pair) => {
@@ -171,6 +184,10 @@ test("a win with fewer cleared but more points still raises the best score", asy
 		await pair.dismissTips();
 		const level = engine.parseLevel(JSON.parse(JSON.stringify(engine.generateInfinite(SEED, 0))));
 		const won = await pair.roll(engine.solve(level, engine.initState(level), 400000) as string);
-		expect(JSON.parse(won.storage["cublitz-infinite-best-v1"] as string)).toStrictEqual({cleared: 5, score: 100, rating: 0});
+		expect(JSON.parse(won.storage["cublitz-infinite-best-v1"] as string)).toStrictEqual({
+			cleared: 5,
+			score: 100,
+			rating: 0,
+		});
 	});
 });

@@ -10,21 +10,84 @@ const level = (index: number) => engine.LEVELS[index] as (typeof engine.LEVELS)[
 const openLevel = async (pair: Pair): Promise<void> => {
 	await pair.click("#titlePlay");
 };
-const CNAME: Record<string, string> = {r: "red", o: "orange", y: "yellow", g: "green", c: "cyan", b: "blue", p: "purple", w: "white"};
+const CNAME: Record<string, string> = {
+	r: "red",
+	o: "orange",
+	y: "yellow",
+	g: "green",
+	c: "cyan",
+	b: "blue",
+	p: "purple",
+	w: "white",
+};
 const WORD: Record<string, string> = {N: "north", S: "south", E: "east", W: "west"};
 const cap = (s: string) => (s[0] as string).toUpperCase() + s.slice(1);
 
-type Blocked = {title: string; index: number; why: string; accept?: (r: Record<string, unknown>) => boolean; text: (r: Record<string, string>, dir: string) => string};
+type Blocked = {
+	title: string;
+	index: number;
+	why: string;
+	accept?: (r: Record<string, unknown>) => boolean;
+	text: (r: Record<string, string>, dir: string) => string;
+};
 const BLOCKED: Blocked[] = [
 	{title: "edge", index: 0, why: "edge", text: () => "<b>Edge.</b> Nothing to roll onto that way."},
-	{title: "color gate, bare face", index: 2, why: "gate", accept: (r) => !r["down"], text: (r, d) => `<b>${cap(CNAME[r["c"] as string] as string)} gate.</b> Rolling ${WORD[d]} would put a bare face down.`},
-	{title: "color gate, wrong color", index: 3, why: "gate", accept: (r) => !!r["down"] && r["down"] !== r["c"], text: (r, d) => `<b>${cap(CNAME[r["c"] as string] as string)} gate.</b> Rolling ${WORD[d]} would put ${CNAME[r["down"] as string]} face down.`},
-	{title: "plain white gate", index: 20, why: "wgate", accept: (r) => r["f"] === "b", text: (r, d) => `<b>White gate.</b> It needs a bare face down, but rolling ${WORD[d]} would put ${CNAME[r["has"] as string]} down.`},
-	{title: "named white gate", index: 21, why: "wgate", text: (r) => `<b>East white gate.</b> Your east face has to be bare when you land, but it would be ${CNAME[r["has"] as string]}.`},
-	{title: "shut door", index: 8, why: "door", text: () => "<b>Red door is shut.</b> Flip a red switch or hold down a red button."},
-	{title: "colored box", index: 9, why: "box", text: () => "<b>Blue box.</b> Only a cube painted solid blue can push it."},
-	{title: "white box", index: 29, why: "box", accept: (r) => r["c"] === "w", text: () => "<b>White box.</b> Only a completely bare cube can push it."},
-	{title: "stuck box", index: 9, why: "stuck", text: () => "<b>The box won't budge.</b> Something is in the way on the other side."},
+	{
+		title: "color gate, bare face",
+		index: 2,
+		why: "gate",
+		accept: (r) => !r["down"],
+		text: (r, d) =>
+			`<b>${cap(CNAME[r["c"] as string] as string)} gate.</b> Rolling ${WORD[d]} would put a bare face down.`,
+	},
+	{
+		title: "color gate, wrong color",
+		index: 3,
+		why: "gate",
+		accept: (r) => !!r["down"] && r["down"] !== r["c"],
+		text: (r, d) =>
+			`<b>${cap(CNAME[r["c"] as string] as string)} gate.</b> Rolling ${WORD[d]} would put ${CNAME[r["down"] as string]} face down.`,
+	},
+	{
+		title: "plain white gate",
+		index: 20,
+		why: "wgate",
+		accept: (r) => r["f"] === "b",
+		text: (r, d) =>
+			`<b>White gate.</b> It needs a bare face down, but rolling ${WORD[d]} would put ${CNAME[r["has"] as string]} down.`,
+	},
+	{
+		title: "named white gate",
+		index: 21,
+		why: "wgate",
+		text: (r) =>
+			`<b>East white gate.</b> Your east face has to be bare when you land, but it would be ${CNAME[r["has"] as string]}.`,
+	},
+	{
+		title: "shut door",
+		index: 8,
+		why: "door",
+		text: () => "<b>Red door is shut.</b> Flip a red switch or hold down a red button.",
+	},
+	{
+		title: "colored box",
+		index: 9,
+		why: "box",
+		text: () => "<b>Blue box.</b> Only a cube painted solid blue can push it.",
+	},
+	{
+		title: "white box",
+		index: 29,
+		why: "box",
+		accept: (r) => r["c"] === "w",
+		text: () => "<b>White box.</b> Only a completely bare cube can push it.",
+	},
+	{
+		title: "stuck box",
+		index: 9,
+		why: "stuck",
+		text: () => "<b>The box won't budge.</b> Something is in the way on the other side.",
+	},
 ];
 
 for (const {title, index, why, accept, text} of BLOCKED) {
@@ -188,19 +251,27 @@ test("hints and solutions from a position with no way out", async ({browser}) =>
 			warn: true,
 		});
 		const noWay = await pair.click("#solBtn");
-		expect(noWay.solution).toStrictEqual({hidden: false, text: "No way out from here. Undo a few rolls or restart, then ask again."});
+		expect(noWay.solution).toStrictEqual({
+			hidden: false,
+			text: "No way out from here. Undo a few rolls or restart, then ask again.",
+		});
 		await pair.press("z", "undo out of the dead end");
 		await pair.click("#solBtn", "solution again restores the buttons");
 	});
 });
 
-test("solution reveal: next, up to goal, reveal the rest, pause, follow, diverge, undo, win as Solved", async ({browser}) => {
+test("solution reveal: next, up to goal, reveal the rest, pause, follow, diverge, undo, win as Solved", async ({
+	browser,
+}) => {
 	const index = 8;
 	await withPair(browser, {storage: atLevel(index)}, async (pair) => {
 		await openLevel(pair);
 		const path = pathOf(index);
 		const first = await pair.click("#solBtn");
-		expect(first.solution).toStrictEqual({hidden: false, text: `Showing 1 of ${path.length} rolls. Follow the arrows in number order, or reveal more.`});
+		expect(first.solution).toStrictEqual({
+			hidden: false,
+			text: `Showing 1 of ${path.length} rolls. Follow the arrows in number order, or reveal more.`,
+		});
 		await pair.click("#solBtn", "pressing again reveals one more");
 		await pair.click("#solNext");
 		await pair.click("#solGoal");
@@ -210,7 +281,10 @@ test("solution reveal: next, up to goal, reveal the rest, pause, follow, diverge
 		await pair.tickIntervals(1);
 		await pair.click("#solAll", "resume the auto reveal");
 		const all = await pair.tickIntervals(path.length);
-		expect(all.solution).toStrictEqual({hidden: false, text: `Full solution shown: ${path.length} rolls from where you are. Follow the arrows in number order; each one disappears as you roll it.`});
+		expect(all.solution).toStrictEqual({
+			hidden: false,
+			text: `Full solution shown: ${path.length} rolls from where you are. Follow the arrows in number order; each one disappears as you roll it.`,
+		});
 		await pair.roll(path.slice(0, 3));
 		await pair.press("z", "undo keeps the reveal");
 		await pair.click("#solHide");
@@ -281,7 +355,9 @@ test("window.claude.hot hooks: data resumes a level, with and without ready", as
 		await withPair(browser, {storage: atLevel(1), hot: {data: RESUME, useReady}}, async (pair) => {
 			expect(pair.last.audio).toStrictEqual([["hot.snapshot", "function"]]);
 			const snapshots = await Promise.all(
-				pair.pages.map((page) => page.evaluate(() => (window as unknown as {__hotSnapshot: () => unknown}).__hotSnapshot())),
+				pair.pages.map((page) =>
+					page.evaluate(() => (window as unknown as {__hotSnapshot: () => unknown}).__hotSnapshot()),
+				),
 			);
 			expect(snapshots[1]).toStrictEqual(snapshots[0]);
 			expect(snapshots[0]).toStrictEqual({...RESUME, mode: "title"});
@@ -293,11 +369,15 @@ test("window.claude.hot hooks: data resumes a level, with and without ready", as
 
 test("level data order and names reach the page unchanged", async ({browser}) => {
 	const everything = Object.fromEntries(golden.map((g) => [g.name, g.par]));
-	await withPair(browser, {storage: {...atLevel(0), "cubist-progress-v2": JSON.stringify(everything)}}, async (pair) => {
-		await openLevel(pair);
-		for (const {index, name, par} of golden) {
-			const shown = await pair.click(`.lvbtn:nth-child(${index + 1})`, `open level ${index + 1}`);
-			expect(shown.hud).toStrictEqual({name, num: `Level ${index + 1} of 30`, moves: "0", par: String(par)});
-		}
-	});
+	await withPair(
+		browser,
+		{storage: {...atLevel(0), "cubist-progress-v2": JSON.stringify(everything)}},
+		async (pair) => {
+			await openLevel(pair);
+			for (const {index, name, par} of golden) {
+				const shown = await pair.click(`.lvbtn:nth-child(${index + 1})`, `open level ${index + 1}`);
+				expect(shown.hud).toStrictEqual({name, num: `Level ${index + 1} of 30`, moves: "0", par: String(par)});
+			}
+		},
+	);
 });

@@ -3,31 +3,55 @@ import {expect, test} from "@playwright/test";
 import type {InfiniteGolden} from "../support/golden.ts";
 import {atLevel, engine, withPair} from "./harness/pair.ts";
 
-const golden = JSON.parse(readFileSync(new URL("../golden/infinite.json", import.meta.url), "utf8")) as InfiniteGolden[];
+const golden = JSON.parse(
+	readFileSync(new URL("../golden/infinite.json", import.meta.url), "utf8"),
+) as InfiniteGolden[];
 const SEED = 12345;
 const canvas = (n: number): InfiniteGolden => golden.find((g) => g.seed === SEED && g.n === n) as InfiniteGolden;
-const pinnedRun = {"cublitz-infinite-run-v1": JSON.stringify({seed: SEED, n: 0, score: 0, effs: [], cleared: 0, streak: 0, bestStreak: 0})};
+const pinnedRun = {
+	"cublitz-infinite-run-v1": JSON.stringify({
+		seed: SEED,
+		n: 0,
+		score: 0,
+		effs: [],
+		cleared: 0,
+		streak: 0,
+		bestStreak: 0,
+	}),
+};
 
 test("a pinned seed plays three canvases to a first rank", async ({browser}) => {
 	await withPair(browser, {storage: {...atLevel(0), ...pinnedRun}}, async (pair) => {
 		await pair.click("#titleInf");
 		for (const n of [0, 1, 2]) {
 			const {level, path} = canvas(n);
-			expect(pair.last.hud).toStrictEqual({name: `Canvas ${n + 1}`, num: "Infinite mode", moves: "0", par: String(level.par)});
+			expect(pair.last.hud).toStrictEqual({
+				name: `Canvas ${n + 1}`,
+				num: "Infinite mode",
+				moves: "0",
+				par: String(level.par),
+			});
 			await pair.dismissTips();
 			const won = await pair.roll(path);
 			expect(won.win).toStrictEqual({
 				hidden: false,
 				title: "Perfect roll",
 				score: `${level.par} rolls · par ${level.par} · +100 points`,
-				note: n < 2 ? `Clear ${2 - n} more to get your first rank.` : "Rank: Grandmaster (rating 100, from your last 3 canvases).",
+				note:
+					n < 2
+						? `Clear ${2 - n} more to get your first rank.`
+						: "Rank: Grandmaster (rating 100, from your last 3 canvases).",
 				nextHidden: false,
 				retryHidden: true,
 			});
 			await pair.press("Enter", "next canvas");
 		}
 		expect(pair.last.hud.name).toBe("Canvas 4");
-		expect(JSON.parse(pair.last.storage["cublitz-infinite-best-v1"] as string)).toStrictEqual({cleared: 3, score: 300, rating: 100});
+		expect(JSON.parse(pair.last.storage["cublitz-infinite-best-v1"] as string)).toStrictEqual({
+			cleared: 3,
+			score: 300,
+			rating: 100,
+		});
 		await pair.click(".brand");
 		expect(await pair.legacy.locator("#titleInf").textContent()).toBe("Infinite · Canvas 4");
 		expect(await pair.legacy.locator("#titleProgress").textContent()).toBe("30 levels · Infinite best 3");
@@ -67,7 +91,9 @@ test("skip, new-run arm and timeout, and a seed drawn from the pinned Math.rando
 		const seed = (JSON.parse(fresh.storage["cublitz-infinite-run-v1"] as string) as {seed: number}).seed;
 		expect(seed).toBe(Math.floor(seedFromPinnedRandom() * 1e9));
 		await pair.click("#infSkip");
-		expect(await pair.legacy.locator("#infNote").textContent()).toBe("Skipped. That canvas counts as 0 toward your rating.");
+		expect(await pair.legacy.locator("#infNote").textContent()).toBe(
+			"Skipped. That canvas counts as 0 toward your rating.",
+		);
 		expect(pair.last.hud.name).toBe("Canvas 2");
 		await pair.fireParkedTimers();
 		await pair.click("#infNew", "arm new run");

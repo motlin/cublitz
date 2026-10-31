@@ -1,4 +1,4 @@
-import {expect, it, vi} from "vitest";
+import {expect, it, vi} from "vite-plus/test";
 import {infCandidate, infRng, infSearch} from "../../../src/core/infinite.ts";
 import {solve} from "../../../src/core/solver.ts";
 
@@ -21,5 +21,12 @@ it("after 240 failed tries it draws candidates from four levels earlier", () => 
 	const found = batch();
 
 	expect(batches.every((level) => level === null)).toBe(true);
-	expect(found).toStrictEqual({map: expected.map, k: expected.k, need: expected.need, par: 20, name: "Canvas 15", inf: 14});
+	expect(found).toStrictEqual({
+		map: expected.map,
+		k: expected.k,
+		need: expected.need,
+		par: 20,
+		name: "Canvas 15",
+		inf: 14,
+	});
 });

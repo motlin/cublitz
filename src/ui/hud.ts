@@ -41,13 +41,19 @@ export function renderHud(popFace?: Face | null): void {
 		if (has) counts[has] = (counts[has] || 0) + 1;
 	});
 	const top = (Object.entries(counts) as [Paint, number][]).sort((a, b) => b[1] - a[1])[0];
-	const solidLine = solid ? `<div class="solidline" style="--sc:${COLORS[solid]}"><b>Solid ${CNAME[solid]}</b>. Works ${CNAME[solid]} switches, buttons and boxes.</div>` : !top ? `<div class="solidline" style="--sc:var(--clay)"><b>All bare</b>. Counts as white for white switches, buttons and boxes.</div>` : `<div>Not solid: ${top[1]} of 6 faces ${CNAME[top[0]]}.</div>`;
+	const solidLine = solid
+		? `<div class="solidline" style="--sc:${COLORS[solid]}"><b>Solid ${CNAME[solid]}</b>. Works ${CNAME[solid]} switches, buttons and boxes.</div>`
+		: !top
+			? `<div class="solidline" style="--sc:var(--clay)"><b>All bare</b>. Counts as white for white switches, buttons and boxes.</div>`
+			: `<div>Not solid: ${top[1]} of 6 faces ${CNAME[top[0]]}.</div>`;
 	const entries = Object.entries(need) as [Face, Paint][];
 	$("needBox").innerHTML =
 		solidLine +
 		(entries.length
 			? "<div>The target needs:</div>" +
-				entries.map(([k, v]) => `<div class="needline">${f[k] === v ? "✓" : "○"} ${CNAME[v]} on ${FNAME[k]}</div>`).join("")
+				entries
+					.map(([k, v]) => `<div class="needline">${f[k] === v ? "✓" : "○"} ${CNAME[v]} on ${FNAME[k]}</div>`)
+					.join("")
 			: "<div>T is the top. B is the face touching the floor.</div>");
 	$("moves").textContent = domValue(S.lvl === -2 ? S.rolls || 0 : S.hist.length);
 	$("moves").nextElementSibling!.textContent = S.lvl === -2 ? "rolls (all count)" : "moves";

@@ -2,6 +2,8 @@ import {readFile} from "node:fs/promises";
 import {createServer} from "node:http";
 import {extname, join, normalize, resolve} from "node:path";
 
+process.title = "cublitz-harness";
+
 // Serves the untouched original next to a build, so the two can be compared from one origin scheme.
 const root = resolve(import.meta.dirname, "../../..");
 const distDir = resolve(process.env["CUBLITZ_DIST_DIR"] ?? join(root, "dist"));
@@ -23,7 +25,10 @@ createServer(async (request, response) => {
 			: join(distDir, pathname === "/" ? "index.html" : pathname);
 	try {
 		const body = await readFile(file);
-		response.writeHead(200, {"content-type": TYPES[extname(file)] ?? "application/octet-stream", "cache-control": "no-store"});
+		response.writeHead(200, {
+			"content-type": TYPES[extname(file)] ?? "application/octet-stream",
+			"cache-control": "no-store",
+		});
 		response.end(body);
 	} catch {
 		response.writeHead(404).end("not found");

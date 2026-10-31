@@ -1,11 +1,22 @@
 import {readFileSync} from "node:fs";
-import {describe, expect, it} from "vitest";
-import {infCandidate, infRank, infRating, infRelaxed, infRng, infSearch, infTier, infTry} from "../../../src/core/infinite.ts";
+import {describe, expect, it} from "vite-plus/test";
+import {
+	infCandidate,
+	infRank,
+	infRating,
+	infRelaxed,
+	infRng,
+	infSearch,
+	infTier,
+	infTry,
+} from "../../../src/core/infinite.ts";
 import type {GeneratedLevel} from "../../../src/core/infinite.ts";
 import type {InfiniteGolden} from "../../support/golden.ts";
 import {loadOriginalEngine} from "../../support/original-engine.ts";
 
-const golden = JSON.parse(readFileSync(new URL("../../golden/infinite.json", import.meta.url), "utf8")) as InfiniteGolden[];
+const golden = JSON.parse(
+	readFileSync(new URL("../../golden/infinite.json", import.meta.url), "utf8"),
+) as InfiniteGolden[];
 const original = loadOriginalEngine();
 const generate = (seed: number, n: number): GeneratedLevel => {
 	const batch = infSearch(seed, n);
@@ -69,9 +80,15 @@ describe("infCandidate and infTry", () => {
 
 describe("infSearch", () => {
 	it("generates what the original generates, across seeds and deep into a run", () => {
-		const pairs = [[4, 8], [9, 10], [77, 15]] as const;
+		const pairs = [
+			[4, 8],
+			[9, 10],
+			[77, 15],
+		] as const;
 		const generated = pairs.map(([seed, n]) => JSON.parse(JSON.stringify(generate(seed, n))) as unknown);
-		expect(generated).toStrictEqual(pairs.map(([seed, n]) => JSON.parse(JSON.stringify(original.generateInfinite(seed, n))) as unknown));
+		expect(generated).toStrictEqual(
+			pairs.map(([seed, n]) => JSON.parse(JSON.stringify(original.generateInfinite(seed, n))) as unknown),
+		);
 	});
 
 	it("generates every golden level from its seed", () => {
@@ -90,7 +107,9 @@ describe("infSearch", () => {
 		const first = batch();
 		const second = batch();
 		expect(first).toBe(null);
-		expect(JSON.parse(JSON.stringify(second))).toStrictEqual(JSON.parse(JSON.stringify(original.generateInfinite(54, 2))));
+		expect(JSON.parse(JSON.stringify(second))).toStrictEqual(
+			JSON.parse(JSON.stringify(original.generateInfinite(54, 2))),
+		);
 	});
 });
 

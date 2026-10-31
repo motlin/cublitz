@@ -108,7 +108,9 @@ test("reduced motion: no scripted animations, no timers on rolls, same rules", a
 		await pair.click("#solBtn");
 		await pair.click("#solAll");
 		const interval = await pair.tickIntervals(2);
-		expect(interval.solution.text).toBe(`Showing 3 of ${pathOf(8).length} rolls. Follow the arrows in number order, or reveal more.`);
+		expect(interval.solution.text).toBe(
+			`Showing 3 of ${pathOf(8).length} rolls. Follow the arrows in number order, or reveal more.`,
+		);
 		await pair.tickIntervals(pathOf(8).length);
 		const won = await pair.roll(pathOf(8));
 		expect(won.win.title).toBe("Solved");
@@ -120,17 +122,32 @@ test("normal motion: the roll and tilt animations are the expected ones", async 
 		await pair.click("#titlePlay");
 		const roll = await pair.press("ArrowRight", "a free roll");
 		expect(roll.animations).toStrictEqual([
-			["roller", "100% 50% 0px", [{transform: "none"}, {transform: "rotateY(90deg)"}], {duration: 170, easing: "cubic-bezier(.45,.05,.55,.95)", fill: "forwards"}],
+			[
+				"roller",
+				"100% 50% 0px",
+				[{transform: "none"}, {transform: "rotateY(90deg)"}],
+				{duration: 170, easing: "cubic-bezier(.45,.05,.55,.95)", fill: "forwards"},
+			],
 		]);
 		const tilt = await pair.press("ArrowUp", "a tilt at the edge");
 		expect(tilt.animations).toStrictEqual([
-			["roller", "50% 0% 0px", [{transform: "none"}, {transform: "rotateX(14deg)"}, {transform: "none"}], {duration: 220, easing: "ease-out"}],
+			[
+				"roller",
+				"50% 0% 0px",
+				[{transform: "none"}, {transform: "rotateX(14deg)"}, {transform: "none"}],
+				{duration: 220, easing: "ease-out"},
+			],
 		]);
 	});
 });
 
 const swipe = async (page: Page, dx: number, dy: number): Promise<void> => {
-	const box = (await page.locator("#viewport").boundingBox()) as {x: number; y: number; width: number; height: number};
+	const box = (await page.locator("#viewport").boundingBox()) as {
+		x: number;
+		y: number;
+		width: number;
+		height: number;
+	};
 	const x = box.x + box.width / 2;
 	const y = box.y + box.height / 2;
 	const client = await page.context().newCDPSession(page);
@@ -172,18 +189,25 @@ test("mobile viewport: swipe every direction, short swipes ignored, d-pad taps, 
 });
 
 test("mobile with reduced motion", async ({browser}) => {
-	await withPair(browser, {viewport: MOBILE, mobile: true, reducedMotion: true, storage: atLevel(0, false)}, async (pair) => {
-		await pair.step("tap play", (page) => page.locator("#titlePlay").tap());
-		await pair.dismissTips();
-		for (const d of pathOf(0)) {
-			const [dx, dy] = SWIPES[d] as [number, number];
-			await pair.step(`swipe ${d}`, (page) => swipe(page, dx, dy));
-		}
-		expect(pair.last.win.hidden).toBe(false);
-	});
+	await withPair(
+		browser,
+		{viewport: MOBILE, mobile: true, reducedMotion: true, storage: atLevel(0, false)},
+		async (pair) => {
+			await pair.step("tap play", (page) => page.locator("#titlePlay").tap());
+			await pair.dismissTips();
+			for (const d of pathOf(0)) {
+				const [dx, dy] = SWIPES[d] as [number, number];
+				await pair.step(`swipe ${d}`, (page) => swipe(page, dx, dy));
+			}
+			expect(pair.last.win.hidden).toBe(false);
+		},
+	);
 });
 
-for (const [label, viewport, mobile] of [["desktop", DESKTOP, false], ["mobile", MOBILE, true]] as const) {
+for (const [label, viewport, mobile] of [
+	["desktop", DESKTOP, false],
+	["mobile", MOBILE, true],
+] as const) {
 	test(`screenshots match at ${label}`, async ({browser}) => {
 		const options = {viewport, mobile, storage: atLevel(9, false)};
 		await withPair(browser, options, async (pair) => {

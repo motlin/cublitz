@@ -8,7 +8,7 @@ import {COLORS, WGLYPH} from "./text.ts";
 import {renderTitle} from "./title.ts";
 
 // Tutorial pop-ups: shown the first time a level contains something new
-export type TipKey = "roll" | "paint" | "gate" | "need" | "switch" | "button" | "wgate" | "wash" | "white";
+type TipKey = "roll" | "paint" | "gate" | "need" | "switch" | "button" | "wgate" | "wash" | "white";
 type ArtPart = [kind: string, param?: string];
 type Tip = {title: string; art: (c: PieceColor) => ArtPart[]; body: string};
 type QueuedTip = {key: TipKey; c: PieceColor | true | undefined};
@@ -26,7 +26,11 @@ const TIPS: Record<TipKey, Tip> = {
 	},
 	gate: {
 		title: "Color gates",
-		art: (c) => [["gate", c], ["gate", c], ["gate", c]],
+		art: (c) => [
+			["gate", c],
+			["gate", c],
+			["gate", c],
+		],
 		body: "You can’t pass a colored tile until you paint your cube the same color. The face that lands on the gate has to match it, and every roll turns a different face down, so count your rolls.",
 	},
 	need: {
@@ -41,7 +45,11 @@ const TIPS: Record<TipKey, Tip> = {
 	},
 	wgate: {
 		title: "White gates",
-		art: () => [["wgate", "b"], ["wgate", "n"], ["wgate", "t"]],
+		art: () => [
+			["wgate", "b"],
+			["wgate", "n"],
+			["wgate", "t"],
+		],
 		body: "White gates want a bare, unpainted side. A plain one needs a bare face down. One with an arrow needs the side it points to still bare when you land, and one with a ring needs a bare top. Paint never comes off, so every puddle you cross uses up a white face. A solid cube can never get through.",
 	},
 	wash: {
@@ -106,7 +114,8 @@ export function tipArt(parts: ArtPart[]): string {
 			if (kind === "solid") return `<span class="tip-cube" style="--pc:${COLORS[c as PieceColor]}"></span>`;
 			if (kind === "start") return '<span class="tip-cube bare"></span>';
 			if (kind === "wash") return '<span class="ec wash" style="--ec:44px"><b>✦</b></span>';
-			if (kind === "wgate") return `<span class="ec wgate wg-${c}" style="--ec:44px">${WGLYPH[c!] ? `<b>${WGLYPH[c!]}</b>` : ""}</span>`;
+			if (kind === "wgate")
+				return `<span class="ec wgate wg-${c}" style="--ec:44px">${WGLYPH[c!] ? `<b>${WGLYPH[c!]}</b>` : ""}</span>`;
 			return `<span class="ec ${kind}" style="--ec:44px${c ? `;--pc:${COLORS[c as PieceColor]}` : ""}"></span>`;
 		})
 		.join("");
@@ -147,7 +156,8 @@ export function initTips(): void {
 			b.classList.add("armed");
 			b.textContent = "Click again to erase all progress";
 			$("resetNote").hidden = false;
-			$("resetNote").textContent = "This locks every level after the first, clears your best scores and brings back the tutorial pop-ups. Your colors and saved editor levels stay.";
+			$("resetNote").textContent =
+				"This locks every level after the first, clears your best scores and brings back the tutorial pop-ups. Your colors and saved editor levels stay.";
 			clearTimeout(resetTimer!);
 			resetTimer = setTimeout(() => {
 				b.classList.remove("armed");

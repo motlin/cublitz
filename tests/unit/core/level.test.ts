@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it} from "vite-plus/test";
 import {blank} from "../../../src/core/cube.ts";
 import {boxAt, cellAt, initState, parseLevel} from "../../../src/core/level.ts";
 import type {LevelSource} from "../../../src/core/types.ts";
@@ -36,7 +36,10 @@ describe("parseLevel", () => {
 		expect({cells: parsed.cells, boxes0: parsed.boxes0, switches: parsed.switches}).toStrictEqual({
 			cells: [
 				[{t: "floor"}, {t: "switch", c: "r", i: 0}, {t: "button", c: "b"}, {t: "door", c: "w"}, {t: "floor"}],
-				[{t: "wgate", f: "t"}, {t: "switch", c: "w", i: 1}],
+				[
+					{t: "wgate", f: "t"},
+					{t: "switch", c: "w", i: 1},
+				],
 			],
 			boxes0: [{x: 4, y: 0, c: "g"}],
 			switches: [
@@ -73,14 +76,29 @@ describe("parseLevel", () => {
 
 describe("initState", () => {
 	it("starts bare on the start tile with copied boxes and open switches off", () => {
-		const parsed = parseLevel({map: [".S1", "2"], k: {"1": ["switch", "r"], "2": ["box", "w"]}});
+		const parsed = parseLevel({
+			map: [".S1", "2"],
+			k: {"1": ["switch", "r"], "2": ["box", "w"]},
+		});
 		const state = initState(parsed);
-		expect(state).toStrictEqual({x: 1, y: 0, f: blank(), boxes: [{x: 0, y: 1, c: "w"}], sw: [0]});
+		expect(state).toStrictEqual({
+			x: 1,
+			y: 0,
+			f: blank(),
+			boxes: [{x: 0, y: 1, c: "w"}],
+			sw: [0],
+		});
 		expect(state.boxes[0] === parsed.boxes0[0]).toBe(false);
 	});
 
 	it("leaves the position unset on a map with no start, as an imported level can have", () => {
-		expect(initState(parseLevel({map: ["X"]}))).toStrictEqual({x: undefined, y: undefined, f: blank(), boxes: [], sw: []});
+		expect(initState(parseLevel({map: ["X"]}))).toStrictEqual({
+			x: undefined,
+			y: undefined,
+			f: blank(),
+			boxes: [],
+			sw: [],
+		});
 	});
 });
 
@@ -88,12 +106,9 @@ describe("cellAt and boxAt", () => {
 	const parsed = parseLevel({map: ["S 1"], k: {"1": ["box", "r"]}});
 
 	it("returns null off the board and on holes", () => {
-		expect([cellAt(parsed, -1, 0), cellAt(parsed, 0, 5), cellAt(parsed, 1, 0), cellAt(parsed, 9, 0)]).toStrictEqual([
-			null,
-			null,
-			null,
-			null,
-		]);
+		expect([cellAt(parsed, -1, 0), cellAt(parsed, 0, 5), cellAt(parsed, 1, 0), cellAt(parsed, 9, 0)]).toStrictEqual(
+			[null, null, null, null],
+		);
 	});
 
 	it("returns the cell on the board", () => {
