@@ -9,13 +9,14 @@ import {
 	infSearch,
 	infTier,
 	infTry,
+	shuffle,
 } from "../../../src/core/infinite.ts";
 import type {GeneratedLevel} from "../../../src/core/infinite.ts";
 import type {InfiniteGolden} from "../../support/golden.ts";
 import {loadExpectedEngine} from "../../support/original-engine.ts";
 
 const golden = JSON.parse(
-	readFileSync(new URL("../../golden/infinite.json", import.meta.url), "utf8"),
+	readFileSync(new URL("../../golden/infinite-post-fix.json", import.meta.url), "utf8"),
 ) as InfiniteGolden[];
 const original = loadExpectedEngine();
 const generate = (seed: number, n: number): GeneratedLevel => {
@@ -35,6 +36,29 @@ describe("infRng", () => {
 	it("produces known values, in [0, 1)", () => {
 		const rng = infRng(0);
 		expect([rng(), rng()]).toStrictEqual([0.26642920868471265, 0.0003297457005828619]);
+	});
+});
+
+describe("shuffle", () => {
+	const scripted = (draws: number[]) => {
+		const left = [...draws];
+		return () => {
+			const next = left.shift();
+			if (next === undefined) throw new Error("drew more than expected");
+			return next;
+		};
+	};
+	const items = ["a", "b", "c", "d"];
+
+	it("swaps from the end with the position each draw picks, one draw per step", () => {
+		expect(shuffle(items, scripted([0, 0, 0]))).toStrictEqual(["b", "c", "d", "a"]);
+		expect(shuffle(items, scripted([0.5, 0.5, 0.5]))).toStrictEqual(["a", "d", "b", "c"]);
+		expect(shuffle(items, scripted([0.999, 0.999, 0.999]))).toStrictEqual(items);
+	});
+
+	it("leaves its input alone", () => {
+		shuffle(items, scripted([0, 0, 0]));
+		expect(items).toStrictEqual(["a", "b", "c", "d"]);
 	});
 });
 
@@ -103,12 +127,12 @@ describe("infSearch", () => {
 	});
 
 	it("reports an empty batch with null so the caller can yield and try again", () => {
-		const batch = infSearch(54, 2);
+		const batch = infSearch(370, 0);
 		const first = batch();
 		const second = batch();
 		expect(first).toBe(null);
 		expect(JSON.parse(JSON.stringify(second))).toStrictEqual(
-			JSON.parse(JSON.stringify(original.generateInfinite(54, 2))),
+			JSON.parse(JSON.stringify(original.generateInfinite(370, 0))),
 		);
 	});
 });

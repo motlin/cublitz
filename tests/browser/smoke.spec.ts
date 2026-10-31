@@ -53,7 +53,7 @@ test("the page under test is what the current source builds", async ({request}) 
 });
 
 // These read the original's own globals in a real browser, so Node's reading of the script and
-// Chromium's cannot drift apart (infCandidate's random-comparator sort depends on the engine).
+// Chromium's cannot drift apart (the original infCandidate's random-comparator sort depends on the engine).
 test("the goldens match the original script running in the browser", async ({page}) => {
 	await page.goto(BASE_URL + LEGACY_PATH);
 	// A string, because const and let at the top of a classic script are not properties of window.
@@ -75,9 +75,6 @@ test("the goldens match the original script running in the browser", async ({pag
 
 // genInf and run are globals on both sides, so the shipped generator itself runs in the same browser. The
 // golden files cover few seeds, and a one-percent change to a probability only shows on some of them.
-// Each seed gets a fresh page because infCandidate's random-comparator sort gives different orders once V8 has
-// optimized it: on the original, 2e5 sorts of one seed's stream differ with --jitless and without, and the RNG alone
-// does not. So in a long session on one page the original itself can return other levels for the same seed.
 for (const seed of [1, 4, 9, 77, 2024, 31337]) {
 	test(`the shipped generator matches the original deep into a run of seed ${seed}`, async ({page}) => {
 		const generate = `(async () => {
@@ -94,6 +91,25 @@ for (const seed of [1, 4, 9, 77, 2024, 31337]) {
 		expect(await page.evaluate(generate)).toStrictEqual(original);
 	});
 }
+
+test("the post-fix goldens match the expected page and dist in the browser", async ({page}) => {
+	const infinite = readGolden<InfiniteGolden[]>("infinite-post-fix.json");
+	const generate = `(async () => {
+		const out = [];
+		for (const [seed, n] of ${JSON.stringify(infinite.map((g) => [g.seed, g.n]))}) {
+			run = { seed, n:0 };
+			out.push(await new Promise(resolve => genInf(n, lv => resolve(JSON.parse(JSON.stringify(lv))))));
+		}
+		return out;
+	})()`;
+	const generated = [];
+	for (const path of [EXPECTED_PATH, DIST_PATH]) {
+		await page.goto(BASE_URL + path);
+		generated.push(await page.evaluate(generate));
+	}
+	const levels = infinite.map((g) => g.level);
+	expect(generated).toStrictEqual([levels, levels]);
+});
 
 test("the screenshot comparison on its own notices a one-element paint change", async ({browser}) => {
 	await withPair(browser, {}, async (pair) => {

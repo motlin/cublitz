@@ -20,6 +20,11 @@ export const INTENTIONAL_DIVERGENCES: IntentionalDivergence[] = [
 		from: "top bare for the second. Paint never comes off.",
 		to: "top bare for the second. Nothing here takes paint off.",
 	},
+	{
+		name: "Infinite levels shuffle the palette with the seeded generator, so a seed gives the same levels in every engine",
+		from: "const palette = [...'roygcbp'].sort(() => R() - 0.5).slice(0, tier >= 4 ? 3 : 2);",
+		to: "const shuffled = [...'roygcbp'];\n  for (let i = shuffled.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; }\n  const palette = shuffled.slice(0, tier >= 4 ? 3 : 2);",
+	},
 ];
 
 export function withIntentionalDivergences(html: string): string {

@@ -33,13 +33,23 @@ export function infTier(n: number): number {
 	return Math.min(7, Math.floor(n / 2));
 }
 
+/** Fisher-Yates driven only by R, so one seed gives one order in every JS engine. */
+export function shuffle<T>(items: T[], R: Rng): T[] {
+	const out = [...items];
+	for (let i = out.length - 1; i > 0; i--) {
+		const j = Math.floor(R() * (i + 1));
+		[out[i], out[j]] = [out[j]!, out[i]!];
+	}
+	return out;
+}
+
 export function infCandidate(R: Rng, n: number): InfiniteCandidate {
 	const tier = infTier(n);
 	const pick = <T>(a: T[]): T => a[Math.floor(R() * a.length)]!;
 	const H = tier >= 3 && R() < 0.5 ? 4 : 3,
 		W = Math.min(15, 7 + tier + Math.floor(R() * 3));
 	const mid = Math.floor((H - 1) / 2) + (H === 4 && R() < 0.5 ? 1 : 0);
-	const palette = [...PALETTE_ORDER].sort(() => R() - 0.5).slice(0, tier >= 4 ? 3 : 2);
+	const palette = shuffle(PALETTE_ORDER, R).slice(0, tier >= 4 ? 3 : 2);
 	const g = Array.from({length: H}, () => Array<string>(W).fill("."));
 	// walls
 	const nWalls = 1 + (tier >= 2 ? 1 : 0) + (tier >= 5 && R() < 0.5 ? 1 : 0);

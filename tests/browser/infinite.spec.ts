@@ -4,7 +4,7 @@ import type {InfiniteGolden} from "../support/golden.ts";
 import {atLevel, engine, withPair} from "./harness/pair.ts";
 
 const golden = JSON.parse(
-	readFileSync(new URL("../golden/infinite.json", import.meta.url), "utf8"),
+	readFileSync(new URL("../golden/infinite-post-fix.json", import.meta.url), "utf8"),
 ) as InfiniteGolden[];
 const SEED = 12345;
 const canvas = (n: number): InfiniteGolden => golden.find((g) => g.seed === SEED && g.n === n) as InfiniteGolden;
@@ -108,6 +108,33 @@ test("skip, new-run arm and timeout, and a seed drawn from the pinned Math.rando
 		await pair.click("#winNext");
 		await pair.click("#modePlay", "leave infinite for the campaign");
 		expect(pair.last.hud.num).toBe("Level 1 of 30");
+	});
+});
+
+test("a run saved before levels changed resumes where it was and keeps its score", async ({browser}) => {
+	const saved = {seed: SEED, n: 5, score: 430, effs: [1, 0.8, 1, 0.5, 1], cleared: 5, streak: 1, bestStreak: 2};
+	const storage = {...atLevel(0), "cublitz-infinite-run-v1": JSON.stringify(saved)};
+	await withPair(browser, {storage}, async (pair) => {
+		const opened = await pair.click("#titleInf");
+		const {level, path} = canvas(5);
+		expect(opened.hud).toStrictEqual({
+			name: "Canvas 6",
+			num: "Infinite mode",
+			moves: "0",
+			par: String(level.par),
+		});
+		expect(JSON.parse(opened.storage["cublitz-infinite-run-v1"] as string)).toStrictEqual(saved);
+		await pair.dismissTips();
+		const won = await pair.roll(path);
+		expect(JSON.parse(won.storage["cublitz-infinite-run-v1"] as string)).toStrictEqual({
+			seed: SEED,
+			n: 6,
+			score: 530,
+			effs: [1, 0.8, 1, 0.5, 1, 1],
+			cleared: 6,
+			streak: 2,
+			bestStreak: 2,
+		});
 	});
 });
 

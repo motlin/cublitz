@@ -286,6 +286,18 @@ const MUTATIONS: Mutation[] = [
 		grep: "no longer say that paint never comes off",
 	},
 	{
+		name: "intentional divergence: the palette goes back to the random comparator sort",
+		from: "shuffle(PALETTE_ORDER, R)",
+		to: "[...PALETTE_ORDER].sort(() => R() - .5)",
+		grep: "one seed generates the same levels",
+	},
+	{
+		name: "intentional divergence: the shuffle can no longer leave an item in place",
+		from: "Math.floor(R() * (i + 1))",
+		to: "Math.floor(R() * i)",
+		grep: "a pinned seed plays",
+	},
+	{
 		name: "solver: the default limit is 300000",
 		from: "limit = 4e5",
 		to: "limit = 3e5",

@@ -23,5 +23,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
       - run: just install
-      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm exec playwright install --with-deps chromium firefox webkit
       - run: just test-browser

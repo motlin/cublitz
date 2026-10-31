@@ -1,0 +1,362 @@
+[
+	{
+		"seed": 1,
+		"n": 0,
+		"level": {
+			"map": [
+				". .yYy.",
+				"Sy.yYy.X",
+				".yy.Y.."
+			],
+			"k": {},
+			"par": 11,
+			"name": "Canvas 1",
+			"inf": 0
+		},
+		"path": "SENENESEEEE"
+	},
+	{
+		"seed": 1,
+		"n": 1,
+		"level": {
+			"map": [
+				"...b.B.",
+				"Sbb..B bX",
+				".b b.B.."
+			],
+			"k": {},
+			"par": 10,
+			"name": "Canvas 2",
+			"inf": 1
+		},
+		"path": "EEEESEEENE"
+	},
+	{
+		"seed": 1,
+		"n": 2,
+		"level": {
+			"map": [
+				".....Cc.",
+				"S. b.CbbX",
+				"..cccC b"
+			],
+			"k": {},
+			"par": 12,
+			"name": "Canvas 3",
+			"inf": 2
+		},
+		"path": "SEEENNESEEEE"
+	},
+	{
+		"seed": 1,
+		"n": 3,
+		"level": {
+			"map": [
+				".rYyr..r",
+				"S.Y.r.y.X",
+				".yY....."
+			],
+			"k": {},
+			"par": 14,
+			"name": "Canvas 4",
+			"inf": 3
+		},
+		"path": "SENWNESEEEEEEE"
+	},
+	{
+		"seed": 1,
+		"n": 5,
+		"level": {
+			"map": [
+				".b.Cc.Bc",
+				"S.cC.cB.X",
+				"...CbbBb"
+			],
+			"k": {},
+			"par": 16,
+			"name": "Canvas 6",
+			"inf": 5
+		},
+		"path": "EEWWNESENESEEEEE"
+	},
+	{
+		"seed": 1,
+		"n": 8,
+		"level": {
+			"map": [
+				"..1.p.B.b.",
+				"So1.b.BopZX",
+				"..1bb.B..."
+			],
+			"k": {
+				"1": [
+					"wgate",
+					"t"
+				]
+			},
+			"par": 14,
+			"name": "Canvas 9",
+			"inf": 8
+		},
+		"path": "SEEENENESEEEEE"
+	},
+	{
+		"seed": 1,
+		"n": 14,
+		"level": {
+			"map": [
+				"...pPZ..rRpoop",
+				"SpopP o.rRr...X",
+				"...pP.op.Rprpp"
+			],
+			"k": {},
+			"par": 24,
+			"name": "Canvas 15",
+			"inf": 14
+		},
+		"path": "SEEENWNEEEEEESWSENEEEEEE"
+	},
+	{
+		"seed": 12345,
+		"n": 0,
+		"level": {
+			"map": [
+				"..r..R.g",
+				"Sr...R..X",
+				"..grgRr."
+			],
+			"k": {},
+			"par": 8,
+			"name": "Canvas 1",
+			"inf": 0
+		},
+		"path": "EEEEEEEE"
+	},
+	{
+		"seed": 12345,
+		"n": 1,
+		"level": {
+			"map": [
+				".y.Y...",
+				"Sg.Y...X",
+				"...Y..."
+			],
+			"k": {},
+			"par": 11,
+			"name": "Canvas 2",
+			"inf": 1
+		},
+		"path": "NESSENEEEEE"
+	},
+	{
+		"seed": 12345,
+		"n": 2,
+		"level": {
+			"map": [
+				".bB b..",
+				"SbB.ggggX",
+				".gBg...."
+			],
+			"k": {},
+			"par": 14,
+			"name": "Canvas 3",
+			"inf": 2
+		},
+		"path": "NESWSENEEEEEEE"
+	},
+	{
+		"seed": 12345,
+		"n": 3,
+		"level": {
+			"map": [
+				".p. P.p",
+				"Sp.pP..X",
+				".pooP.."
+			],
+			"k": {},
+			"par": 11,
+			"name": "Canvas 4",
+			"inf": 3
+		},
+		"path": "NESESENEEEE"
+	},
+	{
+		"seed": 12345,
+		"n": 5,
+		"level": {
+			"map": [
+				"....G..O.",
+				"So.gG.oO.X",
+				"....Go.O."
+			],
+			"k": {},
+			"par": 19,
+			"name": "Canvas 6",
+			"inf": 5
+		},
+		"path": "ENESEWWNESENESEEEEE"
+	},
+	{
+		"seed": 12345,
+		"n": 8,
+		"level": {
+			"map": [
+				"....B..Bpg",
+				"S. bBb.B.bX",
+				"..g BbZB.b"
+			],
+			"k": {},
+			"par": 22,
+			"name": "Canvas 9",
+			"inf": 8
+		},
+		"path": "NEEESNWWWSENEESEEEEEEE"
+	},
+	{
+		"seed": 12345,
+		"n": 14,
+		"level": {
+			"map": [
+				"...Oo .2...2.",
+				".r.O...2..r2..",
+				"SocO.o.2c..2..X",
+				"..cOc..2oo.2.."
+			],
+			"k": {
+				"2": [
+					"wgate",
+					"n"
+				]
+			},
+			"need": {
+				"t": "o"
+			},
+			"par": 20,
+			"name": "Canvas 15",
+			"inf": 14
+		},
+		"path": "ENNESSEESEEEEEEEEENE"
+	},
+	{
+		"seed": 999999999,
+		"n": 0,
+		"level": {
+			"map": [
+				"....Cr",
+				"S...C.X",
+				".c..C."
+			],
+			"k": {},
+			"par": 10,
+			"name": "Canvas 1",
+			"inf": 0
+		},
+		"path": "SENENESEEE"
+	},
+	{
+		"seed": 999999999,
+		"n": 1,
+		"level": {
+			"map": [
+				"....Cgg",
+				"Sc..C..X",
+				".. cCcg"
+			],
+			"k": {},
+			"par": 11,
+			"name": "Canvas 2",
+			"inf": 1
+		},
+		"path": "ENWSEEEEEEE"
+	},
+	{
+		"seed": 999999999,
+		"n": 2,
+		"level": {
+			"map": [
+				"..cC..c.",
+				"S.yC....X",
+				"...Cyycc"
+			],
+			"k": {},
+			"par": 14,
+			"name": "Canvas 3",
+			"inf": 2
+		},
+		"path": "NEESWSENEEEEEE"
+	},
+	{
+		"seed": 999999999,
+		"n": 3,
+		"level": {
+			"map": [
+				"..oGgg. g",
+				"SgoG.gg..X",
+				"..gG.g.g."
+			],
+			"k": {},
+			"par": 15,
+			"name": "Canvas 4",
+			"inf": 3
+		},
+		"path": "SEENWNESEEEEEEE"
+	},
+	{
+		"seed": 999999999,
+		"n": 5,
+		"level": {
+			"map": [
+				".rR...R...",
+				"SrR.rrRr.rX",
+				"..R.r.R.ro"
+			],
+			"k": {},
+			"par": 16,
+			"name": "Canvas 6",
+			"inf": 5
+		},
+		"path": "NESWSENEEEEEEEEE"
+	},
+	{
+		"seed": 999999999,
+		"n": 8,
+		"level": {
+			"map": [
+				".Zc3..1...",
+				"...3 .1...",
+				"S.b3c.1.pcX",
+				"...3c.1..p"
+			],
+			"k": {
+				"1": [
+					"wgate",
+					"t"
+				],
+				"3": [
+					"wgate",
+					"s"
+				]
+			},
+			"par": 14,
+			"name": "Canvas 9",
+			"inf": 8
+		},
+		"path": "NNEEEEESSEEEEE"
+	},
+	{
+		"seed": 999999999,
+		"n": 14,
+		"level": {
+			"map": [
+				". oOo.rryO. .",
+				"SyoOyy.y.O.r.X",
+				"..yO.r..rOooy"
+			],
+			"k": {},
+			"par": 21,
+			"name": "Canvas 15",
+			"inf": 14
+		},
+		"path": "EENSWSENEENEEESEEEEEE"
+	}
+]
