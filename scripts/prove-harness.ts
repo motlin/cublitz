@@ -1,7 +1,8 @@
 import {spawnSync} from "node:child_process";
-import {cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync} from "node:fs";
+import {cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
+import {grepMatchedPassingTest, type PlaywrightReport, verdict} from "./harness-verdict.ts";
 
 // Mutates throwaway copies of dist/ and confirms the differential harness fails on each one.
 // dist/ itself is never touched and every copy is deleted afterwards.
@@ -170,41 +171,161 @@ const MUTATIONS: Mutation[] = [
 		to: "",
 		grep: "raises the best score",
 	},
+	{
+		name: "history: mode changes push entries instead of replacing the current one",
+		from: 'history.replaceState(null, "", h || location.pathname + location.search);',
+		to: 'history.pushState(null, "", h || location.pathname + location.search);',
+		grep: "navigation: brand",
+	},
+	{
+		name: "clipboard fallback: says selected but selects nothing",
+		from: '$("edCode").select();',
+		to: "",
+		grep: "copying a share code",
+	},
+	{
+		name: "input: painting no longer captures the pointer",
+		from: '$("edGrid").setPointerCapture(e.pointerId);',
+		to: "",
+		grep: "drag painting",
+	},
+	{
+		name: "input: game keys ignore no modifier at all",
+		from: "if (e.metaKey || e.ctrlKey || e.altKey) return;",
+		to: "",
+		grep: "game keys with",
+	},
+	{
+		name: "input: game keys roll with Meta held",
+		from: "if (e.metaKey || e.ctrlKey || e.altKey) return;",
+		to: "if (e.ctrlKey || e.altKey) return;",
+		grep: "game keys with Meta",
+	},
+	{
+		name: "input: game keys roll with Control held",
+		from: "if (e.metaKey || e.ctrlKey || e.altKey) return;",
+		to: "if (e.metaKey || e.altKey) return;",
+		grep: "game keys with Control",
+	},
+	{
+		name: "input: game keys roll with Alt held",
+		from: "if (e.metaKey || e.ctrlKey || e.altKey) return;",
+		to: "if (e.metaKey || e.ctrlKey) return;",
+		grep: "game keys with Alt",
+	},
+	{
+		name: "input: the M key toggles sound with Alt held",
+		from: '!e.metaKey && !e.ctrlKey && !e.altKey && !/INPUT',
+		to: '!e.metaKey && !e.ctrlKey && !/INPUT',
+		grep: "M key with Alt",
+	},
+	{
+		name: "storage: unparseable JSON rethrows from loadJSON",
+		from: "return JSON.parse(localStorage.getItem(key)) || fallback;\n\t} catch {\n\t\treturn fallback;",
+		to: "return JSON.parse(localStorage.getItem(key)) || fallback;\n\t} catch (e) {\n\t\tthrow e;",
+		grep: "unparseable JSON",
+	},
+	{
+		name: "storage: unparseable JSON rethrows from readObject",
+		from: 'return JSON.parse(localStorage.getItem(key) || "{}") || {};\n\t} catch {\n\t\treturn {};',
+		to: 'return JSON.parse(localStorage.getItem(key) || "{}") || {};\n\t} catch (e) {\n\t\tthrow e;',
+		grep: "unparseable JSON",
+	},
+	{
+		name: "timer: confirming a reset leaves the disarm timer running",
+		from: "clearTimeout(resetTimer);\n\t\teraseProgress();",
+		to: "eraseProgress();",
+		grep: "title screen: progress text",
+	},
+	{
+		name: "score: the rating window is nine canvases",
+		from: "r.effs.slice(-10)",
+		to: "r.effs.slice(-9)",
+		grep: "rating averages the last ten",
+	},
+	{
+		name: "hooks: hot data resumes a locked level",
+		from: "LEVELS[data.lvl] && unlocked(data.lvl) && data.st",
+		to: "LEVELS[data.lvl] && data.st",
+		grep: "locked level",
+	},
+	{
+		name: "CSS at runtime: a win adds a style element",
+		from: '$("winNext").focus({ preventScroll: true });',
+		to: '$("winNext").focus({ preventScroll: true }); document.head.append(Object.assign(document.createElement("style"), {textContent: ".title-keys{color:red}"}));',
+		grep: "focus moves without scrolling",
+	},
+	{
+		name: "CSS at runtime: a win adds a rule to the sheet",
+		from: '$("winNext").focus({ preventScroll: true });',
+		to: '$("winNext").focus({ preventScroll: true }); document.styleSheets[0].insertRule(".title-keys{color:red}");',
+		grep: "focus moves without scrolling",
+	},
+	{
+		name: "sound: the noise buffer is filled backwards, with the same sum",
+		from: "d[i] = Math.random() * 2 - 1;",
+		to: "d[d.length - 1 - i] = Math.random() * 2 - 1;",
+		grep: "sound: toggle|every sound effect",
+	},
+	{
+		name: "solver: the default limit is 300000",
+		from: "limit = 4e5",
+		to: "limit = 3e5",
+		grep: "default limit",
+	},
 ];
 
-const runHarness = (distDir: string, grep: string) =>
-	spawnSync("pnpm", ["exec", "playwright", "test", "-g", grep, "--workers=1", "--reporter=line"], {
-		encoding: "utf8",
-		env: {...process.env, CUBLITZ_DIST_DIR: distDir, CUBLITZ_PORT: "4818"},
-	});
-
-const firstError = (output: string): string =>
-	(output.match(/Error: .*/)?.[0] ?? "no error line found").replace(/\u001b\[[0-9;]*m/g, "").slice(0, 160);
-
 const scratch = mkdtempSync(join(tmpdir(), "cublitz-prove-"));
+// `just prove-harness <text>` proves only the mutations whose name contains the text.
+const only = process.argv[2] ?? "";
+const selected = MUTATIONS.filter((m) => m.name.includes(only));
+if (selected.length === 0) throw new Error(`No mutation's name contains "${only}"`);
+
+const runHarness = (distDir: string, grep: string): {status: number | null; report: PlaywrightReport | null} => {
+	const reportFile = join(scratch, "report.json");
+	rmSync(reportFile, {force: true});
+	const {status} = spawnSync("pnpm", ["exec", "playwright", "test", "-g", grep, "--workers=1", "--reporter=json"], {
+		encoding: "utf8",
+		maxBuffer: 1 << 28,
+		env: {...process.env, CUBLITZ_DIST_DIR: distDir, CUBLITZ_PORT: "4818", PLAYWRIGHT_JSON_OUTPUT_NAME: reportFile},
+	});
+	return {status, report: existsSync(reportFile) ? (JSON.parse(readFileSync(reportFile, "utf8")) as PlaywrightReport) : null};
+};
+
 let survived = 0;
+let invalid = 0;
 try {
 	const control = join(scratch, "control");
 	cpSync("dist", control, {recursive: true});
-	const baseline = runHarness(control, MUTATIONS.map((m) => m.grep).join("|"));
-	if (baseline.status !== 0) throw new Error(`The unmutated copy already fails:\n${baseline.stdout}`);
-	console.log("control: the unmutated copy passes every test used below");
+	const baseline = runHarness(control, selected.map((m) => m.grep).join("|"));
+	const baselineVerdict = verdict(baseline.status, baseline.report);
+	if (baselineVerdict.kind !== "passed") throw new Error(`The unmutated copy does not pass: ${JSON.stringify(baselineVerdict)}`);
+	const unmatched = selected.filter((m) => !grepMatchedPassingTest(baseline.report as PlaywrightReport, m.grep));
+	if (unmatched.length > 0) throw new Error(`These greps select no passing test: ${unmatched.map((m) => m.grep).join(", ")}`);
+	console.log("control: the unmutated copy passes, and each grep below selects a test that passed");
 
-	for (const [i, mutation] of MUTATIONS.entries()) {
+	for (const [i, mutation] of selected.entries()) {
 		const copy = join(scratch, `mutant-${i}`);
 		cpSync("dist", copy, {recursive: true});
 		const file = join(copy, "index.html");
 		const html = readFileSync(file, "utf8");
 		if (html.split(mutation.from).length !== 2) throw new Error(`"${mutation.from}" must occur exactly once in dist/index.html`);
-		writeFileSync(file, html.replace(mutation.from, mutation.to));
-		const result = runHarness(copy, mutation.grep);
-		const caught = result.status !== 0;
-		if (!caught) survived++;
-		console.log(`${caught ? "caught  " : "SURVIVED"} ${mutation.name}${caught ? ` -> ${firstError(result.stdout)}` : ""}`);
+		writeFileSync(file, html.replace(mutation.from, () => mutation.to));
+		const {status, report} = runHarness(copy, mutation.grep);
+		const result = verdict(status, report);
+		if (result.kind === "caught") console.log(`caught   ${mutation.name} -> ${result.detail}`);
+		else if (result.kind === "passed") {
+			survived++;
+			console.log(`SURVIVED ${mutation.name}`);
+		} else {
+			invalid++;
+			console.log(`INVALID  ${mutation.name} -> ${result.detail}`);
+		}
 		rmSync(copy, {recursive: true});
 	}
 } finally {
 	rmSync(scratch, {recursive: true, force: true});
 }
-console.log(survived === 0 ? `All ${MUTATIONS.length} mutations were caught.` : `${survived} mutations survived.`);
-process.exit(survived === 0 ? 0 : 1);
+const clean = survived === 0 && invalid === 0;
+console.log(clean ? `All ${selected.length} mutations were caught.` : `${survived} mutations survived and ${invalid} runs were invalid.`);
+process.exit(clean ? 0 : 1);

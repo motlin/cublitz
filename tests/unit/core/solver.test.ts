@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 import {initState, parseLevel} from "../../../src/core/level.ts";
 import {solve} from "../../../src/core/solver.ts";
 
@@ -9,6 +9,26 @@ const solveMap = (map: string[], limit?: number) => {
 };
 
 describe("solve", () => {
+	// A search that really reaches 400000 states takes many seconds, so the set of seen states reports its size.
+	it.each([
+		[399_999, {path: "EE", hitLimit: false}],
+		[400_000, {path: null, hitLimit: true}],
+	])("by default gives up at 400000 states: size %i", (size, expected) => {
+		vi.stubGlobal(
+			"Set",
+			class extends Set {
+				override get size(): number {
+					return size;
+				}
+			},
+		);
+		try {
+			expect(solveMap(["S.X"])).toStrictEqual(expected);
+		} finally {
+			vi.unstubAllGlobals();
+		}
+	});
+
 	it("finds the shortest path", () => {
 		expect(solveMap(["S.X"])).toStrictEqual({path: "EE", hitLimit: false});
 	});

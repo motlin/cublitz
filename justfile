@@ -38,9 +38,9 @@ build: install
 golden: install
     pnpm run golden
 
-# Prove the harness catches mutated copies of dist/
-prove-harness: build
-    pnpm run prove-harness
+# Prove the harness catches mutated copies of dist/, optionally only those whose name contains the given text
+prove-harness *args: build
+    pnpm run prove-harness {{ args }}
 
 # Upload dist/ to the production Cloudflare Pages deployment
 deploy: build

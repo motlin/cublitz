@@ -107,6 +107,10 @@ describe("infRating", () => {
 	it("only counts the last ten", () => {
 		expect(infRating({effs: [0, 0, 0, ...Array<number>(10).fill(1)]})).toBe(100);
 	});
+
+	it("counts the tenth from last", () => {
+		expect(infRating({effs: [0, ...Array<number>(9).fill(1)]})).toBe(90);
+	});
 });
 
 describe("infRank", () => {

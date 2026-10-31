@@ -31,6 +31,7 @@ test("dist is one page, the original byte for byte outside the body of its class
 test("the bundle is a sloppy script", async ({request}) => {
 	const dist = await (await request.get(BASE_URL + DIST_PATH)).text();
 	const script = /(?<=<script>\n)[\s\S]*(?=<\/script>)/.exec(dist)?.[0] ?? "";
+	expect(script === "").toBe(false);
 	expect(script.includes("use strict")).toBe(false);
 });
 
@@ -69,8 +70,9 @@ test("the goldens match the original script running in the browser", async ({pag
 
 // genInf and run are globals on both sides, so the shipped generator itself runs in the same browser. The
 // golden files cover few seeds, and a one-percent change to a probability only shows on some of them.
-// Each seed gets a fresh page: in long sequences on one page Chromium has been seen to return different levels
-// from the original itself, between two loads of the same file.
+// Each seed gets a fresh page because infCandidate's random-comparator sort gives different orders once V8 has
+// optimized it: on the original, 2e5 sorts of one seed's stream differ with --jitless and without, and the RNG alone
+// does not. So in a long session on one page the original itself can return other levels for the same seed.
 for (const seed of [1, 4, 9, 77, 2024, 31337]) {
 	test(`the shipped generator matches the original deep into a run of seed ${seed}`, async ({page}) => {
 		const generate = `(async () => {

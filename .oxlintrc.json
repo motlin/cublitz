@@ -8,7 +8,7 @@
 	},
 	"overrides": [
 		{"files": ["tests/browser/harness/**"], "rules": {"no-setter-return": "off"}},
-		{"files": ["scripts/prove-harness.ts"], "rules": {"no-control-regex": "off"}}
+		{"files": ["scripts/harness-verdict.ts"], "rules": {"no-control-regex": "off"}}
 	],
 	"ignorePatterns": ["legacy/**", "dist/**", "node_modules/**", "test-results/**"]
 }

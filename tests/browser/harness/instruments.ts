@@ -25,6 +25,9 @@ export type Snapshot = {
 	animations: unknown[];
 	prevented: string[];
 	focusCalls: unknown[];
+	historyCalls: unknown[];
+	history: {length: number; state: unknown};
+	pointerCaptures: unknown[];
 	errors: string[];
 };
 
@@ -50,6 +53,8 @@ export function installInstruments(options: InstrumentOptions): void {
 	const errors: string[] = [];
 	const prevented: string[] = [];
 	const focusCalls: unknown[] = [];
+	const historyCalls: unknown[] = [];
+	const pointerCaptures: unknown[] = [];
 	let audioTotal = 0;
 
 	// ---- Math.random and Date are pinned ----
@@ -80,8 +85,8 @@ export function installInstruments(options: InstrumentOptions): void {
 	const realClearTimeout = window.clearTimeout.bind(window);
 	const realRaf = window.requestAnimationFrame.bind(window);
 	const realCaf = window.cancelAnimationFrame.bind(window);
-	const shortTimers = new Set<number>();
-	const parked = new Map<number, () => void>();
+	const shortTimers = new Map<number, number>();
+	const parked = new Map<number, {run: () => void; delay: number}>();
 	const intervals = new Map<number, () => void>();
 	const frames = new Set<number>();
 	let nextVirtualId = 1_000_000_000;
@@ -91,7 +96,7 @@ export function installInstruments(options: InstrumentOptions): void {
 		const run = () => (handler as (...a: unknown[]) => void)(...args);
 		if (delay >= LONG_TIMER_MS) {
 			const id = nextVirtualId++;
-			parked.set(id, run);
+			parked.set(id, {run, delay});
 			return id;
 		}
 		const id: number = realSetTimeout(() => {
@@ -101,10 +106,13 @@ export function installInstruments(options: InstrumentOptions): void {
 				shortTimers.delete(id);
 			}
 		}, delay);
-		shortTimers.add(id);
+		shortTimers.set(id, delay);
 		return id;
 	}) as typeof window.setTimeout;
 	window.clearTimeout = ((id: number) => {
+		// Only a cancel that stops a pending timer is recorded. Clearing one that already fired changes nothing.
+		const pending = parked.get(id)?.delay ?? shortTimers.get(id);
+		if (pending !== undefined) timers.push(["clearTimeout", pending]);
 		if (parked.delete(id)) return;
 		shortTimers.delete(id);
 		realClearTimeout(id);
@@ -152,6 +160,27 @@ export function installInstruments(options: InstrumentOptions): void {
 	HTMLElement.prototype.focus = function (focusOptions) {
 		focusCalls.push([this.id, focusOptions ?? null]);
 		realFocus.call(this, focusOptions);
+	};
+
+	// ---- Which way the page writes history and whether a drag holds on to its pointer. Neither shows in the DOM ----
+	for (const method of ["pushState", "replaceState"] as const) {
+		const real = History.prototype[method];
+		History.prototype[method] = function (state, unused, url) {
+			// The two pages live at different paths, which the game passes back as its own URL.
+			historyCalls.push([method, state, unused, url === location.pathname ? "<path>" : (url ?? null)]);
+			real.call(this, state, unused, url);
+		};
+	}
+	const capturing = (el: Element): string => el.id || el.tagName;
+	const realSetCapture = Element.prototype.setPointerCapture;
+	Element.prototype.setPointerCapture = function (pointerId) {
+		pointerCaptures.push(["set", capturing(this)]);
+		realSetCapture.call(this, pointerId);
+	};
+	const realReleaseCapture = Element.prototype.releasePointerCapture;
+	Element.prototype.releasePointerCapture = function (pointerId) {
+		pointerCaptures.push(["release", capturing(this)]);
+		realReleaseCapture.call(this, pointerId);
 	};
 
 	// ---- Web Audio: a recording stand-in, so every call sequence and argument is compared and
@@ -212,7 +241,7 @@ export function installInstruments(options: InstrumentOptions): void {
 		createBufferSource() {
 			const s = node("source", []);
 			Object.defineProperty(s, "buffer", {
-				set: (b: {__data: Float32Array}) => record(`${String(s["__id"])}.buffer`, b.__data.reduce((x, y) => x + y, 0)),
+				set: (b: {__data: Float32Array}) => record(`${String(s["__id"])}.buffer`, hash(b.__data.join())),
 			});
 			return s;
 		}
@@ -261,11 +290,11 @@ export function installInstruments(options: InstrumentOptions): void {
 		return 4294967296 * (2097151 & h2) + (h1 >>> 0);
 	};
 
-	// Where the CSS and JS live is build plumbing. Their effects are compared through cssom,
-	// computed styles and behavior. The Google Fonts links stay in the comparison.
+	// The script's bytes differ by design, and the smoke tests compare everything around it byte for byte. Style
+	// elements stay in the comparison, so that one added at runtime shows. So do the Google Fonts links.
 	const isPlumbing = (el: Element): boolean => {
 		const tag = el.tagName;
-		if (tag === "SCRIPT" || tag === "STYLE") return true;
+		if (tag === "SCRIPT") return true;
 		if (tag !== "LINK") return false;
 		const href = el.getAttribute("href") ?? "";
 		return !/^https:\/\/fonts\.(googleapis|gstatic)\.com/.test(href);
@@ -308,9 +337,7 @@ export function installInstruments(options: InstrumentOptions): void {
 		const names = Array.from({length: cs.length}, (_, i) => cs.item(i)).sort();
 		return Object.fromEntries(names.map((name) => [name, cs.getPropertyValue(name)]));
 	};
-	let cssomCache = "";
-	const cssom = (): string => {
-		if (cssomCache) return cssomCache;
+	const cssom = (): string[] => {
 		const rules: string[] = [];
 		for (const sheet of document.styleSheets) {
 			try {
@@ -319,8 +346,7 @@ export function installInstruments(options: InstrumentOptions): void {
 				rules.push("inaccessible sheet");
 			}
 		}
-		cssomCache = rules.join("\n");
-		return cssomCache;
+		return rules;
 	};
 	const freezeInfinite = () => {
 		for (const anim of document.getAnimations()) {
@@ -343,14 +369,15 @@ export function installInstruments(options: InstrumentOptions): void {
 			rects[`${i}:${el.tagName}#${el.id}.${el.className}`] = [r.x, r.y, r.width, r.height];
 		});
 		const fields = [...document.querySelectorAll<HTMLInputElement>("input, select, textarea")].map((el) => [
-			el.id, el.value, el.checked, el.disabled,
+			el.id, el.value, el.checked, el.disabled, el.selectionStart, el.selectionEnd,
 		]);
 		return {
 			dom: serialize(document.documentElement, true).split("><").join(">\n<"),
 			computed,
 			rects,
-			cssom: cssom().split("\n"),
+			cssom: cssom(),
 			fields,
+			selection: String(window.getSelection()),
 			focus: describe(document.activeElement),
 			scroll: [window.scrollX, window.scrollY, document.documentElement.scrollWidth, document.documentElement.scrollHeight],
 			viewportVars: document.documentElement.getAttribute("style") ?? "",
@@ -379,7 +406,7 @@ export function installInstruments(options: InstrumentOptions): void {
 		fireParked: () => {
 			const pending = [...parked.values()];
 			parked.clear();
-			pending.forEach((run) => run());
+			pending.forEach(({run}) => run());
 		},
 		tickIntervals: (count) => {
 			for (let i = 0; i < count; i++) [...intervals.values()].forEach((run) => run());
@@ -415,6 +442,9 @@ export function installInstruments(options: InstrumentOptions): void {
 				animations: drain(animations),
 				prevented: drain(prevented) as string[],
 				focusCalls: drain(focusCalls),
+				historyCalls: drain(historyCalls),
+				history: {length: history.length, state: history.state},
+				pointerCaptures: drain(pointerCaptures),
 				errors: errors.slice(),
 			};
 		},

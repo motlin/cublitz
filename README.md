@@ -63,7 +63,8 @@ Tool versions are pinned in `.mise/config.toml`.
 `tests/browser/` drives the same scripted session through `legacy/original.html` and the built
 `dist/`, side by side. After every step it compares normalized DOM, form values, focus, every
 element's position, the full computed style of key elements, all CSS rules, localStorage, status
-text, win state, and logs of Web Audio calls, timers and scripted animations.
+text, win state, text selection, history entries, and logs of Web Audio calls, timers and their
+cancels, scripted animations, history writes and pointer capture.
 
 `tests/browser/harness/instruments.ts` makes that deterministic in both pages. It pins `Math.random`
 and `Date`, replaces `AudioContext` with a recorder, holds timers of a second or more and intervals
@@ -75,8 +76,12 @@ when the script is split into modules.
 `tests/golden/` holds `solve()` results for all 30 levels and generated infinite levels, produced by
 evaluating the original script. `tests/browser/smoke.spec.ts` checks those files against the original
 running in Chromium as well as in Node, since infinite generation relies on a sort with a random
-comparator, whose result depends on the JavaScript engine. The same seed already gives different levels
-on Node 24 and Node 26, so run the unit tests through `pnpm exec` or `just`, which use the pinned Node.
+comparator, whose result depends on the JavaScript engine and how far it has optimized the sort. The same
+seed already gives different levels on Node 24 and Node 26, and on one long-lived page, so run the unit tests
+through `pnpm exec` or `just`, which use the pinned Node, and compare the generator on fresh pages.
+
+`just prove-harness` counts a mutant as caught only when a test fails on an assertion. A run where no test
+matched, the server did not start or the browser failed reports `INVALID` and fails the proof.
 
 `tests/unit/core/` tests each rule directly and also runs the modules against the original script
 move by move, including malformed levels a share code could carry.
