@@ -32,7 +32,7 @@ export type Cell =
 	| DoorCell;
 
 /** A level's legend entry for a map character. */
-export type LegendEntry = ["wgate", Face] | ["box" | "switch" | "button" | "door", PieceColor];
+export type LegendEntry = ["wgate", Face] | ["box" | "switch" | "button" | "door", PieceColor] | ["cube", "w"];
 export type Legend = Record<string, LegendEntry>;
 export type Need = Partial<Record<Face, Paint>>;
 
@@ -53,6 +53,8 @@ export type BoardSwitch = {x: number; y: number; c: PieceColor};
 export type Level = LevelSource & {
 	cells: (Cell | null)[][];
 	boxes0: Box[];
+	/** Loose cubes the player can merge with. Only a level whose legend has a cube gets this. */
+	cubes0?: {x: number; y: number}[];
 	switches: BoardSwitch[];
 	cols: number;
 	rows: number;
@@ -60,7 +62,21 @@ export type Level = LevelSource & {
 	sy: number;
 };
 
-export type State = {x: number; y: number; f: Faces; boxes: Box[]; sw: number[]};
+/** One cube of a merged block, with z counted up from the floor. */
+export type Unit = {x: number; y: number; z: number; f: Faces};
+export type LooseCube = {x: number; y: number; f: Faces};
+/**
+ * units and loose appear only on a level with loose cubes, and then x, y and f mirror the first unit.
+ */
+export type State = {
+	x: number;
+	y: number;
+	f: Faces;
+	boxes: Box[];
+	sw: number[];
+	units?: Unit[];
+	loose?: LooseCube[];
+};
 export type OpenColors = Partial<Record<PieceColor, true>>;
 
 type Blocked = {ok: false; nx: number; ny: number};
@@ -70,7 +86,9 @@ export type MoveFailure =
 	| (Blocked & {why: "wgate"; f: Face; has: FaceColor})
 	| (Blocked & {why: "box"; c: PieceColor})
 	| (Blocked & {why: "stuck"; c: PieceColor})
-	| (Blocked & {why: "door"; c: PieceColor});
+	| (Blocked & {why: "door"; c: PieceColor})
+	| (Blocked & {why: "misaligned"})
+	| (Blocked & {why: "heavy"});
 export type MoveSuccess = {
 	ok: true;
 	nx: number;
@@ -83,5 +101,7 @@ export type MoveSuccess = {
 	goal: boolean;
 	won: boolean;
 	cell: Cell;
+	/** Present when the press merged a loose cube instead of rolling. */
+	merged?: true;
 };
 export type MoveResult = MoveFailure | MoveSuccess;

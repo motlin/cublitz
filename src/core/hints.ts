@@ -16,6 +16,7 @@ export type Milestone = MilestoneBase &
 		| {type: "solid"; c: Paint}
 		| {type: "button"; c: PieceColor; box: number; firstPush: Push; from: Box}
 		| {type: "door"; c: PieceColor}
+		| {type: "merge"}
 	);
 
 /** The first thing worth pointing out along sol, which has to be a path that works from st0. */
@@ -42,6 +43,7 @@ export function nextMilestone(L: Level, st0: State, sol: string): Milestone | nu
 		const now = solidColor(st.f),
 			before = solidColor(prev.f);
 		if (r.won) return {...base, type: "goal"};
+		if (r.merged) return {...base, type: "merge"};
 		if (r.cell.t === "gate" && !before) return {...base, type: "gate", c: r.cell.c};
 		if (r.cell.t === "wgate") return {...base, type: "wgate", f: r.cell.f};
 		if (r.washed) return {...base, type: "wash"};
@@ -94,6 +96,11 @@ export function hintTexts(L: Level, st: State, m: Milestone): [string, string] {
 					: `Arrive rolling ${dirWord(m.d)}. Nothing else is required.`,
 			];
 		}
+		case "merge":
+			return [
+				"Next, merge with the highlighted cube.",
+				`Press ${dirWord(m.d)} into it. The cubes join without moving, and from then on they roll as one block.`,
+			];
 		case "wash":
 			return [
 				"Next, roll onto the highlighted paint remover.",

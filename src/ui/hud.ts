@@ -1,14 +1,19 @@
 import {FACES, solidColor} from "../core/cube.ts";
 import {LEVELS} from "../core/levels.ts";
+import {MERGE_LEVELS} from "../core/merge-levels.ts";
+import {solidColorOf} from "../core/prism.ts";
 import {CNAME, FNAME} from "../core/names.ts";
 import type {Face, Need, Paint} from "../core/types.ts";
 import {$, domValue} from "./dom.ts";
 import {renderStock} from "./editor.ts";
-import {loadLevel} from "./play.ts";
+import {loadLevel, loadMergeLevel, mergeIndex} from "./play.ts";
 import {beaten, S, unlocked} from "./session.ts";
 import {COLORS} from "./text.ts";
 
 const NET_POS: Record<Face, [number, number]> = {n: [2, 1], w: [1, 2], t: [2, 2], e: [3, 2], s: [2, 3], b: [2, 4]};
+
+const MERGE_BUTTON =
+	"font-family:var(--font-mono);font-weight:700;font-size:13px;width:36px;height:32px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;";
 
 export function renderHud(popFace?: Face | null): void {
 	const L = S.L,
@@ -33,6 +38,25 @@ export function renderHud(popFace?: Face | null): void {
 		}
 		if (k === popFace) d.classList.add("pop");
 		net.appendChild(d);
+	}
+	const units = S.st.units;
+	if (units && units.length > 1) {
+		const solid = solidColorOf(S.st);
+		$("needBox").innerHTML =
+			`<div class="solidline"><b>Block of ${units.length} cubes</b>${solid ? `. Solid ${CNAME[solid]}` : ""}.</div>` +
+			units
+				.map((u, i) => {
+					const painted = FACES.filter((k) => u.f[k]).map((k) => `${CNAME[u.f[k] as Paint]} on ${FNAME[k]}`);
+					return `<div>Cube ${i + 1}: ${painted.join(", ") || "bare"}.</div>`;
+				})
+				.join("") +
+			(Object.entries(need) as [Face, Paint][])
+				.map(([k, v]) => `<div class="needline">The target needs ${CNAME[v]} on ${FNAME[k]}.</div>`)
+				.join("");
+		$("moves").textContent = domValue(S.hist.length);
+		$("moves").nextElementSibling!.textContent = "moves";
+		$("undoBtn").disabled = !S.hist.length;
+		return;
 	}
 	const solid = solidColor(f);
 	const counts: Partial<Record<Paint, number>> = {};
@@ -73,6 +97,17 @@ export function renderLevels(): void {
 		b.disabled = !open;
 		if (!open) b.setAttribute("aria-label", `Level ${i + 1}, locked`);
 		b.onclick = () => loadLevel(i);
+		nav.appendChild(b);
+	});
+	MERGE_LEVELS.forEach((L, j) => {
+		const b = document.createElement("button");
+		const current = mergeIndex(S.lvl) === j;
+		b.textContent = `M${j + 1}`;
+		b.title = L.name + (beaten(L) ? ` (best ${beaten(L)})` : "");
+		// Inline, because the stylesheets stay byte for byte the original's
+		b.style.cssText =
+			MERGE_BUTTON + (current ? "background:var(--clay);color:#1b1e29;" : beaten(L) ? "color:var(--ink);" : "");
+		b.onclick = () => loadMergeLevel(j);
 		nav.appendChild(b);
 	});
 }

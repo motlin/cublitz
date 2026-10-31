@@ -6,7 +6,7 @@ import {renderEditor} from "./editor.ts";
 import {hint} from "./hint.ts";
 import {campaignLvl, loadInfLevel} from "./infinite-mode.ts";
 import {mode, setMode} from "./modes.ts";
-import {loadLevel, move, restart, SHARED, undo} from "./play.ts";
+import {loadLevel, loadMergeLevel, mergeIndex, move, restart, SHARED, undo} from "./play.ts";
 import {S} from "./session.ts";
 import {dismissTip, tipOpen} from "./tips.ts";
 
@@ -44,9 +44,11 @@ export function initInput(): void {
 			? loadInfLevel()
 			: S.lvl === SHARED
 				? loadLevel(campaignLvl)
-				: S.lvl < 0
-					? setMode("edit")
-					: loadLevel(Math.min(S.lvl + 1, LEVELS.length - 1));
+				: mergeIndex(S.lvl) >= 0
+					? loadMergeLevel(mergeIndex(S.lvl) + 1)
+					: S.lvl < 0
+						? setMode("edit")
+						: loadLevel(Math.min(S.lvl + 1, LEVELS.length - 1));
 	document
 		.querySelectorAll<HTMLElement>(".dpad button")
 		.forEach((b) => b.addEventListener("click", () => move(b.dataset["d"] as Direction)));

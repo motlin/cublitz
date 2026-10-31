@@ -1,14 +1,26 @@
-import {solidColor} from "../core/cube.ts";
-import {parseLevel, initState} from "../core/level.ts";
+import {cellAt, parseLevel, initState} from "../core/level.ts";
 import {LEVELS} from "../core/levels.ts";
+import {MERGE_LEVELS} from "../core/merge-levels.ts";
 import {CNAME, dirWord, FNAME} from "../core/names.ts";
+import {solidColorOf} from "../core/prism.ts";
 import {openColors, tryMove} from "../core/rules.ts";
 import type {Direction, Face, Level, LevelSource, Paint, State, SwitchCell} from "../core/types.ts";
-import {boxEls, C, placeCube, pulse, renderBoard, renderPieces, rollerEl, shadowEl} from "./board.ts";
+import {
+	boxEls,
+	C,
+	placeCube,
+	pulse,
+	pulseBlock,
+	renderBoard,
+	renderPieces,
+	rollBlock,
+	rollerEl,
+	shadowEl,
+} from "./board.ts";
 import {$, domValue} from "./dom.ts";
 import {clearHint, clearHintState, forgetHintPosition, hintAfterMove} from "./hint.ts";
 import {renderHud, renderLevels, setStatus} from "./hud.ts";
-import {enterCampaignLevel, infWin, renderInfCard} from "./infinite-mode.ts";
+import {campaignLvl, enterCampaignLevel, infWin, renderInfCard} from "./infinite-mode.ts";
 import {mode} from "./modes.ts";
 import {beaten, progress, reduced, S, saveProgress, setSession, unlocked} from "./session.ts";
 import {SFX} from "./sfx.ts";
@@ -32,6 +44,15 @@ const TILT: Record<Direction, string> = {
 
 /** S.lvl for a level from a shared link. */
 export const SHARED = -3;
+
+/** S.lvl for the first merge level. Later ones count down from here. */
+const FIRST_MERGE = -10;
+/** Which merge level an S.lvl means, or -1 when it means something else. */
+export const mergeIndex = (lvl: number): number => (lvl <= FIRST_MERGE ? FIRST_MERGE - lvl : -1);
+export function loadMergeLevel(j: number): void {
+	enterCampaignLevel(campaignLvl);
+	startLevel(MERGE_LEVELS[j]!, FIRST_MERGE - j);
+}
 
 export type Snapshot = {st?: State; hist?: State[]};
 
@@ -63,7 +84,9 @@ export function startLevel(source: LevelSource, i: number, snap?: Snapshot | nul
 				? "Infinite mode"
 				: i === SHARED
 					? "Shared level"
-					: "Your level";
+					: mergeIndex(i) >= 0
+						? `Merge level ${mergeIndex(i) + 1} of ${MERGE_LEVELS.length}`
+						: "Your level";
 	$("lvTip").textContent =
 		L.tip ||
 		(i === SHARED ? "Someone shared this level with you." : i < 0 ? "Testing a level from the editor." : "");
@@ -117,6 +140,13 @@ export function move(d: Direction): void {
 			);
 		} else if (r.why === "stuck") {
 			setStatus(`<b>The box won't budge.</b> Something is in the way on the other side.`, true);
+		} else if (r.why === "misaligned") {
+			setStatus(
+				"<b>Not lined up.</b> A block only takes on a cube straight ahead while lying along that line.",
+				true,
+			);
+		} else if (r.why === "heavy") {
+			setStatus("<b>Too clumsy.</b> A block of cubes can't push a box.", true);
 		} else setStatus("<b>Edge.</b> Nothing to roll onto that way.", true);
 		SFX.play("blocked");
 		if (!reduced) {
@@ -134,20 +164,22 @@ export function move(d: Direction): void {
 		}
 		return;
 	}
-	const wasSolid = solidColor(S.st.f);
+	const wasSolid = solidColorOf(S.st);
 	const prevOpen = openColors(L, S.st);
 	S.hist.push(S.st);
 	S.rolls = (S.rolls || 0) + 1;
 	let anim: Animation | null = null;
+	let blockAnims: Animation[] = [];
 	const finish = (): void => {
 		S.st = r.st;
 		placeCube();
 		if (anim) anim.cancel();
+		blockAnims.forEach((a) => a.cancel());
 		renderPieces();
 		S.busy = false;
 		renderHud(r.painted ? "b" : null);
 		if (r.washed) document.querySelectorAll("#net .nf").forEach((n) => n.classList.add("pop"));
-		const solid = solidColor(S.st.f),
+		const solid = solidColorOf(S.st),
 			nowOpen = openColors(L, S.st);
 		const opened = (Object.keys(nowOpen) as (keyof typeof nowOpen)[]).filter((k) => !prevOpen[k]),
 			closed = (Object.keys(prevOpen) as (keyof typeof prevOpen)[]).filter((k) => !nowOpen[k]);
@@ -172,7 +204,12 @@ export function move(d: Direction): void {
 			msg += ` ${opened.map((k) => cap(CNAME[k])).join(" and ")} door${opened.length > 1 ? "s" : ""} opened.`;
 		if (closed.length)
 			msg += ` ${closed.map((k) => cap(CNAME[k])).join(" and ")} door${closed.length > 1 ? "s" : ""} closed.`;
+		if (r.merged) {
+			pulse(r.nx, r.ny, "flash");
+			msg = `<b>Merged!</b> Your block is ${S.st.units!.length} cubes long now, and rolls as one.`;
+		}
 		if (r.won) SFX.play("win");
+		else if (r.merged) SFX.play("solid");
 		else if (r.flipped >= 0) SFX.play("switch");
 		else if (solid && solid !== wasSolid) SFX.play("solid");
 		else if (r.washed) SFX.play("wash");
@@ -186,8 +223,9 @@ export function move(d: Direction): void {
 			if (r.goal) SFX.play("blocked");
 		}
 		if (r.goal && !r.won) {
+			const onGoal = S.st.units?.find((u) => u.z === 0 && cellAt(L, u.x, u.y)?.t === "goal")?.f ?? S.st.f;
 			const miss = (Object.entries(L.need!) as [Face, Paint][])
-				.filter(([k, v]) => S.st.f[k] !== v)
+				.filter(([k, v]) => onGoal[k] !== v)
 				.map(([k, v]) => `${CNAME[v]} on ${FNAME[k]}`)
 				.join(" and ");
 			msg = `<b>Not yet.</b> The target needs ${miss}.`;
@@ -205,10 +243,18 @@ export function move(d: Direction): void {
 		flushQueue();
 	};
 	S.busy = true;
-	SFX.play("roll");
+	SFX.play(r.merged ? "push" : "roll");
 	if (r.pushed >= 0) SFX.play("push");
 	if (reduced) {
 		finish();
+		return;
+	}
+	if (r.merged) {
+		// The new cube is already where it ends up, so the block shows merged while it pulses
+		S.st = r.st;
+		placeCube();
+		blockAnims = pulseBlock();
+		void Promise.all(blockAnims.map(async (a) => a.finished)).then(finish);
 		return;
 	}
 	const c = C();
@@ -217,6 +263,11 @@ export function move(d: Direction): void {
 		const b = r.st.boxes[r.pushed]!,
 			off = Math.round(c * 0.1);
 		boxEls[r.pushed]!.style.transform = `translate3d(${b.x * c + off}px, ${b.y * c + off}px, 1px)`;
+	}
+	if (S.st.units) {
+		blockAnims = rollBlock(d, ROT[d]);
+		void Promise.all(blockAnims.map(async (a) => a.finished)).then(finish);
+		return;
 	}
 	rollerEl.style.transformOrigin = ORIGIN[d];
 	anim = rollerEl.animate([{transform: "none"}, {transform: ROT[d]}], {
@@ -245,7 +296,8 @@ function win(): void {
 		$("winNext").focus({preventScroll: true});
 		return;
 	}
-	const custom = S.lvl < 0;
+	const merge = mergeIndex(S.lvl);
+	const custom = S.lvl < 0 && merge < 0;
 	if (!custom) {
 		const prev = beaten(L);
 		if (!prev || m < prev) {
@@ -257,19 +309,21 @@ function win(): void {
 	const par = L.par;
 	$("winTitle").textContent = S.usedSolution ? "Solved" : par && m <= par ? "Perfect roll" : "Dry and done";
 	$("winScore").textContent = par ? `${m} moves · par ${par}` : `${m} moves`;
-	const last = S.lvl === LEVELS.length - 1;
+	const last = S.lvl === LEVELS.length - 1 || merge === MERGE_LEVELS.length - 1;
 	$("winNote").textContent =
 		S.lvl === SHARED
 			? "You cleared a shared level. Keep rolling in the main game."
 			: custom
 				? "Your level works. Head back to the editor to tweak or save it."
-				: last
-					? "That was the last canvas. Replay any level to chase par, or build your own in the editor."
-					: S.usedSolution
-						? "You followed the solution this time. Replay it from memory when you are ready."
-						: m <= par!
-							? "You matched the shortest solution."
-							: `Par is ${par}. Replay to tighten it up.`;
+				: merge === MERGE_LEVELS.length - 1
+					? "That was the last merge level. Replay any of them to chase par."
+					: last
+						? "That was the last canvas. Replay any level to chase par, or build your own in the editor."
+						: S.usedSolution
+							? "You followed the solution this time. Replay it from memory when you are ready."
+							: m <= par!
+								? "You matched the shortest solution."
+								: `Par is ${par}. Replay to tighten it up.`;
 	$("winNext").hidden = last && !custom;
 	$("winNext").firstChild!.textContent =
 		S.lvl === SHARED ? "Play the game " : custom ? "Back to editor " : "Next level ";

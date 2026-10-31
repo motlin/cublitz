@@ -90,6 +90,7 @@ export function hintAfterMove(r: MoveSuccess): string | undefined {
 	let done = false;
 	if (m.type === "gate" || m.type === "door" || m.type === "wgate" || m.type === "wash")
 		done = st.x === m.x && st.y === m.y;
+	else if (m.type === "merge") done = !!r.merged;
 	else if (m.type === "switch") done = r.flipped >= 0 && r.nx === m.x && r.ny === m.y;
 	else if (m.type === "solid") done = solidColor(st.f) === m.c;
 	else if (m.type === "button") done = st.boxes[m.box]!.x === m.x && st.boxes[m.box]!.y === m.y;

@@ -1,6 +1,7 @@
 import {FACES, solidColor, workColor} from "../core/cube.ts";
+import {solidColorOf, workColorOf} from "../core/prism.ts";
 import {doorOpen, openColors, pressed} from "../core/rules.ts";
-import type {Cell, Face, Level, Need, PieceColor} from "../core/types.ts";
+import type {Cell, Direction, Face, Level, Need, PieceColor, Unit} from "../core/types.ts";
 import {$, type ElementById} from "./dom.ts";
 import {hintState, renderHint} from "./hint.ts";
 import {buildProbes, scheduleOverlays} from "./overlays.ts";
@@ -15,6 +16,14 @@ let cubeEl: HTMLElement;
 export let rollerEl: HTMLElement;
 export let shadowEl: HTMLElement;
 let faceEls: Partial<Record<Face, HTMLElement>> = {};
+/** One per cube on a level with loose cubes, units first and then the loose ones, whichever cube each shows now. */
+type CubeView = {
+	cube: HTMLElement;
+	roller: HTMLElement;
+	faces: Partial<Record<Face, HTMLElement>>;
+	shadow: HTMLElement;
+};
+let views: CubeView[] = [];
 export let boxEls: HTMLElement[] = [];
 let doorEls: DoorPiece[] = [];
 
@@ -185,20 +194,20 @@ export function renderBoard(): void {
 		board.appendChild(blk);
 		boxEls[i] = blk;
 	});
-	cubeEl = document.createElement("div");
-	cubeEl.className = "cube";
-	rollerEl = document.createElement("div");
-	rollerEl.className = "roller";
-	faceEls = {};
-	for (const k of FACES) {
-		const fe = document.createElement("div");
-		fe.className = "face f-" + k;
-		fe.appendChild(document.createElement("span"));
-		rollerEl.appendChild(fe);
-		faceEls[k] = fe;
-	}
-	cubeEl.appendChild(rollerEl);
+	({cube: cubeEl, roller: rollerEl, faces: faceEls} = makeCube());
 	board.appendChild(cubeEl);
+	views = [];
+	if (S.st.units) {
+		views = [{cube: cubeEl, roller: rollerEl, faces: faceEls, shadow: shadowEl}];
+		for (let i = S.st.units.length + S.st.loose!.length - 1; i > 0; i--) {
+			const shadow = document.createElement("div");
+			shadow.className = "shadow";
+			board.appendChild(shadow);
+			const view = {...makeCube(), shadow};
+			board.appendChild(view.cube);
+			views.push(view);
+		}
+	}
 	buildProbes(L, c);
 	placeCube();
 	renderPieces(true);
@@ -207,10 +216,84 @@ export function renderBoard(): void {
 	scheduleOverlays();
 }
 
+function makeCube(): Omit<CubeView, "shadow"> {
+	const cube = document.createElement("div");
+	cube.className = "cube";
+	const roller = document.createElement("div");
+	roller.className = "roller";
+	const faces: CubeView["faces"] = {};
+	for (const k of FACES) {
+		const fe = document.createElement("div");
+		fe.className = "face f-" + k;
+		fe.appendChild(document.createElement("span"));
+		roller.appendChild(fe);
+		faces[k] = fe;
+	}
+	cube.appendChild(roller);
+	return {cube, roller, faces};
+}
+
 /** A share code's legend can hand any cell a color the type does not list, so this reads it from any cell. */
 const colorOf = (cell: Cell): PieceColor | undefined => (cell as {c?: PieceColor}).c;
 
+function placeViews(): void {
+	const c = C(),
+		st = S.st;
+	const solid = solidColorOf(st);
+	const cubes: (Omit<Unit, "z"> & {z?: number})[] = [...st.units!, ...st.loose!];
+	cubes.forEach((u, i) => {
+		const view = views[i]!;
+		view.cube.style.transform = `translate3d(${u.x * c}px, ${u.y * c}px, ${(u.z ?? 0) * c + 1}px)`;
+		view.shadow.style.transform = `translate3d(${u.x * c + 4}px, ${u.y * c + 6}px, 0.5px)`;
+		view.shadow.hidden = (u.z ?? 0) > 0;
+		for (const k of FACES) {
+			const col = u.f[k];
+			view.faces[k]!.style.setProperty("--fc", col ? COLORS[col] : "var(--clay)");
+			view.faces[k]!.firstChild!.textContent = col ? GLYPH[col] : "";
+		}
+		const isBlock = i < st.units!.length && !!solid;
+		view.cube.classList.toggle("solid", isBlock);
+		view.shadow.classList.toggle("solid", isBlock);
+		if (isBlock) view.shadow.style.setProperty("--gc", COLORS[solid]);
+	});
+}
+
+/** Tips every cube of the block over the one bottom edge they share. */
+export function rollBlock(d: Direction, rotation: string): Animation[] {
+	const c = C(),
+		units = S.st.units!;
+	const xs = units.map((u) => u.x),
+		ys = units.map((u) => u.y);
+	const pivotX = d === "E" ? Math.max(...xs) + 1 : Math.min(...xs),
+		pivotY = d === "S" ? Math.max(...ys) + 1 : Math.min(...ys);
+	return units.map((u, i) => {
+		const roller = views[i]!.roller;
+		const ox = d === "E" || d === "W" ? `${(pivotX - u.x) * c}px` : "50%",
+			oy = d === "N" || d === "S" ? `${(pivotY - u.y) * c}px` : "50%";
+		roller.style.transformOrigin = `${ox} ${oy} ${-u.z * c}px`;
+		return roller.animate([{transform: "none"}, {transform: rotation}], {
+			duration: 170,
+			easing: "cubic-bezier(.45,.05,.55,.95)",
+			fill: "forwards",
+		});
+	});
+}
+
+/** The cubes of a block swelling together as a new one joins. */
+export function pulseBlock(): Animation[] {
+	return S.st.units!.map((_, i) =>
+		views[i]!.roller.animate([{transform: "none"}, {transform: "scale3d(1.14, 1.14, 1.14)"}, {transform: "none"}], {
+			duration: 220,
+			easing: "ease-out",
+		}),
+	);
+}
+
 export function placeCube(): void {
+	if (S.st.units) {
+		placeViews();
+		return;
+	}
 	const c = C(),
 		st = S.st;
 	cubeEl.style.transform = `translate3d(${st.x * c}px, ${st.y * c}px, 1px)`;
@@ -232,7 +315,7 @@ export function renderPieces(instant?: boolean): void {
 		st = S.st,
 		c = C();
 	const open = openColors(L, st),
-		solid = workColor(st.f);
+		solid = st.units ? workColorOf(st) : workColor(st.f);
 	L.switches.forEach((s, i) => tiles[s.x + "," + s.y]!.classList.toggle("on", !!st.sw[i]));
 	for (const key in tiles) {
 		const t = tiles[key]!;

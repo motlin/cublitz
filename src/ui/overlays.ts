@@ -1,5 +1,6 @@
 import {DIRS} from "../core/cube.ts";
-import type {Direction, Level} from "../core/types.ts";
+import {tryMove} from "../core/rules.ts";
+import type {Direction, Level, State} from "../core/types.ts";
 import {$} from "./dom.ts";
 import {C} from "./board.ts";
 import {hintState} from "./hint.ts";
@@ -89,12 +90,13 @@ function drawOverlays(): void {
 			if (p) ovEl("ov-ring", p, P.size(x, y));
 		});
 		if (tier >= 3 && hintState.at === S.st) {
+			const landings = S.st.units ? blockLandings(S.L, S.st, m.path) : null;
 			let x = S.st.x,
 				y = S.st.y;
 			const steps = new Map<string, {x: number; y: number; n: number[]}>();
 			[...m.path].forEach((d, i) => {
-				x += DIRS[d as Direction][0];
-				y += DIRS[d as Direction][1];
+				x = landings ? landings[i]![0] : x + DIRS[d as Direction][0];
+				y = landings ? landings[i]![1] : y + DIRS[d as Direction][1];
 				const k = x + "," + y;
 				if (!steps.has(k)) steps.set(k, {x, y, n: []});
 				steps.get(k)!.n.push(i + 1);
@@ -109,18 +111,21 @@ function drawOverlays(): void {
 	// Solution: arrows on the tile each roll lands on, pointing the way you roll
 	if (solState && solState.path) {
 		const {path, revealed} = solState,
-			cells = new Map<string, {x: number; y: number; steps: {n: number; ang: number}[]}>();
+			cells = new Map<string, {x: number; y: number; steps: {n: number; ang: number}[]}>(),
+			landings = S.st.units ? blockLandings(S.L, S.st, path.slice(0, revealed)) : null;
 		let x = S.st.x,
 			y = S.st.y;
 		for (let i = 0; i < revealed; i++) {
 			const d = path[i] as Direction,
 				px = x,
 				py = y;
-			x += DIRS[d][0];
-			y += DIRS[d][1];
+			x = landings ? landings[i]![0] : x + DIRS[d][0];
+			y = landings ? landings[i]![1] : y + DIRS[d][1];
 			const a = P.at(px, py),
-				b = P.at(x, y);
-			const ang = a && b ? (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI : 0;
+				b = P.at(px + DIRS[d][0], py + DIRS[d][1]);
+			// Blocks land more than one cell along, so the arrow takes the direction of the press
+			const c = landings ? b : P.at(x, y);
+			const ang = a && c ? (Math.atan2(c.y - a.y, c.x - a.x) * 180) / Math.PI : 0;
 			const k = x + "," + y;
 			if (!cells.has(k)) cells.set(k, {x, y, steps: []});
 			cells.get(k)!.steps.push({n: i + 1, ang});
@@ -141,6 +146,16 @@ function drawOverlays(): void {
 			);
 		});
 	}
+}
+/** Where each press of a path puts a block: a roll can carry it more than one cell, and a merge not at all. */
+function blockLandings(L: Level, st0: State, path: string): [number, number][] {
+	let st = st0;
+	return [...path].map((d) => {
+		const r = tryMove(L, st, d as Direction);
+		if (!r.ok) return [st.x, st.y];
+		st = r.st;
+		return [r.nx, r.ny];
+	});
 }
 export function scheduleOverlays(): void {
 	cancelAnimationFrame(ovRaf);

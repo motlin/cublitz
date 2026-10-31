@@ -34,6 +34,7 @@ function validLegendEntry(entry: unknown): boolean {
 	if (!Array.isArray(entry) || entry.length !== 2) return false;
 	const [kind, param] = entry as unknown[];
 	if (kind === "wgate") return isOneOf(param, FACES);
+	if (kind === "cube") return param === "w";
 	return COLORED_KINDS.has(kind as string) && isOneOf(param, LEGEND_COLORS);
 }
 

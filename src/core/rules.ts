@@ -1,16 +1,20 @@
 import {blank, DIRS, FACES, roll, workColor} from "./cube.ts";
 import {boxAt, cellAt, needEntries} from "./level.ts";
+import {exposedWorkColor, footprint, restsOn, rollUnits, synced, workColorOf} from "./prism.ts";
 import type {
 	ButtonCell,
+	Cell,
 	Direction,
 	DoorCell,
 	Faces,
 	Level,
+	LooseCube,
 	MoveResult,
 	OpenColors,
 	Paint,
 	PieceColor,
 	State,
+	Unit,
 } from "./types.ts";
 
 // Which colors have their doors open right now
@@ -19,7 +23,7 @@ export function openColors(L: Level, st: State): OpenColors {
 	L.switches.forEach((s, i) => {
 		if (st.sw[i]) open[s.c] = true;
 	});
-	const solid = workColor(st.f);
+	const solid = workColorOf(st);
 	for (let y = 0; y < L.rows; y++)
 		for (let x = 0; x < L.cols; x++) {
 			const c = cellAt(L, x, y);
@@ -32,7 +36,7 @@ export function openColors(L: Level, st: State): OpenColors {
 /** Whether the button at x, y is held down. Callers only ask about button cells. */
 export function pressed(L: Level, st: State, x: number, y: number, solid?: PieceColor | ""): boolean {
 	const c = cellAt(L, x, y) as ButtonCell;
-	if (st.x === x && st.y === y && (solid ?? workColor(st.f)) === c.c) return true;
+	if (restsOn(st, x, y) && (solid ?? workColorOf(st)) === c.c) return true;
 	const bi = boxAt(st, x, y);
 	return bi >= 0 && st.boxes[bi]!.c === c.c;
 }
@@ -40,10 +44,11 @@ export function pressed(L: Level, st: State, x: number, y: number, solid?: Piece
 /** Whether the door at x, y shows open. Callers only ask about door cells. */
 export function doorOpen(L: Level, st: State, x: number, y: number, open: OpenColors): boolean {
 	const c = cellAt(L, x, y) as DoorCell;
-	return open[c.c] || (st.x === x && st.y === y) || boxAt(st, x, y) >= 0;
+	return open[c.c] || restsOn(st, x, y) || boxAt(st, x, y) >= 0;
 }
 
 export function tryMove(L: Level, st: State, d: Direction): MoveResult {
+	if (st.units) return tryBlockMove(L, st, st.units, st.loose ?? [], d);
 	const [dx, dy] = DIRS[d];
 	const nx = st.x + dx,
 		ny = st.y + dy;
@@ -98,7 +103,122 @@ export function tryMove(L: Level, st: State, d: Direction): MoveResult {
 	return {ok: true, nx, ny, st: ns, painted, washed, pushed, flipped, goal, won, cell};
 }
 
+// The rules above for any number of cubes: each cube answers for the cell under it, and a press into a loose cube
+// merges it rather than rolling. tests/unit/core/merge.test.ts holds a one-cube block to exactly what tryMove does.
+function tryBlockMove(L: Level, st: State, units: Unit[], loose: LooseCube[], d: Direction): MoveResult {
+	const moved = rollUnits(units, d);
+	const feet = footprint(moved);
+	// A block of three or more can hang its middle over a void, held up by its two ends
+	const gap = feet.find((u, i) => (i === 0 || i === feet.length - 1) && !cellAt(L, u.x, u.y));
+	const edge = gap ?? (feet.length < 3 ? feet.find((u) => !cellAt(L, u.x, u.y)) : undefined);
+	if (edge) return {ok: false, why: "edge", nx: edge.x, ny: edge.y};
+	const standing = feet
+		.map((u) => ({u, cell: cellAt(L, u.x, u.y)}))
+		.filter((foot): foot is {u: Unit; cell: Cell} => !!foot.cell);
+	const looseAt = (x: number, y: number) => loose.findIndex((cube) => cube.x === x && cube.y === y);
+	const hit = feet.find((u) => looseAt(u.x, u.y) >= 0);
+	if (hit) {
+		if (feet.length > 1 || units.some((u) => u.z > 0)) return {ok: false, why: "misaligned", nx: hit.x, ny: hit.y};
+		const i = looseAt(hit.x, hit.y),
+			cube = loose[i]!;
+		const st2 = synced({
+			...st,
+			units: [...units, {x: cube.x, y: cube.y, z: 0, f: cube.f}],
+			loose: loose.filter((_, j) => j !== i),
+		});
+		return {
+			ok: true,
+			nx: cube.x,
+			ny: cube.y,
+			st: st2,
+			painted: null,
+			washed: false,
+			pushed: -1,
+			flipped: -1,
+			goal: false,
+			won: false,
+			cell: cellAt(L, cube.x, cube.y)!,
+			merged: true,
+		};
+	}
+	for (const {u, cell} of standing)
+		if (cell.t === "gate" && u.f.b !== cell.c)
+			return {ok: false, why: "gate", c: cell.c, down: u.f.b, nx: u.x, ny: u.y};
+	for (const {u, cell} of standing)
+		if (cell.t === "wgate" && u.f[cell.f])
+			return {ok: false, why: "wgate", f: cell.f, has: u.f[cell.f], nx: u.x, ny: u.y};
+	let boxes = st.boxes,
+		pushed = -1;
+	for (const {u} of standing) {
+		const bi = boxAt(st, u.x, u.y);
+		if (bi < 0) continue;
+		if (moved.length > 1) return {ok: false, why: "heavy", nx: u.x, ny: u.y};
+		const box = st.boxes[bi]!;
+		if (workColorOf(st) !== box.c) return {ok: false, why: "box", c: box.c, nx: u.x, ny: u.y};
+		const [dx, dy] = DIRS[d];
+		const bx = u.x + dx,
+			by = u.y + dy,
+			bc = cellAt(L, bx, by);
+		const free = bc && !["gate", "wgate", "goal"].includes(bc.t) && boxAt(st, bx, by) < 0 && looseAt(bx, by) < 0;
+		if (!free) return {ok: false, why: "stuck", c: box.c, nx: u.x, ny: u.y};
+		boxes = st.boxes.map((b, i) => (i === bi ? {...b, x: bx, y: by} : b));
+		pushed = bi;
+		if (bc.t === "door" && !openColors(L, synced({...st, units: moved, boxes}))[bc.c])
+			return {ok: false, why: "door", c: bc.c, nx: bx, ny: by};
+	}
+	const open = openColors(L, synced({...st, units: moved, boxes}));
+	for (const {u, cell} of standing)
+		if (cell.t === "door" && !open[cell.c]) return {ok: false, why: "door", c: cell.c, nx: u.x, ny: u.y};
+	let painted: Paint | null = null;
+	let landed = moved.map((u) => {
+		const cell = standing.find((foot) => foot.u === u)?.cell;
+		if (cell?.t !== "paint") return u;
+		painted ??= cell.c;
+		return {...u, f: {...u.f, b: cell.c}};
+	});
+	let washed = false;
+	if (standing.some(({cell}) => cell.t === "wash")) {
+		washed = landed.some((u) => FACES.some((k) => u.f[k]));
+		landed = landed.map((u) => ({...u, f: blank()}));
+	}
+	const color = exposedWorkColor(landed);
+	let sw = st.sw,
+		flipped = -1;
+	for (const {cell} of standing)
+		if (cell.t === "switch" && color === cell.c) {
+			if (sw === st.sw) sw = st.sw.slice();
+			sw[cell.i]! ^= 1;
+			if (flipped < 0) flipped = cell.i;
+		}
+	const on = (t: Cell["t"]) => standing.findIndex(({cell}) => cell.t === t);
+	const goalAt = on("goal");
+	const goal = goalAt >= 0;
+	const goalFoot = standing[goalAt];
+	const goalFaces = goalFoot && landed[moved.indexOf(goalFoot.u)]!.f;
+	const won = goal && needEntries(L).every(([k, v]) => goalFaces![k] === v);
+	const featured = goal ? goalFoot! : (standing.find(({cell}) => cell.t !== "floor") ?? standing[0]!);
+	return {
+		ok: true,
+		nx: feet[0]!.x,
+		ny: feet[0]!.y,
+		st: synced({...st, units: landed, boxes, sw}),
+		painted,
+		washed,
+		pushed,
+		flipped,
+		goal,
+		won,
+		cell: featured.cell,
+	};
+}
+
 export function stateKey(st: State): string {
+	const block = st.units
+		? "," +
+			st.units.map((u) => [u.x, u.y, u.z, FACES.map((k) => u.f[k] || "-").join("")].join(":")).join(";") +
+			"," +
+			st.loose!.map((cube) => cube.x + ":" + cube.y).join(";")
+		: "";
 	return (
 		st.x +
 		"," +
@@ -108,6 +228,7 @@ export function stateKey(st: State): string {
 		"," +
 		st.boxes.map((b) => b.x + ":" + b.y).join(";") +
 		"," +
-		st.sw.join("")
+		st.sw.join("") +
+		block
 	);
 }

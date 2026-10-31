@@ -1,4 +1,5 @@
 import {blank} from "./cube.ts";
+import {withUnits} from "./prism.ts";
 import type {Box, Cell, Face, Level, LevelSource, Paint, State} from "./types.ts";
 
 // Map chars: ' ' void, '.' floor, 'S' start, 'X' target, lowercase color letter = puddle, uppercase = gate.
@@ -24,7 +25,10 @@ export function parseLevel<T extends LevelSource>(source: T): T & Level {
 			else if (k) {
 				const [kind, c] = k;
 				if (kind === "wgate") cell = {t: "wgate", f: c};
-				else if (kind === "box") {
+				else if (kind === "cube") {
+					cell = {t: "floor"};
+					(L.cubes0 ||= []).push({x, y});
+				} else if (kind === "box") {
 					cell = {t: "floor"};
 					L.boxes0.push({x, y, c});
 				} else if (kind === "switch") {
@@ -48,7 +52,13 @@ export function parseLevel<T extends LevelSource>(source: T): T & Level {
 }
 
 export function initState(L: Level): State {
-	return {x: L.sx, y: L.sy, f: blank(), boxes: L.boxes0.map((b) => ({...b})), sw: L.switches.map(() => 0)};
+	const st: State = {x: L.sx, y: L.sy, f: blank(), boxes: L.boxes0.map((b) => ({...b})), sw: L.switches.map(() => 0)};
+	return L.cubes0
+		? withUnits(
+				st,
+				L.cubes0.map((cube) => ({...cube, f: blank()})),
+			)
+		: st;
 }
 
 export const cellAt = (L: Level, x: number, y: number): Cell | null => (L.cells[y] || [])[x] || null;
