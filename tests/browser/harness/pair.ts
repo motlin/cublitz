@@ -159,8 +159,9 @@ export class Pair {
 		});
 	}
 
-	/** Screenshots both pages with animations settled. Under heavy load Chromium can still be finishing
-	 * raster work on the 3D layers, so a mismatch gets a few delayed retakes before it counts. */
+	/** Screenshots both pages with animations settled. Screenshots disable the hint rings' running animation, and
+	 * Chromium can take a moment to raster them afresh, so a mismatch gets a few delayed retakes before it counts.
+	 * The original compared with itself mismatches the same way. */
 	async expectSameScreenshot(name: string): Promise<void> {
 		const shoot = () => Promise.all(this.pages.map((page) => page.screenshot({animations: "disabled", fullPage: true})));
 		let [legacy, dist] = (await shoot()) as [Buffer, Buffer];
