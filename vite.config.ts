@@ -2,7 +2,7 @@ import {readFileSync} from "node:fs";
 import {defineConfig, type Plugin} from "vite";
 import {inlineStylesheets} from "./scripts/single-file-page.ts";
 
-const APP_TAG = '<script type="module" src="/src/app.js"></script>';
+const APP_TAG = '<script type="module" src="/src/main.ts"></script>';
 
 // The shipped page has to stay the original single file. Vite would minify the CSS and move it and the
 // script to deferred external files, which can paint the page before the game has set it up. So the raw

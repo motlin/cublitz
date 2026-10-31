@@ -1,3 +1,8 @@
+// @ts-nocheck: the page code not yet moved to typed modules in ui/.
+import { $ } from './ui/dom.ts';
+import { beaten, eraseProgress, loadProgress, loadReducedMotion, progress, reduced, S, saveProgress, setSession, unlocked } from './ui/session.ts';
+import { clearTipsSeen, readBest, readColors, readDraft, readMine, readMuted, readRun, readTipsSeen, writeBest, writeColors, writeDraft, writeMine, writeMuted, writeRun, writeTipsSeen } from './ui/storage.ts';
+import { cap, COLORS, esc, GLYPH, WGLYPH } from './ui/text.ts';
 // The game's page code, still as the original script wrote it. The pure rules live in core/.
 import { FACES, DIRS, roll, solidColor, workColor } from './core/cube.ts';
 import { nextMilestone, hintTexts } from './core/hints.ts';
@@ -9,23 +14,15 @@ import { openColors, pressed, doorOpen, tryMove } from './core/rules.ts';
 import { encodeLevel, decodeLevel } from './core/share.ts';
 import { solve } from './core/solver.ts';
 
-const COLORS = { r:'var(--red)', o:'var(--orange)', y:'var(--yellow)', g:'var(--green)', c:'var(--cyan)', b:'var(--blue)', p:'var(--purple)', w:'var(--clay)' };
 const PAINT_COLORS = 'roygcbp'; // white only exists as switches, buttons, boxes and doors
-const GLYPH = { r:'▲', o:'✚', y:'●', g:'◆', c:'▼', b:'■', p:'★', w:'○' };
-const WGLYPH = { b:'', t:'◉', n:'↑', s:'↓', e:'→', w:'←' };
 const ROT = { E:'rotateY(90deg)', W:'rotateY(-90deg)', N:'rotateX(90deg)', S:'rotateX(-90deg)' };
 const ORIGIN = { E:'100% 50% 0', W:'0% 50% 0', N:'50% 0% 0', S:'50% 100% 0' };
 const TILT = { E:'rotateY(14deg)', W:'rotateY(-14deg)', N:'rotateX(14deg)', S:'rotateX(-14deg)' };
 
 
-// Progress
-let progress = {};
-try { progress = JSON.parse(localStorage.getItem('cubist-progress-v2') || '{}') || {}; } catch (e) { progress = {}; }
-function saveProgress() { try { localStorage.setItem('cubist-progress-v2', JSON.stringify(progress)); } catch (e) {} }
+loadProgress();
 
-const $ = id => document.getElementById(id);
 const board = $('board');
-let S = null; // { lvl, L, st, hist, busy, won }  lvl is -1 for a level from the editor
 let tiles = {}, cubeEl, rollerEl, shadowEl, faceEls = {}, boxEls = [], doorEls = [], queued = null;
 const C = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--c'));
 
@@ -35,13 +32,12 @@ function cellSize(L) {
   return Math.max(24, Math.min(62, Math.floor(vw / span)));
 }
 
-const unlocked = i => i === 0 || !!progress[LEVELS[i - 1].name] || !!progress[LEVELS[i].name];
 function loadLevel(i, snap) { if (!unlocked(i)) return; startLevel(LEVELS[i], i, snap); }
 function startLevel(L, i, snap, opts) {
   if (typeof clearSolution === 'function' && board) clearSolution();
   hintState = null; $('hintBox').hidden = true;
   if (!L.cells) parseLevel(L);
-  S = { lvl:i, L, st:initState(L), hist:[], busy:false, won:false, rolls:(opts && opts.rolls) || 0 };
+  setSession({ lvl:i, L, st:initState(L), hist:[], busy:false, won:false, rolls:(opts && opts.rolls) || 0 });
   if (i >= 0) { campaignLvl = i; infinite = false; }
   if (snap && snap.st) { S.st = snap.st; S.hist = snap.hist || []; }
   queued = null;
@@ -233,7 +229,7 @@ function setStatus(html, warn) {
 }
 function pulse(x, y, cls) { const t = tiles[x+','+y]; if (!t) return; t.classList.remove(cls); void t.offsetWidth; t.classList.add(cls); }
 
-const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+loadReducedMotion();
 function move(d) {
   if (S.won || tipOpen()) return;
   if (S.busy) { queued = d; return; }
@@ -319,7 +315,6 @@ function move(d) {
   anim.finished.then(finish);
 }
 function flushQueue() { if (queued) { const q = queued; queued = null; move(q); } }
-const cap = s => s[0].toUpperCase() + s.slice(1);
 
 function win() {
   S.won = true;
@@ -358,7 +353,6 @@ function undo() {
   if (keep) { stopAutoReveal(); planSolution(keep); }
 }
 // ---------- Tutorial pop-ups: shown the first time a level contains something new ----------
-const TIPS_KEY = 'cubist-tips-seen-v1';
 const TIPS = {
   roll: { title:'Rolling', art:() => [['start'], ['arrow'], ['floor'], ['arrow'], ['goal']],
     body:'Use the arrow keys, WASD, or swipe on a phone to roll your cube one tile at a time. Each roll tips it over an edge, so a different side ends up on the floor. It can only roll onto tiles, never off the edge. Reach the glowing target to finish the level.' },
@@ -380,7 +374,7 @@ const TIPS = {
     body:'A button holds its doors open only while something of its color sits on it. If you step off, the door shuts. A solid cube can push a box of its own color, and a box left on the button keeps the door open for good.' },
 };
 const TIP_ORDER = ['roll', 'paint', 'gate', 'need', 'switch', 'button', 'wgate', 'wash', 'white'];
-let tipsSeen = {}; try { tipsSeen = JSON.parse(localStorage.getItem(TIPS_KEY) || '{}') || {}; } catch (e) { tipsSeen = {}; }
+let tipsSeen = readTipsSeen();
 let tipQueue = [], tipTotal = 0;
 function levelTips(L) {
   const found = {};
@@ -429,7 +423,7 @@ function showNextTip() {
 }
 function dismissTip() {
   const t = tipQueue.shift();
-  if (t) { tipsSeen[t.key] = true; try { localStorage.setItem(TIPS_KEY, JSON.stringify(tipsSeen)); } catch (e) {} }
+  if (t) { tipsSeen[t.key] = true; writeTipsSeen(tipsSeen); }
   showNextTip();
   if ($('tip').hidden) $('viewport').focus?.({ preventScroll:true });
 }
@@ -446,8 +440,8 @@ $('resetProgress').onclick = () => {
     return;
   }
   clearTimeout(resetTimer);
-  progress = {}; saveProgress();
-  tipsSeen = {}; try { localStorage.removeItem(TIPS_KEY); } catch (e) {}
+  eraseProgress();
+  tipsSeen = {}; clearTipsSeen();
   b.classList.remove('armed'); b.textContent = 'Reset all progress';
   $('resetNote').hidden = false; $('resetNote').textContent = 'Progress erased. Every level after the first is locked again.';
   setTimeout(() => { $('resetNote').hidden = true; }, 3000);
@@ -455,7 +449,7 @@ $('resetProgress').onclick = () => {
   renderTitle();
 };
 $('tipsReplay').onclick = () => {
-  tipsSeen = {}; try { localStorage.removeItem(TIPS_KEY); } catch (e) {}
+  tipsSeen = {}; clearTipsSeen();
   $('resetNote').hidden = false; $('resetNote').textContent = 'The tutorial pop-ups will show again as you reach each new thing.';
   setTimeout(() => { $('resetNote').hidden = true; }, 3000);
 };
@@ -625,12 +619,9 @@ function scheduleOverlays() { cancelAnimationFrame(ovRaf); ovRaf = requestAnimat
 try { new ResizeObserver(scheduleOverlays).observe($('viewport')); } catch (e) {}
 
 // ---------- Infinite mode: endless generated levels, scored against par ----------
-const INF_RUN_KEY = 'cublitz-infinite-run-v1', INF_BEST_KEY = 'cublitz-infinite-best-v1';
 let infinite = false, campaignLvl = 0, infNext = null, infGenToken = 0;
-const loadJSON = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } };
-const saveJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
-let run = loadJSON(INF_RUN_KEY, null), best = loadJSON(INF_BEST_KEY, { cleared:0, rating:0, score:0 });
-function newRun() { run = { seed:Math.floor(Math.random() * 1e9), n:0, score:0, effs:[], cleared:0, streak:0, bestStreak:0 }; saveJSON(INF_RUN_KEY, run); infNext = null; }
+let run = readRun(), best = readBest();
+function newRun() { run = { seed:Math.floor(Math.random() * 1e9), n:0, score:0, effs:[], cleared:0, streak:0, bestStreak:0 }; writeRun(run); infNext = null; }
 // Generate level n of the current run without freezing the page: a few tries per tick
 function genInf(n, cb, background) {
   const token = background ? 0 : ++infGenToken, nextBatch = infSearch(run.seed, n);
@@ -684,11 +675,11 @@ function infWin() {
   const eff = Math.min(1, par / m), pts = Math.round(100 * eff);
   run.effs.push(eff); run.score += pts; run.cleared++;
   run.streak = m <= par ? run.streak + 1 : 0; run.bestStreak = Math.max(run.bestStreak, run.streak);
-  run.n++; saveJSON(INF_RUN_KEY, run);
+  run.n++; writeRun(run);
   const rating = infRating(run);
   if (run.cleared > best.cleared || run.score > best.score || (run.effs.length >= 3 && rating > best.rating)) {
     best = { cleared:Math.max(best.cleared, run.cleared), score:Math.max(best.score, run.score), rating:run.effs.length >= 3 ? Math.max(best.rating, rating) : best.rating };
-    saveJSON(INF_BEST_KEY, best);
+    writeBest(best);
   }
   $('winTitle').textContent = m <= par ? 'Perfect roll' : 'Cleared';
   $('winScore').textContent = `${m} rolls · par ${par} · +${pts} points`;
@@ -702,7 +693,7 @@ function infWin() {
 let skipArmed = null, newArmed = null;
 $('infSkip').onclick = () => {
   if (S.busy) return;
-  run.effs.push(0); run.streak = 0; run.n++; saveJSON(INF_RUN_KEY, run);
+  run.effs.push(0); run.streak = 0; run.n++; writeRun(run);
   $('infNote').textContent = 'Skipped. That canvas counts as 0 toward your rating.';
   setTimeout(() => { $('infNote').textContent = ''; }, 3500);
   loadInfLevel();
@@ -833,7 +824,6 @@ $('editCopy').onclick = () => { loadIntoEditor(S.L, S.lvl === -1 ? S.L.name : S.
 addEventListener('hashchange', () => setMode(location.hash === '#editor' ? 'edit' : mode === 'title' ? 'title' : 'play'));
 
 // ---------- Editor ----------
-const DRAFT_KEY = 'cubist-editor-draft-v1', MINE_KEY = 'cubist-my-levels-v1';
 const TOOLS = [
   ['floor', 'Floor'], ['erase', 'Erase'], ['start', 'Start'], ['goal', 'Target'],
   ['paint', 'Puddle'], ['wash', 'Paint remover'], ['gate', 'Gate'], ['wgate', 'White gate'], ['switch', 'Switch'], ['button', 'Button'], ['box', 'Box'], ['door', 'Door'],
@@ -863,10 +853,7 @@ function loadIntoEditor(L, name, id) {
   lastCheck = null;
   saveDraft();
 }
-function saveDraft() { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(ED)); } catch (e) {} }
-function loadDraft() { try { const d = JSON.parse(localStorage.getItem(DRAFT_KEY)); if (d && d.grid) return d; } catch (e) {} return null; }
-function mine() { try { return JSON.parse(localStorage.getItem(MINE_KEY)) || []; } catch (e) { return []; } }
-function setMine(list) { try { localStorage.setItem(MINE_KEY, JSON.stringify(list)); return true; } catch (e) { return false; } }
+const saveDraft = () => writeDraft(ED), loadDraft = readDraft, mine = readMine, setMine = writeMine;
 
 // Editor grid -> level data the game understands
 function edToLevel() {
@@ -1065,7 +1052,6 @@ function renderMine() {
     <button type="button" data-act="edit" data-id="${x.id}">Edit</button>
     <button type="button" data-act="del" data-id="${x.id}" class="${armedDelete === x.id ? 'armed' : ''}">${armedDelete === x.id ? 'Confirm' : 'Delete'}</button></li>`).join('');
 }
-const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' })[c]);
 $('edList').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   const list = mine(), x = list.find(i => i.id === b.dataset.id); if (!x) return;
@@ -1086,11 +1072,10 @@ $('edList').addEventListener('click', e => {
 });
 
 // ---------- Paint colors ----------
-const PAL_KEY = 'cubist-colors-v1';
 const VAR = { r:'--red', o:'--orange', y:'--yellow', g:'--green', c:'--cyan', b:'--blue', p:'--purple' };
 const rootCS = getComputedStyle(document.documentElement);
 const DEFAULT_HEX = {}; for (const k in VAR) DEFAULT_HEX[k] = rootCS.getPropertyValue(VAR[k]).trim().toLowerCase();
-let custom = {}; try { custom = JSON.parse(localStorage.getItem(PAL_KEY) || '{}') || {}; } catch (e) { custom = {}; }
+let custom = readColors();
 let palSel = 'r';
 const hexOf = k => custom[k] || DEFAULT_HEX[k];
 const toRGB = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
@@ -1102,7 +1087,7 @@ function applyColors() {
   }
   $('palDots').innerHTML = Object.keys(VAR).map(k => `<i style="background:${COLORS[k]}"></i>`).join('');
 }
-function saveColors() { try { localStorage.setItem(PAL_KEY, JSON.stringify(custom)); } catch (e) {} }
+function saveColors() { writeColors(custom); }
 function setColor(k, hex) {
   hex = hex.toLowerCase();
   if (hex === DEFAULT_HEX[k]) delete custom[k]; else custom[k] = hex;
@@ -1174,9 +1159,8 @@ document.addEventListener('keydown', e => {
 
 // ---------- Sound effects, synthesized with Web Audio (no files) ----------
 const SFX = (() => {
-  const KEY = 'cubist-sound-v1';
   let ctx = null, master = null, muted = false;
-  try { muted = localStorage.getItem(KEY) === 'off'; } catch (e) {}
+  muted = readMuted();
   function ensure() {
     if (!ctx) {
       try {
@@ -1241,7 +1225,7 @@ const SFX = (() => {
     play(name) { if (muted || !SOUNDS[name]) return; if (!ensure()) return; try { SOUNDS[name](); } catch (e) {} },
     ensure,
     get muted() { return muted; },
-    setMuted(m) { muted = m; try { localStorage.setItem(KEY, m ? 'off' : 'on'); } catch (e) {} },
+    setMuted(m) { muted = m; writeMuted(m); },
   };
 })();
 // Browsers only allow audio after the viewer interacts, so wake it on the first press

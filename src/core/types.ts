@@ -31,7 +31,7 @@ export type LevelSource = {
 	map: string[];
 	name?: string;
 	tip?: string;
-	par?: number;
+	par?: number | null;
 	k?: Legend;
 	need?: Need | undefined;
 	inf?: number;

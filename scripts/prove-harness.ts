@@ -52,8 +52,8 @@ const MUTATIONS: Mutation[] = [
 	},
 	{
 		name: "storage: sound key renamed",
-		from: 'const KEY = "cubist-sound-v1"',
-		to: 'const KEY = "cublitz-sound-v1"',
+		from: 'sound: "cubist-sound-v1"',
+		to: 'sound: "cublitz-sound-v1"',
 		grep: "sound: toggle",
 	},
 	{
