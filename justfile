@@ -21,6 +21,10 @@ check: install
 test *args: install
     pnpm exec vitest run {{ args }}
 
+# Run the unit tests and report coverage of the core modules
+coverage: install
+    pnpm exec vitest run --coverage
+
 # Run the Playwright differential harness against a fresh build
 test-browser *args: build
     pnpm exec playwright test {{ args }}
