@@ -12,9 +12,10 @@ install:
 dev *args: install
     pnpm exec vite {{ args }}
 
-# Type-check and confirm the legacy artifact is untouched
+# Type-check, lint and confirm the legacy artifact is untouched
 check: install
     pnpm run typecheck
+    pnpm run lint
     node scripts/verify-legacy.ts
 
 # Run the fast unit tests and golden checks
