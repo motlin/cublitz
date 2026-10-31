@@ -1,0 +1,28 @@
+{
+	"name": "cublitz",
+	"version": "0.0.0",
+	"private": true,
+	"description": "A rolling paint puzzle",
+	"type": "module",
+	"scripts": {
+		"preinstall": "npx only-allow pnpm",
+		"dev": "vite",
+		"preview": "vite preview",
+		"build": "vite build",
+		"typecheck": "tsc --noEmit",
+		"test:unit": "vitest run",
+		"test:browser": "playwright test",
+		"golden": "node scripts/generate-golden.ts",
+		"prove-harness": "node scripts/prove-harness.ts",
+		"deploy": "wrangler pages deploy --branch main"
+	},
+	"devDependencies": {
+		"@playwright/test": "1.64.1",
+		"@types/node": "^26.6.6",
+		"typescript": "^7.0.2",
+		"vite": "^8.3.5",
+		"vitest": "^5.0.5",
+		"wrangler": "^4.156.0"
+	},
+	"packageManager": "pnpm@12.7.0"
+}

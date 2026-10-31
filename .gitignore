@@ -1,0 +1,9 @@
+/node_modules
+/dist
+/test-results
+/playwright-report
+/.wrangler
+/.vite
+.DS_Store
+.envrc
+.llm/

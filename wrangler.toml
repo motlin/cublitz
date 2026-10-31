@@ -1,0 +1,7 @@
+# Cloudflare Pages, not a Worker: the whole deployable is the static build in dist/.
+#
+#   just build          writes dist/
+#   just deploy         uploads dist/ to the production Pages deployment
+name = "cublitz"
+compatibility_date = "2025-01-12"
+pages_build_output_dir = "dist"
