@@ -41,8 +41,8 @@ const MUTATIONS: Mutation[] = [
 	},
 	{
 		name: "timing: roll animation is 171ms",
-		from: "duration: 170,",
-		to: "duration: 171,",
+		from: "{ transform: ROT[d] }], {\n\t\tduration: 170,",
+		to: "{ transform: ROT[d] }], {\n\t\tduration: 171,",
 		grep: "level 1 First Roll",
 	},
 	{
@@ -89,8 +89,8 @@ const MUTATIONS: Mutation[] = [
 	},
 	{
 		name: "script: dist is not what the source builds",
-		from: "duration: 170,",
-		to: "duration: 170 ,",
+		from: "{ transform: ROT[d] }], {\n\t\tduration: 170,",
+		to: "{ transform: ROT[d] }], {\n\t\tduration: 170 ,",
 		grep: "what the current source builds",
 	},
 	{
