@@ -6,6 +6,10 @@ import {COLORS, WGLYPH} from "./text.ts";
 
 // The editor's grid and what it becomes, without the page.
 
+/** The stylesheets must stay the original's, so a loose cube is drawn inline: a clay block with a plus on it. */
+export const LOOSE_CUBE_STYLE =
+	"background:linear-gradient(#1b1e29,#1b1e29) center/12% 44% no-repeat,linear-gradient(#1b1e29,#1b1e29) center/44% 12% no-repeat,linear-gradient(var(--clay),var(--clay)) center/72% 72% no-repeat,linear-gradient(135deg,var(--tile-hi),var(--tile))";
+
 export type GridCheck = {level: LevelSource; error?: undefined} | {level?: undefined; error: string};
 
 export function blankGrid(cols: number, rows: number): (EditorCell | null)[][] {
@@ -39,6 +43,9 @@ export function draftFromLevel(L: LevelSource, name: string, id: string | null):
 	P.boxes0.forEach((b) => {
 		grid[b.y]![b.x] = {t: "box", c: b.c};
 	});
+	P.cubes0?.forEach((cube) => {
+		grid[cube.y]![cube.x] = {t: "cube"};
+	});
 	return {id, name, cols: P.cols, rows: P.rows, grid, need: {...L.need}};
 }
 
@@ -66,7 +73,7 @@ export function edToLevel(ED: EditorDraft): GridCheck {
 				if (c.t === "gate") return c.c.toUpperCase();
 				if (c.t === "wgate" && c.f === "b") return "W";
 				if (c.t === "wash") return "Z";
-				const param = c.t === "wgate" ? c.f : c.c;
+				const param = c.t === "wgate" ? c.f : c.t === "cube" ? "w" : c.c;
 				const key = c.t + param;
 				if (!rev[key]) {
 					const ch = POOL[Object.keys(rev).length]!;
@@ -90,6 +97,7 @@ export function edToLevel(ED: EditorDraft): GridCheck {
 export function edCellHTML(c: EditorCell | null, need: Need): string {
 	if (!c) return '<div class="ec void"></div>';
 	if (c.t === "wash") return '<div class="ec wash"><b>✦</b></div>';
+	if (c.t === "cube") return `<div class="ec loose" style="${LOOSE_CUBE_STYLE}"></div>`;
 	if (c.t === "wgate") return `<div class="ec wgate wg-${c.f}">${WGLYPH[c.f] ? `<b>${WGLYPH[c.f]}</b>` : ""}</div>`;
 	const color = (c as {c?: PieceColor}).c;
 	const style = color

@@ -1,6 +1,13 @@
 import {expect, test} from "vite-plus/test";
 import {parseLevel} from "../../../src/core/level.ts";
-import {blankGrid, draftFromLevel, edCellHTML, edToLevel, newEditor} from "../../../src/ui/editor-grid.ts";
+import {
+	blankGrid,
+	draftFromLevel,
+	edCellHTML,
+	edToLevel,
+	LOOSE_CUBE_STYLE,
+	newEditor,
+} from "../../../src/ui/editor-grid.ts";
 import type {EditorDraft} from "../../../src/ui/storage.ts";
 
 const draft = (grid: EditorDraft["grid"], over: Partial<EditorDraft> = {}): EditorDraft => ({
@@ -92,6 +99,36 @@ test("a level comes back as a grid, with its start and boxes as cells", () => {
 		need: {t: "b"},
 	});
 	expect(parseLevel(edToLevel(expected).level!).rows).toBe(3);
+});
+
+test("a loose cube becomes one legend entry, however many cubes share it", () => {
+	const grid: EditorDraft["grid"] = [[{t: "start"}, {t: "cube"}, {t: "floor"}, {t: "cube"}, {t: "goal"}]];
+	expect(edToLevel(draft(grid))).toStrictEqual({
+		level: {name: "Mine", map: ["S1.1X"], k: {1: ["cube", "w"]}},
+	});
+});
+
+test("a level's loose cubes come back as cells and survive the round trip", () => {
+	const source = {name: "Stick Together", map: ["S+.X"], k: {"+": ["cube", "w"]}} as Parameters<
+		typeof draftFromLevel
+	>[0];
+	const copy = draftFromLevel(source, "Copy", null);
+	expect(JSON.parse(JSON.stringify(copy))).toStrictEqual({
+		id: null,
+		name: "Copy",
+		cols: 4,
+		rows: 1,
+		grid: [[{t: "start"}, {t: "cube"}, {t: "floor"}, {t: "goal"}]],
+		need: {},
+	});
+	expect(edToLevel(copy)).toStrictEqual({
+		level: {name: "Copy", map: ["S1.X"], k: {1: ["cube", "w"]}},
+	});
+	expect(parseLevel(edToLevel(copy).level!).cubes0).toStrictEqual([{x: 1, y: 0}]);
+});
+
+test("a loose cube's cell is drawn in its own class, which the board's .cube rules can't reach", () => {
+	expect(edCellHTML({t: "cube"}, {})).toBe(`<div class="ec loose" style="${LOOSE_CUBE_STYLE}"></div>`);
 });
 
 test("cells render as the original markup", () => {

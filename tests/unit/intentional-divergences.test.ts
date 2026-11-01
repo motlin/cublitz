@@ -19,6 +19,7 @@ describe("the intentional divergences", () => {
 			"Level 23's tip says nothing on that level takes paint off",
 			"Infinite levels shuffle the palette with the seeded generator, so a seed gives the same levels in every engine",
 			"The level bar links to the merge levels after the campaign",
+			"The editor's tool bar has a Loose cube tool",
 		]);
 	});
 

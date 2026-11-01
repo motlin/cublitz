@@ -33,12 +33,13 @@ The shipped game differs from `legacy/original.html` in exactly these ways, whic
 - Level 23's tip says nothing on that level takes paint off
 - Infinite levels shuffle the palette with the seeded generator, so a seed gives the same levels in every engine
 - The level bar links to the merge levels after the campaign
+- The editor's tool bar has a Loose cube tool
 
 `tests/support/intentional-divergences.ts` holds each one as an exact edit to the original's text. The harness applies those edits to an in-memory copy of the original and compares `dist/` against that copy, so any other difference still fails. A unit test checks the list above against that file.
 
 ## Merge levels
 
-`src/core/merge-levels.ts` holds levels beyond the original game. A map cell whose legend entry is `["cube", "w"]` is a loose cube. Pressing toward one merges it into the player's block without moving, and pressing again rolls the block, which tips like any rectangular prism. Every cube keeps its own faces and answers for the cell under it, a block of three or more can hang its middle over a void, and only a block lying along the press, or a lone cube, can take on another. A level with loose cubes runs through `tryBlockMove` in `src/core/rules.ts`, and every other level never reaches it.
+`src/core/merge-levels.ts` holds levels beyond the original game. A map cell whose legend entry is `["cube", "w"]` is a loose cube. Pressing toward one merges it into the player's block without moving, and pressing again rolls the block, which tips like any rectangular prism. Every cube keeps its own faces and answers for the cell under it, a block of three or more can hang its middle over a void, and only a block lying along the press, or a lone cube, can take on another. A level with loose cubes runs through `tryBlockMove` in `src/core/rules.ts`, and every other level never reaches it. The editor's Loose cube tool places them, so a player can build, test, save and share a merge level.
 
 ## Commands
 

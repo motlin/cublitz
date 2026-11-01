@@ -1,8 +1,8 @@
 import {type Browser, expect, type Page, test} from "@playwright/test";
-import {initState} from "../../src/core/level.ts";
+import {initState, parseLevel} from "../../src/core/level.ts";
 import {MERGE_LEVELS} from "../../src/core/merge-levels.ts";
 import {solve} from "../../src/core/solver.ts";
-import type {Direction} from "../../src/core/types.ts";
+import type {Direction, LevelSource} from "../../src/core/types.ts";
 import {atLevel, BASE_URL} from "./harness/pair.ts";
 
 const KEYS: Record<Direction, string> = {N: "ArrowUp", S: "ArrowDown", E: "ArrowRight", W: "ArrowLeft"};
@@ -110,6 +110,75 @@ test("a misaligned block is told why it can't merge", async ({browser}) => {
 	await roll(page, "E");
 	await page.keyboard.press("ArrowDown");
 	await expect(page.locator("#status")).toContainText("lined up");
+	await page.close();
+});
+
+const cell = (x: number, y: number) => `#edGrid [data-x="${x}"][data-y="${y}"]`;
+const decode = (code: string): LevelSource =>
+	JSON.parse(Buffer.from(code.replace("CUBLITZ:", ""), "base64").toString()) as LevelSource;
+const BUILT = {
+	name: "My Merge",
+	map: ["........", "........", "S1.....X", "........", "........"],
+	k: {1: ["cube", "w"]},
+};
+
+test("a merge level built in the editor checks, tests, saves and shares", async ({browser}) => {
+	const page = await open(browser, "reduce");
+	const errors: string[] = [];
+	page.on("pageerror", (error) => errors.push(error.message));
+	await page.locator("#modeEdit").click();
+	await page.locator("#edName").fill("My Merge");
+	await page.locator('#edTools [data-tool="cube"]').click();
+	await page.locator(cell(1, 2)).click();
+	await expect(page.locator(`${cell(1, 2)}.loose`)).toHaveCount(1);
+	const code = await page.locator("#edCode").inputValue();
+	expect(decode(code)).toStrictEqual(BUILT);
+
+	const level = parseLevel(decode(code));
+	const path = solve(level, initState(level))!;
+	await page.locator("#edCheck").click();
+	await expect(page.locator("#edResult")).toHaveText(`Solvable in ${path.length} moves. That becomes the par.`);
+
+	await page.locator("#edTest").click();
+	await expect(page.locator(".cube")).toHaveCount(2);
+	await roll(page, path);
+	await expect(page.locator("#win")).toBeVisible();
+	await page.locator("#winNext").click();
+
+	await page.locator("#edSave").click();
+	const saved = await page.evaluate(
+		() => JSON.parse(localStorage.getItem("cubist-my-levels-v1")!) as {level: LevelSource}[],
+	);
+	expect(saved.map((entry) => entry.level)).toStrictEqual([BUILT]);
+	await page.locator("#edNew").click();
+	await expect(page.locator("#edGrid .loose")).toHaveCount(0);
+	await page.locator('#edList [data-act="edit"]').click();
+	await expect(page.locator(`${cell(1, 2)}.loose`)).toHaveCount(1);
+	await page.locator('#edList [data-act="play"]').click();
+	await expect(page.locator(".cube")).toHaveCount(2);
+	await expect(page.locator("#lvName")).toHaveText("My Merge");
+
+	await page.goto(`${BASE_URL}/?${code}`);
+	await expect(page.locator(".cube")).toHaveCount(2);
+	await roll(page, path);
+	await expect(page.locator("#win")).toBeVisible();
+	expect(errors).toStrictEqual([]);
+	await page.close();
+});
+
+test("edit a copy of a merge level keeps its loose cubes", async ({browser}) => {
+	const page = await open(browser, "reduce");
+	await page.locator('#levels button[title="Mind the Gap"]').click();
+	await page.locator("#editCopy").click();
+	await expect(page.locator("#edName")).toHaveValue("Mind the Gap remix");
+	await expect(page.locator("#edGrid .loose")).toHaveCount(2);
+	expect(decode(await page.locator("#edCode").inputValue())).toStrictEqual({
+		name: "Mind the Gap remix",
+		map: ["S11.. .X"],
+		k: {1: ["cube", "w"]},
+	});
+	await page.locator("#edTest").click();
+	await expect(page.locator(".cube")).toHaveCount(3);
 	await page.close();
 });
 

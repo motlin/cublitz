@@ -6,7 +6,7 @@ import {decodeLevel, encodeLevel} from "../core/share.ts";
 import {solve} from "../core/solver.ts";
 import type {Face, Level, LevelSource, Paint, PieceColor} from "../core/types.ts";
 import {$, domValue, type ElementById, needSelect, targetElement, targetInput, targetSelect} from "./dom.ts";
-import {blankGrid, draftFromLevel, edCellHTML, edToLevel, newEditor} from "./editor-grid.ts";
+import {blankGrid, draftFromLevel, edCellHTML, edToLevel, LOOSE_CUBE_STYLE, newEditor} from "./editor-grid.ts";
 import {setMode} from "./modes.ts";
 import {startLevel} from "./play.ts";
 import {unlocked} from "./session.ts";
@@ -26,7 +26,8 @@ type Tool =
 	| "switch"
 	| "button"
 	| "box"
-	| "door";
+	| "door"
+	| "cube";
 type Check = {ok: boolean; html: string; par?: number; level?: Level};
 
 const TOOLS: [Tool, string][] = [
@@ -130,7 +131,7 @@ function applyTool(x: number, y: number): void {
 	let next: EditorCell | null;
 	if (tool === "erase") next = null;
 	else if (tool === "floor") next = {t: "floor"};
-	else if (tool === "start" || tool === "goal" || tool === "wash") next = {t: tool};
+	else if (tool === "start" || tool === "goal" || tool === "wash" || tool === "cube") next = {t: tool};
 	else if (tool === "wgate") next = {t: "wgate", f: wface};
 	else next = {t: tool, c: ecolor};
 	if (JSON.stringify(cur) === JSON.stringify(next)) return;
@@ -232,10 +233,13 @@ export function initEditor(): void {
 		painting = false;
 	});
 
-	$("edTools").innerHTML = TOOLS.map(([k, label]) => {
+	// The cube's button is apart from TOOLS, which stays the original's list on the page's global scope.
+	$("edTools").innerHTML = `${TOOLS.map(([k, label]) => {
 		const sample = k === "erase" ? "void" : k;
 		return `<button type="button" data-tool="${k}" aria-pressed="false"><span class="ec ${sample}" style="--ec:20px;--pc:var(--blue)">${k === "wash" ? "<b>✦</b>" : ""}</span>${label}</button>`;
-	}).join("");
+	}).join(
+		"",
+	)}<button type="button" data-tool="cube" aria-pressed="false"><span class="ec loose" style="--ec:20px;--pc:var(--blue);${LOOSE_CUBE_STYLE}"></span>Loose cube</button>`;
 	$("edTools").addEventListener("click", (e) => {
 		const b = targetElement(e).closest("button");
 		if (b) {

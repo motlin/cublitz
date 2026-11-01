@@ -35,6 +35,7 @@ export type EditorCell =
 	| {t: "start"}
 	| {t: "goal"}
 	| {t: "wash"}
+	| {t: "cube"}
 	| {t: "wgate"; f: Face}
 	| {[T in ColoredTool]: {t: T; c: PieceColor}}[ColoredTool];
 export type EditorDraft = {

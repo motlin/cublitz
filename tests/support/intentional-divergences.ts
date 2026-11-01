@@ -30,6 +30,11 @@ export const INTENTIONAL_DIVERGENCES: IntentionalDivergence[] = [
 		from: "    nav.appendChild(b);\n  });\n}\n\nfunction setStatus",
 		to: "    nav.appendChild(b);\n  });\n  ['Stick Together', 'Mind the Gap', 'Side by Side'].forEach((name, j) => {\n    const b = document.createElement('button');\n    b.textContent = `M${j + 1}`;\n    b.title = name;\n    b.style.cssText = 'font-family:var(--font-mono);font-weight:700;font-size:13px;width:36px;height:32px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;';\n    nav.appendChild(b);\n  });\n}\n\nfunction setStatus",
 	},
+	{
+		name: "The editor's tool bar has a Loose cube tool",
+		from: "}).join('');\n$('edTools').addEventListener",
+		to: '}).join(\'\') + `<button type="button" data-tool="cube" aria-pressed="false"><span class="ec loose" style="--ec:20px;--pc:var(--blue);${\'background:linear-gradient(#1b1e29,#1b1e29) center/12% 44% no-repeat,linear-gradient(#1b1e29,#1b1e29) center/44% 12% no-repeat,linear-gradient(var(--clay),var(--clay)) center/72% 72% no-repeat,linear-gradient(135deg,var(--tile-hi),var(--tile))\'}"></span>Loose cube</button>`;\n$(\'edTools\').addEventListener',
+	},
 ];
 
 export function withIntentionalDivergences(html: string): string {
