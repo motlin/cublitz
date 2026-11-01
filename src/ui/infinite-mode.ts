@@ -44,7 +44,7 @@ function genInf(n: number, cb: (level: GeneratedLevel) => void, background?: boo
 }
 function pregenerate(): void {
 	const n = run!.n + 1;
-	if (infNext && infNext.inf === n) return;
+	if (infNext?.inf === n) return;
 	genInf(
 		n,
 		(lv) => {
@@ -68,7 +68,7 @@ export function loadInfLevel(): void {
 		startLevel(lv, -2);
 		pregenerate();
 	};
-	if (infNext && infNext.inf === n) {
+	if (infNext?.inf === n) {
 		const lv = infNext;
 		infNext = null;
 		go(lv);
@@ -82,7 +82,7 @@ export function leaveInfinite(): void {
 	renderInfCard();
 }
 export function renderInfCard(): void {
-	const on = infinite && S && S.lvl === -2;
+	const on = infinite && S?.lvl === -2;
 	$("infCard").hidden = !on;
 	$("hintBtn").hidden = $("solBtn").hidden = on;
 	if (!on || !run) return;
@@ -134,7 +134,7 @@ export function infWin(): void {
 export function initInfinite(): void {
 	run = readRun();
 	best = readBest();
-	$("infSkip").onclick = () => {
+	$("infSkip").addEventListener("click", () => {
 		if (S.busy) return;
 		run!.effs.push(0);
 		run!.streak = 0;
@@ -145,8 +145,8 @@ export function initInfinite(): void {
 			$("infNote").textContent = "";
 		}, 3500);
 		loadInfLevel();
-	};
-	$("infNew").onclick = () => {
+	});
+	$("infNew").addEventListener("click", () => {
 		const b = $("infNew");
 		if (!b.classList.contains("armed")) {
 			b.classList.add("armed");
@@ -163,9 +163,9 @@ export function initInfinite(): void {
 		b.textContent = "New run";
 		newRun();
 		loadInfLevel();
-	};
-	$("titleInf").onclick = () => {
+	});
+	$("titleInf").addEventListener("click", () => {
 		SFX.play("start");
 		startInfinite();
-	};
+	});
 }

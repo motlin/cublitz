@@ -84,7 +84,9 @@ const SOUNDS = {
 	},
 	wash: () => {
 		noise(0.35, {filter: "highpass", freq: 600, to: 5000, vol: 0.16});
-		[1568, 1319, 1047].forEach((f, i) => tone(f, 0.12, {vol: 0.05, at: 0.05 + i * 0.05}));
+		[1568, 1319, 1047].forEach((f, i) => {
+			tone(f, 0.12, {vol: 0.05, at: 0.05 + i * 0.05});
+		});
 	},
 	paint: () => {
 		noise(0.18, {filter: "lowpass", freq: 2400, to: 350, vol: 0.22});
@@ -102,8 +104,11 @@ const SOUNDS = {
 		tone(880, 0.16, {type: "triangle", vol: 0.12});
 		tone(1320, 0.3, {type: "triangle", vol: 0.08, at: 0.06});
 	},
-	solid: () =>
-		[523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.22, {type: "triangle", vol: 0.12, at: i * 0.06})),
+	solid: () => {
+		[523, 659, 784, 1047, 1319].forEach((f, i) => {
+			tone(f, 0.22, {type: "triangle", vol: 0.12, at: i * 0.06});
+		});
+	},
 	unsolid: () => {
 		tone(520, 0.16, {to: 330, type: "triangle", vol: 0.1});
 	},
@@ -127,8 +132,12 @@ const SOUNDS = {
 		tone(560, 0.08, {to: 330, vol: 0.1});
 	},
 	win: () => {
-		[523, 659, 784, 1047].forEach((f, i) => tone(f, 0.3, {type: "triangle", vol: 0.13, at: i * 0.09}));
-		[523, 659, 784].forEach((f) => tone(f * 2, 0.9, {vol: 0.06, at: 0.4}));
+		[523, 659, 784, 1047].forEach((f, i) => {
+			tone(f, 0.3, {type: "triangle", vol: 0.13, at: i * 0.09});
+		});
+		[523, 659, 784].forEach((f) => {
+			tone(f * 2, 0.9, {vol: 0.06, at: 0.4});
+		});
 		tone(1047, 0.9, {type: "triangle", vol: 0.1, at: 0.4});
 	},
 	tip: () => {
@@ -143,7 +152,9 @@ const SOUNDS = {
 		tone(700, 0.04, {type: "triangle", vol: 0.06});
 	},
 	start: () => {
-		[392, 523, 659, 784].forEach((f, i) => tone(f, 0.2, {type: "triangle", vol: 0.1, at: i * 0.05}));
+		[392, 523, 659, 784].forEach((f, i) => {
+			tone(f, 0.2, {type: "triangle", vol: 0.1, at: i * 0.05});
+		});
 	},
 } satisfies Record<string, () => void>;
 
@@ -182,16 +193,18 @@ function toggleSound(): void {
 export function initSound(): void {
 	muted = readMuted();
 	// Browsers only allow audio after the viewer interacts, so wake it on the first press
-	["pointerdown", "keydown"].forEach((ev) =>
+	["pointerdown", "keydown"].forEach((ev) => {
 		addEventListener(
 			ev,
 			() => {
 				if (!SFX.muted) SFX.ensure();
 			},
 			{capture: true},
-		),
-	);
-	document.querySelectorAll(".soundbtn").forEach((b) => b.addEventListener("click", toggleSound));
+		);
+	});
+	document.querySelectorAll(".soundbtn").forEach((b) => {
+		b.addEventListener("click", toggleSound);
+	});
 	addEventListener("keydown", (e) => {
 		if (
 			(e.key === "m" || e.key === "M") &&

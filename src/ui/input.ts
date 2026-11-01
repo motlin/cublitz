@@ -36,23 +36,24 @@ let touch0: [number, number] | null = null;
 let rt: ReturnType<typeof setTimeout>;
 
 export function initInput(): void {
-	$("undoBtn").onclick = undo;
-	$("resetBtn").onclick = restart;
-	$("hintBtn").onclick = () => hint();
-	$("winRetry").onclick = restart;
-	$("winNext").onclick = () =>
-		S.lvl === -2
-			? loadInfLevel()
-			: S.lvl === SHARED
-				? loadLevel(campaignLvl)
-				: mergeIndex(S.lvl) >= 0
-					? loadMergeLevel(mergeIndex(S.lvl) + 1)
-					: S.lvl < 0
-						? setMode("edit")
-						: loadLevel(Math.min(S.lvl + 1, LEVELS.length - 1));
-	document
-		.querySelectorAll<HTMLElement>(".dpad button")
-		.forEach((b) => b.addEventListener("click", () => move(b.dataset["d"] as Direction)));
+	$("undoBtn").addEventListener("click", undo);
+	$("resetBtn").addEventListener("click", restart);
+	$("hintBtn").addEventListener("click", () => {
+		hint();
+	});
+	$("winRetry").addEventListener("click", restart);
+	$("winNext").addEventListener("click", () => {
+		if (S.lvl === -2) loadInfLevel();
+		else if (S.lvl === SHARED) loadLevel(campaignLvl);
+		else if (mergeIndex(S.lvl) >= 0) loadMergeLevel(mergeIndex(S.lvl) + 1);
+		else if (S.lvl < 0) setMode("edit");
+		else loadLevel(Math.min(S.lvl + 1, LEVELS.length - 1));
+	});
+	document.querySelectorAll<HTMLElement>(".dpad button").forEach((b) => {
+		b.addEventListener("click", () => {
+			move(b.dataset["d"] as Direction);
+		});
+	});
 
 	document.addEventListener("keydown", (e) => {
 		if (e.metaKey || e.ctrlKey || e.altKey) return;

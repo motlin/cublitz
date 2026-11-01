@@ -26,13 +26,14 @@ const DIRECTIONS: [Direction, number, number][] = [
 	["N", 0, -1],
 ];
 
+const screenAngle = (x: number, y: number): number => {
+	const [px, py] = project(x, y, 0);
+	return (Math.atan2(py, px) * 180) / Math.PI;
+};
+
 /** The on-screen angle of each roll, in degrees. */
 export function gridAxes(): Record<Direction, number> {
-	const angle = (x: number, y: number): number => {
-		const [px, py] = project(x, y, 0);
-		return (Math.atan2(py, px) * 180) / Math.PI;
-	};
-	return {E: angle(1, 0), S: angle(0, 1), W: angle(-1, 0), N: angle(0, -1)};
+	return {E: screenAngle(1, 0), S: screenAngle(0, 1), W: screenAngle(-1, 0), N: screenAngle(0, -1)};
 }
 
 /** The roll whose drawn axis is nearest the direction a finger moved. */

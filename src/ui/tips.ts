@@ -150,8 +150,8 @@ export const tipOpen = (): boolean => !$("tip").hidden;
 
 export function initTips(): void {
 	tipsSeen = readTipsSeen();
-	$("tipOk").onclick = dismissTip;
-	$("resetProgress").onclick = () => {
+	$("tipOk").addEventListener("click", dismissTip);
+	$("resetProgress").addEventListener("click", () => {
 		const b = $("resetProgress");
 		if (!b.classList.contains("armed")) {
 			b.classList.add("armed");
@@ -180,8 +180,8 @@ export function initTips(): void {
 		}, 3000);
 		loadLevel(0);
 		renderTitle();
-	};
-	$("tipsReplay").onclick = () => {
+	});
+	$("tipsReplay").addEventListener("click", () => {
 		tipsSeen = {};
 		clearTipsSeen();
 		$("resetNote").hidden = false;
@@ -189,5 +189,5 @@ export function initTips(): void {
 		setTimeout(() => {
 			$("resetNote").hidden = true;
 		}, 3000);
-	};
+	});
 }

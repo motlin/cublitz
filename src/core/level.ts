@@ -18,9 +18,9 @@ export function parseLevel<T extends LevelSource>(source: T): T & Level {
 	L.rows = L.map.length;
 	L.map.forEach((row, y) => {
 		L.cells[y] = [];
-		[...row].forEach((ch, x) => {
+		Array.from(row).forEach((ch, x) => {
 			let cell: Cell | null = null;
-			const k = (L.k || {})[ch];
+			const k = L.k?.[ch];
 			if (ch === " ") cell = null;
 			else if (k) {
 				const [kind, c] = k;

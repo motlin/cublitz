@@ -44,13 +44,17 @@ function validSharedLevel(L: Record<string, unknown>): boolean {
 	if (typeof name !== "string" || !name.trim() || name.length > MAX_NAME) return false;
 	if (!isRecord(k) || !isRecord(need)) return false;
 	const legend = Object.entries(k);
-	if (!legend.every(([ch, entry]) => [...ch].length === 1 && !UNSHADOWABLE.includes(ch) && validLegendEntry(entry)))
+	if (
+		!legend.every(
+			([ch, entry]) => Array.from(ch).length === 1 && !UNSHADOWABLE.includes(ch) && validLegendEntry(entry),
+		)
+	)
 		return false;
 	if (!Object.entries(need).every(([face, paint]) => isOneOf(face, FACES) && isOneOf(paint, PAINTS))) return false;
 	const rows = map as string[];
 	if (rows.length > MAX_ROWS) return false;
-	const cells = rows.flatMap((row) => [...row]);
-	if (rows.some((row) => [...row].length > MAX_COLS)) return false;
+	const cells = rows.flatMap((row) => Array.from(row));
+	if (rows.some((row) => Array.from(row).length > MAX_COLS)) return false;
 	if (!cells.every((ch) => MAP_CHARS.includes(ch) || Object.hasOwn(k, ch))) return false;
 	return cells.filter((ch) => ch === "S").length === 1 && cells.includes("X");
 }

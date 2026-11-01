@@ -53,7 +53,7 @@ export function nextMilestone(L: Level, st0: State, sol: string): Milestone | nu
 		if (r.pushed >= 0) {
 			const b = st.boxes[r.pushed]!,
 				cell = cellAt(L, b.x, b.y);
-			if (cell && cell.t === "button" && cell.c === b.c)
+			if (cell?.t === "button" && cell.c === b.c)
 				return {
 					...base,
 					type: "button",
@@ -143,5 +143,7 @@ export function hintTexts(L: Level, st: State, m: Milestone): [string, string] {
 				`Next, get through the highlighted ${cn} door.`,
 				`It has to be open as you finish the roll onto it. A flipped ${cn} switch, or a ${cn} box sitting on a ${cn} button, keeps it open.`,
 			];
+		default:
+			throw new Error("Unknown milestone type");
 	}
 }

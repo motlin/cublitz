@@ -28,15 +28,15 @@ export function draftFromLevel(L: LevelSource, name: string, id: string | null):
 		grid[y] = [];
 		for (let x = 0; x < P.cols; x++) {
 			const c = P.cells[y]![x];
-			grid[y]![x] = !c
-				? null
-				: c.t === "floor"
+			grid[y]![x] = c
+				? c.t === "floor"
 					? {t: "floor"}
 					: c.t === "wash"
 						? {t: "wash"}
 						: c.t === "wgate"
 							? {t: "wgate", f: c.f}
-							: ({t: c.t, c: (c as {c?: PieceColor}).c} as EditorCell);
+							: ({t: c.t, c: (c as {c?: PieceColor}).c} as EditorCell)
+				: null;
 		}
 	}
 	grid[P.sy]![P.sx] = {t: "start"};

@@ -92,14 +92,18 @@ export const readColors = (): CustomColors => readObject(STORAGE_KEYS.colors) as
 export const writeColors = (colors: CustomColors): boolean => write(STORAGE_KEYS.colors, colors);
 
 export const readRun = (): SavedRun | null => loadJSON<SavedRun | null>(STORAGE_KEYS.infiniteRun, null);
-export const writeRun = (run: SavedRun | null): void => saveJSON(STORAGE_KEYS.infiniteRun, run);
+export const writeRun = (run: SavedRun | null): void => {
+	saveJSON(STORAGE_KEYS.infiniteRun, run);
+};
 export const readBest = (): BestRun => loadJSON<BestRun>(STORAGE_KEYS.infiniteBest, {cleared: 0, rating: 0, score: 0});
-export const writeBest = (best: BestRun): void => saveJSON(STORAGE_KEYS.infiniteBest, best);
+export const writeBest = (best: BestRun): void => {
+	saveJSON(STORAGE_KEYS.infiniteBest, best);
+};
 
 export function loadDraft(): EditorDraft | null {
 	try {
 		const draft = JSON.parse(localStorage.getItem(STORAGE_KEYS.draft)!) as EditorDraft | null;
-		if (draft && draft.grid) return draft;
+		if (draft?.grid) return draft;
 	} catch {
 		// An unreadable draft is the same as no draft.
 	}

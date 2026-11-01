@@ -36,7 +36,7 @@ function projector() {
 	const at = (x: number, y: number): Point | null => {
 		const k = x + "," + y;
 		if (cache.has(k)) return cache.get(k)!;
-		const p = probes[y] && probes[y][x];
+		const p = probes[y]?.[x];
 		if (!p) return null;
 		const r = p.getBoundingClientRect();
 		const v = {x: r.left - vr.left, y: r.top - vr.top};
@@ -78,7 +78,7 @@ function drawOverlays(): void {
 			for (let y = 0; y < L.rows; y++)
 				for (let x = 0; x < L.cols; x++) {
 					const c = L.cells[y]![x];
-					if (c && c.t === "paint" && c.c === m.c) rings.push([x, y]);
+					if (c?.t === "paint" && c.c === m.c) rings.push([x, y]);
 				}
 		} else rings.push([m.x, m.y]);
 		if (m.type === "button") {
@@ -94,22 +94,27 @@ function drawOverlays(): void {
 			let x = S.st.x,
 				y = S.st.y;
 			const steps = new Map<string, {x: number; y: number; n: number[]}>();
-			[...m.path].forEach((d, i) => {
+			Array.from(m.path).forEach((d, i) => {
 				x = landings ? landings[i]![0] : x + DIRS[d as Direction][0];
 				y = landings ? landings[i]![1] : y + DIRS[d as Direction][1];
 				const k = x + "," + y;
 				if (!steps.has(k)) steps.set(k, {x, y, n: []});
 				steps.get(k)!.n.push(i + 1);
 			});
-			steps.forEach(({x, y, n}) => {
-				const p = P.at(x, y);
+			steps.forEach(({x: stepX, y: stepY, n}) => {
+				const p = P.at(stepX, stepY);
 				if (p)
-					ovEl("ov-trail" + (n.length > 1 ? " multi" : ""), p, P.size(x, y), `<span>${n.join(" ")}</span>`);
+					ovEl(
+						"ov-trail" + (n.length > 1 ? " multi" : ""),
+						p,
+						P.size(stepX, stepY),
+						`<span>${n.join(" ")}</span>`,
+					);
 			});
 		}
 	}
 	// Solution: arrows on the tile each roll lands on, pointing the way you roll
-	if (solState && solState.path) {
+	if (solState?.path) {
 		const {path, revealed} = solState,
 			cells = new Map<string, {x: number; y: number; steps: {n: number; ang: number}[]}>(),
 			landings = S.st.units ? blockLandings(S.L, S.st, path.slice(0, revealed)) : null;
@@ -130,13 +135,13 @@ function drawOverlays(): void {
 			if (!cells.has(k)) cells.set(k, {x, y, steps: []});
 			cells.get(k)!.steps.push({n: i + 1, ang});
 		}
-		cells.forEach(({x, y, steps}) => {
-			const p = P.at(x, y);
+		cells.forEach(({x: landingX, y: landingY, steps}) => {
+			const p = P.at(landingX, landingY);
 			if (!p) return;
 			ovEl(
 				"ov-sol" + (steps.length > 1 ? " multi" : ""),
 				p,
-				P.size(x, y),
+				P.size(landingX, landingY),
 				steps
 					.map(
 						(s) =>
@@ -150,7 +155,7 @@ function drawOverlays(): void {
 /** Where each press of a path puts a block: a roll can carry it more than one cell, and a merge not at all. */
 function blockLandings(L: Level, st0: State, path: string): [number, number][] {
 	let st = st0;
-	return [...path].map((d) => {
+	return Array.from(path).map((d) => {
 		const r = tryMove(L, st, d as Direction);
 		if (!r.ok) return [st.x, st.y];
 		st = r.st;

@@ -262,30 +262,18 @@ export default defineConfig({
 					"vitest/no-identical-title": "error",
 				},
 			},
-			// The game keeps the original script's behaviour and shipped bytes, so these findings stay until a change can be proven against dist. The number is how many findings each rule had at the template sync.
+			// These stay off because no test can prove the change safe. The comment on each says why. The number is how many findings it had when last counted.
 			{
 				files: ["src/**/*.ts"],
 				rules: {
-					"@typescript-eslint/consistent-return": "off", // 3
-					"@typescript-eslint/no-confusing-void-expression": "off", // 42
-					"@typescript-eslint/no-deprecated": "off", // 2
-					"@typescript-eslint/no-dynamic-delete": "off", // 3
-					"@typescript-eslint/no-floating-promises": "off", // 2
-					"@typescript-eslint/no-misused-spread": "off", // 3
-					"@typescript-eslint/no-non-null-assertion": "off", // 153
-					"@typescript-eslint/no-unnecessary-condition": "off", // 14
-					"@typescript-eslint/no-unsafe-type-assertion": "off", // 56
-					"@typescript-eslint/prefer-nullish-coalescing": "off", // 43
-					"@typescript-eslint/prefer-optional-chain": "off", // 21
-					"@typescript-eslint/prefer-string-starts-ends-with": "off", // 1
-					"import/no-cycle": "off", // 37
-					"no-negated-condition": "off", // 2
-					"no-shadow": "off", // 4
-					"promise/always-return": "off", // 2
-					"unicorn/consistent-function-scoping": "off", // 2
-					"unicorn/no-array-sort": "off", // 2
-					"unicorn/prefer-add-event-listener": "off", // 37
-					"unicorn/prefer-set-has": "off", // 1
+					"@typescript-eslint/no-deprecated": "off", // 2: unescape and escape in share codes; replacing them risks which pasted codes still decode.
+					"@typescript-eslint/no-non-null-assertion": "off", // 199: a check in place of each would add new failure paths to the shipped script.
+					"@typescript-eslint/no-unnecessary-condition": "off", // 16: the session S is typed as always set but is empty until a level loads, so these guards are live.
+					"@typescript-eslint/no-unsafe-type-assertion": "off", // 66: the casts cover DOM lookups and saved JSON; real guards would change what bad data does.
+					"@typescript-eslint/prefer-nullish-coalescing": "off", // 43: || also replaces 0 and "", which saved data and share codes can hold.
+					"import/no-cycle": "off", // 44: module order sets the order of top-level code in the bundle, and untangling the ui modules would change it.
+					"unicorn/no-array-sort": "off", // 2: both sort a fresh array, and toSorted would drop browsers that run the game today.
+					"unicorn/prefer-set-has": "off", // 1: COLORED is one of the original's page globals, and the harness requires it to stay an array.
 				},
 			},
 			// Each step waits for the last, so the awaits in a loop are the point. The harness's own names on window start with two underscores to stay clear of the game's.

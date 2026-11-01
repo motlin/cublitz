@@ -21,19 +21,23 @@ export function renderTitle(): void {
 		$("titleProgress").textContent = `${cleared} of ${LEVELS.length} levels cleared`;
 	}
 	if (best.cleared) $("titleProgress").textContent += ` · Infinite best ${best.cleared}`;
-	$("titleInf").textContent = run && run.n ? `Infinite · Canvas ${run.n + 1}` : "Infinite mode";
+	$("titleInf").textContent = run?.n ? `Infinite · Canvas ${run.n + 1}` : "Infinite mode";
 }
 
 export function initTitle(): void {
-	$("titlePlay").onclick = () => {
+	$("titlePlay").addEventListener("click", () => {
 		SFX.play("start");
 		const next = LEVELS.findIndex((L, i) => unlocked(i) && !beaten(L));
 		leaveInfinite();
 		if (!S || S.lvl !== (next < 0 ? 0 : next)) loadLevel(next < 0 ? 0 : next);
 		setMode("play");
-	};
-	$("titleEdit").onclick = () => setMode("edit");
-	document.querySelector("header .brand")!.addEventListener("click", () => setMode("title"));
+	});
+	$("titleEdit").addEventListener("click", () => {
+		setMode("edit");
+	});
+	document.querySelector("header .brand")!.addEventListener("click", () => {
+		setMode("title");
+	});
 	document.addEventListener("keydown", (e) => {
 		if (
 			mode === "title" &&

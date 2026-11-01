@@ -83,7 +83,7 @@ export function hint(more?: boolean): void {
 }
 // Called after each successful roll
 export function hintAfterMove(r: MoveSuccess): string | undefined {
-	if (!hintState) return;
+	if (!hintState) return undefined;
 	clearTrail();
 	const m = hintState.m,
 		st = S.st;
@@ -110,6 +110,10 @@ export function hintAfterMove(r: MoveSuccess): string | undefined {
 }
 
 export function initHints(): void {
-	$("hintMore").onclick = () => hint(true);
-	$("hintClose").onclick = () => clearHint();
+	$("hintMore").addEventListener("click", () => {
+		hint(true);
+	});
+	$("hintClose").addEventListener("click", () => {
+		clearHint();
+	});
 }

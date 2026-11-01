@@ -39,21 +39,25 @@ export function setMode(m: Mode): void {
 }
 
 export function initModes(): void {
-	$("modePlay").onclick = () => {
+	$("modePlay").addEventListener("click", () => {
 		if (infinite || !S || S.lvl < 0) {
 			leaveInfinite();
 			loadLevel(campaignLvl);
 		}
 		setMode("play");
-	};
-	$("modeEdit").onclick = () => setMode("edit");
-	$("backEdit").onclick = () => setMode("edit");
-	$("editCopy").onclick = () => {
+	});
+	$("modeEdit").addEventListener("click", () => {
+		setMode("edit");
+	});
+	$("backEdit").addEventListener("click", () => {
+		setMode("edit");
+	});
+	$("editCopy").addEventListener("click", () => {
 		loadIntoEditor(S.L, S.lvl === -1 ? S.L.name! : S.L.name + " remix", S.lvl === -1 ? editorId() : null);
 		leaveInfinite();
 		setMode("edit");
-	};
-	addEventListener("hashchange", () =>
-		setMode(location.hash === "#editor" ? "edit" : mode === "title" ? "title" : "play"),
-	);
+	});
+	addEventListener("hashchange", () => {
+		setMode(location.hash === "#editor" ? "edit" : mode === "title" ? "title" : "play");
+	});
 }

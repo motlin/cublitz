@@ -69,9 +69,9 @@ export function startLevel(source: LevelSource, i: number, snap?: Snapshot | nul
 	$("hintBox").hidden = true;
 	if (!(source as Partial<Level>).cells) parseLevel(source);
 	const L = source as Level;
-	setSession({lvl: i, L, st: initState(L), hist: [], busy: false, won: false, rolls: (opts && opts.rolls) || 0});
+	setSession({lvl: i, L, st: initState(L), hist: [], busy: false, won: false, rolls: opts?.rolls || 0});
 	if (i >= 0) enterCampaignLevel(i);
-	if (snap && snap.st) {
+	if (snap?.st) {
 		S.st = snap.st;
 		S.hist = snap.hist || [];
 	}
@@ -161,7 +161,7 @@ export function move(d: Direction): void {
 				return;
 			}
 			rollerEl.style.transformOrigin = ORIGIN[d];
-			rollerEl
+			void rollerEl
 				.animate([{transform: "none"}, {transform: TILT[d]}, {transform: "none"}], {
 					duration: 220,
 					easing: "ease-out",
@@ -180,11 +180,16 @@ export function move(d: Direction): void {
 		S.st = r.st;
 		placeCube();
 		if (anim) anim.cancel();
-		blockAnims.forEach((a) => a.cancel());
+		blockAnims.forEach((a) => {
+			a.cancel();
+		});
 		renderPieces();
 		S.busy = false;
 		renderHud(r.painted ? "b" : null);
-		if (r.washed) document.querySelectorAll("#net .nf").forEach((n) => n.classList.add("pop"));
+		if (r.washed)
+			document.querySelectorAll("#net .nf").forEach((n) => {
+				n.classList.add("pop");
+			});
 		const solid = solidColorOf(S.st),
 			nowOpen = openColors(L, S.st);
 		const opened = (Object.keys(nowOpen) as (keyof typeof nowOpen)[]).filter((k) => !prevOpen[k]),
@@ -223,8 +228,14 @@ export function move(d: Direction): void {
 		else if (r.cell.t === "gate") SFX.play("gate");
 		else if (r.cell.t === "wgate") SFX.play("wgate");
 		if (!r.won) {
-			if (opened.length) setTimeout(() => SFX.play("doorOpen"), 60);
-			else if (closed.length) setTimeout(() => SFX.play("doorShut"), 60);
+			if (opened.length)
+				setTimeout(() => {
+					SFX.play("doorOpen");
+				}, 60);
+			else if (closed.length)
+				setTimeout(() => {
+					SFX.play("doorShut");
+				}, 60);
 			if (!solid && wasSolid) SFX.play("unsolid");
 			if (r.goal) SFX.play("blocked");
 		}
@@ -244,7 +255,8 @@ export function move(d: Direction): void {
 		if (r.won) {
 			clearHint();
 			clearSolution();
-			return win();
+			win();
+			return;
 		}
 		flushQueue();
 	};
@@ -281,7 +293,7 @@ export function move(d: Direction): void {
 		easing: "cubic-bezier(.45,.05,.55,.95)",
 		fill: "forwards",
 	});
-	anim.finished.then(finish);
+	void anim.finished.then(finish);
 }
 function flushQueue(): void {
 	if (queued) {
@@ -353,4 +365,6 @@ export function undo(): void {
 		planSolution(keep);
 	}
 }
-export const restart = (): void => startLevel(S.L, S.lvl, null, {rolls: S.lvl === -2 ? S.rolls : 0});
+export const restart = (): void => {
+	startLevel(S.L, S.lvl, null, {rolls: S.lvl === -2 ? S.rolls : 0});
+};

@@ -47,7 +47,7 @@ export function planSolution(keepRevealed?: number): void {
 }
 export function renderSolution(): void {
 	scheduleOverlays();
-	if (!solState || !solState.path) return;
+	if (!solState?.path) return;
 	const {path, revealed} = solState;
 	const done = revealed >= path.length;
 	$("solText").innerHTML = done
@@ -57,12 +57,12 @@ export function renderSolution(): void {
 	if (done) stopAutoReveal();
 }
 function revealMore(n: number): void {
-	if (!solState || !solState.path) return;
+	if (!solState?.path) return;
 	solState.revealed = Math.min(solState.path.length, solState.revealed + n);
 	renderSolution();
 }
 function revealToNextGoal(): void {
-	if (!solState || !solState.path) return;
+	if (!solState?.path) return;
 	let st = S.st;
 	for (let i = 0; i < solState.revealed; i++)
 		st = (tryMove(S.L, st, solState.path[i] as Direction) as MoveSuccess).st;
@@ -81,7 +81,7 @@ export function showSolution(): void {
 // Called after each successful roll
 export function solutionAfterMove(d: Direction): void {
 	if (!solState) return;
-	if (solState.path && solState.path[0] === d) {
+	if (solState.path?.startsWith(d)) {
 		solState.path = solState.path.slice(1);
 		solState.revealed = Math.max(0, solState.revealed - 1);
 		solState.at = S.st;
@@ -98,10 +98,12 @@ export function solutionAfterMove(d: Direction): void {
 }
 
 export function initSolution(): void {
-	$("solBtn").onclick = showSolution;
-	$("solNext").onclick = () => revealMore(1);
-	$("solGoal").onclick = revealToNextGoal;
-	$("solAll").onclick = () => {
+	$("solBtn").addEventListener("click", showSolution);
+	$("solNext").addEventListener("click", () => {
+		revealMore(1);
+	});
+	$("solGoal").addEventListener("click", revealToNextGoal);
+	$("solAll").addEventListener("click", () => {
 		if (solTimer) {
 			stopAutoReveal();
 			return;
@@ -109,11 +111,11 @@ export function initSolution(): void {
 		$("solAll").textContent = "Pause";
 		solTimer = setInterval(
 			() => {
-				if (!solState || !solState.path || solState.revealed >= solState.path.length) stopAutoReveal();
+				if (!solState?.path || solState.revealed >= solState.path.length) stopAutoReveal();
 				else revealMore(1);
 			},
 			reduced ? 60 : 320,
 		);
-	};
-	$("solHide").onclick = clearSolution;
+	});
+	$("solHide").addEventListener("click", clearSolution);
 }

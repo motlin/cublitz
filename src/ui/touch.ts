@@ -34,12 +34,12 @@ const surfaces: {fingers: Gestures; el: HTMLElement}[] = [];
 export function addFingerSurface(fingers: Gestures, el: HTMLElement): void {
 	surfaces.push({fingers, el});
 }
+const eachSurface =
+	(run: (fingers: Gestures, e: PointerEvent) => void) =>
+	(e: PointerEvent): void => {
+		if (takesTouch(e)) for (const {fingers} of surfaces) run(fingers, e);
+	};
 function listenToFingers(): void {
-	const each =
-		(run: (fingers: Gestures, e: PointerEvent) => void) =>
-		(e: PointerEvent): void => {
-			if (takesTouch(e)) for (const {fingers} of surfaces) run(fingers, e);
-		};
 	addEventListener(
 		"pointerdown",
 		(e) => {
@@ -62,17 +62,23 @@ function listenToFingers(): void {
 	);
 	addEventListener(
 		"pointermove",
-		each((fingers, e) => fingers.move(e)),
+		eachSurface((fingers, e) => {
+			fingers.move(e);
+		}),
 		true,
 	);
 	addEventListener(
 		"pointerup",
-		each((fingers, e) => fingers.up(e)),
+		eachSurface((fingers, e) => {
+			fingers.up(e);
+		}),
 		true,
 	);
 	addEventListener(
 		"pointercancel",
-		each((fingers, e) => fingers.cancel(e)),
+		eachSurface((fingers, e) => {
+			fingers.cancel(e);
+		}),
 		true,
 	);
 }
@@ -173,7 +179,9 @@ function buildChrome(): void {
 	menu.className = "act";
 	menu.textContent = "☰";
 	menu.setAttribute("aria-label", "Levels and menu");
-	menu.onclick = () => document.querySelector(".app")!.classList.add("menu-open");
+	menu.addEventListener("click", () => {
+		document.querySelector(".app")!.classList.add("menu-open");
+	});
 	document.querySelector(".levelhead")!.prepend(menu);
 
 	const close = document.createElement("button");
@@ -200,7 +208,7 @@ function buildChrome(): void {
 	more.className = "act";
 	more.textContent = "⋯";
 	more.setAttribute("aria-label", "More actions");
-	more.onclick = () => playView.classList.toggle("more-open");
+	more.addEventListener("click", () => playView.classList.toggle("more-open"));
 	$("undoBtn").parentElement!.append(more);
 	const closeMore = (e: Event): void => {
 		const target = e.target as Element;
@@ -218,7 +226,7 @@ function buildChrome(): void {
 	fitBtn.className = "act small";
 	fitBtn.textContent = "Fit";
 	fitBtn.hidden = true;
-	fitBtn.onclick = resetCamera;
+	fitBtn.addEventListener("click", resetCamera);
 	const viewport = $("viewport");
 	viewport.append(fitBtn);
 
@@ -231,7 +239,9 @@ function buildChrome(): void {
 			const d: Direction | null = swipe ? swipeAxis(swipe[0], swipe[1]) : null;
 			aimTiles(d);
 		},
-		swipe: (dx, dy) => move(swipeAxis(dx, dy)),
+		swipe: (dx, dy) => {
+			move(swipeAxis(dx, dy));
+		},
 		camera: moveCamera,
 		doubleTap: resetCamera,
 	});

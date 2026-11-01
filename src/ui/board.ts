@@ -367,7 +367,9 @@ export function pulse(x: number, y: number, cls: string): void {
 let aimed: HTMLElement[] = [];
 /** Marks the tiles a roll that way would land on, so a swipe shows where it goes before the finger lifts. */
 export function aimTiles(d: Direction | null): void {
-	aimed.forEach((t) => t.classList.remove("aim"));
+	aimed.forEach((t) => {
+		t.classList.remove("aim");
+	});
 	aimed = [];
 	if (!d || S.won) return;
 	const [dx, dy] = DIRS[d];

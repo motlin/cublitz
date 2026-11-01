@@ -67,9 +67,9 @@ export function renderHud(popFace?: Face | null): void {
 	const top = (Object.entries(counts) as [Paint, number][]).sort((a, b) => b[1] - a[1])[0];
 	const solidLine = solid
 		? `<div class="solidline" style="--sc:${COLORS[solid]}"><b>Solid ${CNAME[solid]}</b>. Works ${CNAME[solid]} switches, buttons and boxes.</div>`
-		: !top
-			? `<div class="solidline" style="--sc:var(--clay)"><b>All bare</b>. Counts as white for white switches, buttons and boxes.</div>`
-			: `<div>Not solid: ${top[1]} of 6 faces ${CNAME[top[0]]}.</div>`;
+		: top
+			? `<div>Not solid: ${top[1]} of 6 faces ${CNAME[top[0]]}.</div>`
+			: `<div class="solidline" style="--sc:var(--clay)"><b>All bare</b>. Counts as white for white switches, buttons and boxes.</div>`;
 	const entries = Object.entries(need) as [Face, Paint][];
 	$("needBox").innerHTML =
 		solidLine +
@@ -96,7 +96,9 @@ export function renderLevels(): void {
 		b.title = open ? L.name + (beaten(L) ? ` (best ${beaten(L)})` : "") : `Locked. Beat level ${i} to unlock.`;
 		b.disabled = !open;
 		if (!open) b.setAttribute("aria-label", `Level ${i + 1}, locked`);
-		b.onclick = () => loadLevel(i);
+		b.addEventListener("click", () => {
+			loadLevel(i);
+		});
 		nav.appendChild(b);
 	});
 	MERGE_LEVELS.forEach((L, j) => {
@@ -107,7 +109,9 @@ export function renderLevels(): void {
 		// Inline, because the stylesheets stay byte for byte the original's
 		b.style.cssText =
 			MERGE_BUTTON + (current ? "background:var(--clay);color:#1b1e29;" : beaten(L) ? "color:var(--ink);" : "");
-		b.onclick = () => loadMergeLevel(j);
+		b.addEventListener("click", () => {
+			loadMergeLevel(j);
+		});
 		nav.appendChild(b);
 	});
 }
