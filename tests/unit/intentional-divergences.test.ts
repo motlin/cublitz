@@ -21,6 +21,7 @@ describe("the intentional divergences", () => {
 			"The level bar links to the merge levels after the campaign",
 			"The editor's tool bar has a Loose cube tool",
 			"On a phone-sized touch screen, play is one fixed screen that fits the level, and touch gestures go by finger count",
+			"The editor has a Copy link button beside Copy code",
 		]);
 	});
 

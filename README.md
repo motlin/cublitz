@@ -35,6 +35,7 @@ The shipped game differs from `legacy/original.html` in exactly these ways, whic
 - The level bar links to the merge levels after the campaign
 - The editor's tool bar has a Loose cube tool
 - On a phone-sized touch screen, play is one fixed screen that fits the level, and touch gestures go by finger count
+- The editor has a Copy link button beside Copy code
 
 `tests/support/intentional-divergences.ts` holds each one as an exact edit to the original's text. The harness applies those edits to an in-memory copy of the original and compares `dist/` against that copy, so any other difference still fails. A unit test checks the list above against that file.
 

@@ -45,6 +45,15 @@ for (const [name, setup] of CLIPBOARDS) {
 			expect(await text(pair, "#edCodeNote")).toBe("Selected. Press Ctrl+C or Cmd+C to copy.");
 		});
 	});
+
+	test(`copying a share link when the clipboard ${name} selects the link instead`, async ({browser}) => {
+		await withPair(browser, {storage: atLevel(1), setup}, async (pair) => {
+			await openEditor(pair);
+			await pair.click("#edCopyLink");
+			expect(await text(pair, "#edCodeNote")).toBe("Selected. Copy the link from the box.");
+			await pair.click("#edName", "leaving the box hides it");
+		});
+	});
 }
 
 test("history.replaceState throwing falls back to setting the hash", async ({browser}) => {

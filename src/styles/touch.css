@@ -164,3 +164,4 @@ html:has(#playView:not([hidden])), html:has(#playView:not([hidden])) body { over
 .ed-grid { margin: 0 auto; }
 .step { width: 44px; height: 44px; }
 .size { flex: none; }
+#edCopyLink { min-height: 44px; }

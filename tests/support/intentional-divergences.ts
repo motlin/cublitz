@@ -40,6 +40,20 @@ export const INTENTIONAL_DIVERGENCES: IntentionalDivergence[] = [
 		from: "$('viewport').addEventListener('pointerdown', e => { touch0 = [e.clientX, e.clientY]; });",
 		to: "$('viewport').addEventListener('pointerdown', e => { if (e.pointerType === 'touch' && matchMedia('(pointer: coarse) and (max-width: 932px), (pointer: coarse) and (max-height: 500px)').matches) return; touch0 = [e.clientX, e.clientY]; });",
 	},
+	{
+		name: "The editor has a Copy link button beside Copy code",
+		from: "$('edImport').onclick = () => {",
+		to: `$('edCopy').insertAdjacentHTML('afterend', '<button class="act" id="edCopyLink" type="button">Copy link</button>');
+$('edCodeNote').insertAdjacentHTML('afterend', '<input id="edLinkText" type="text" readonly hidden aria-label="Share link" style="flex:1 1 100%;min-width:0">');
+$('edLinkText').addEventListener('blur', e => { e.target.hidden = true; });
+$('edCopyLink').addEventListener('click', () => {
+  const code = $('edCode').value; if (!code) return;
+  const link = location.origin + location.pathname + '?' + code;
+  const sel = () => { const box = $('edLinkText'); box.value = link; box.hidden = false; box.focus(); box.setSelectionRange(0, link.length); $('edCodeNote').textContent = 'Selected. Copy the link from the box.'; };
+  try { navigator.clipboard.writeText(link).then(() => { $('edLinkText').hidden = true; $('edCodeNote').textContent = 'Copied.'; }, sel); } catch (e) { sel(); }
+});
+$('edImport').onclick = () => {`,
+	},
 ];
 
 export function withIntentionalDivergences(html: string): string {

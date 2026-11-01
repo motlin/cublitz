@@ -384,6 +384,22 @@ for (const screen of SCREENS) {
 			await context.close();
 		});
 
+		test("the editor's Copy link button can be tapped and copies the link", async ({browser}) => {
+			const {context, page} = await openPhone(browser, screen);
+			await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+			await page.locator("#titleEdit").tap();
+			await sleep(60);
+			const button = page.locator("#edCopyLink");
+			await button.scrollIntoViewIfNeeded();
+			const box = (await button.boundingBox())!;
+			expect(box.height >= 44 && box.width >= 44).toBe(true);
+			await button.tap();
+			await expect(page.locator("#edCodeNote")).toHaveText("Copied.");
+			const code = await page.locator("#edCode").inputValue();
+			expect(await page.evaluate(async () => navigator.clipboard.readText())).toBe(`${BASE_URL}/?${code}`);
+			await context.close();
+		});
+
 		test("the editor page scrolls, and its tools stay in reach", async ({browser}) => {
 			const {context, page, cdp} = await openPhone(browser, screen);
 			await page.locator("#titleEdit").tap();

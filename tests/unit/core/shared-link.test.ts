@@ -25,6 +25,25 @@ describe("levelFromSearch", () => {
 		},
 	);
 
+	it.each<[string, (code: string) => string]>([
+		["after the code", (code) => `?${code}&fbclid=IwAR0abc`],
+		["before the code", (code) => `?utm_source=chat&${code}`],
+		["on both sides of the code", (code) => `?a=1&${code}&b=2`],
+		["after the code, holding a broken percent escape", (code) => `?${code}&note=%%%`],
+	])("ignores parameters %s", (_name, link) => {
+		const level = {name: "a>>>?", map: ["S.X"], k: {}};
+		expect(levelFromSearch(link(encodeLevel(level)))).toStrictEqual(level);
+	});
+
+	it("still refuses a bad level when other parameters come with it", () => {
+		expect(() => levelFromSearch(`${search({...VALID, par: 1})}&fbclid=IwAR0abc`)).toThrow(new Error("bad"));
+		expect(() => levelFromSearch("?CUBLITZ:&fbclid=IwAR0abc")).toThrow("Unexpected end of JSON input");
+	});
+
+	it.each(["?fbclid=CUBLITZ:e30=", "?a=1&cublitz:e30=", "?a=1&b=2"])("finds no code in %j", (query) => {
+		expect(levelFromSearch(query)).toBeNull();
+	});
+
 	it("keeps a + in the code, which query parsing would turn into a space", () => {
 		const level = {name: "a>>>?", map: ["S.X"], k: {}};
 		const code = encodeLevel(level);

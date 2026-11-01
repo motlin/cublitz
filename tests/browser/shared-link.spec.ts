@@ -62,6 +62,56 @@ test("winning a shared level saves no progress and leads into the campaign", asy
 	await page.close();
 });
 
+test("a link with extra parameters from a social site still opens the level", async ({browser}) => {
+	for (const search of [`${FLIP}&fbclid=IwAR0abc`, `?utm_source=chat&${FLIP.slice(1)}`]) {
+		const {page, errors} = await open(browser, search);
+		await expect(page.locator("#lvName")).toHaveText("Flip it and reverse it");
+		await expect(page.locator("#shareError")).toHaveCount(0);
+		expect(errors).toStrictEqual([]);
+		await page.close();
+	}
+});
+
+test("the editor's Copy link button copies a full URL that opens the level", async ({browser}) => {
+	const {page} = await open(browser, "");
+	await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+	await page.locator("#titleEdit").click();
+	await page.locator("#edName").fill("Linked");
+	await page.locator("#edCopyLink").click();
+	await expect(page.locator("#edCodeNote")).toHaveText("Copied.");
+	const code = await page.locator("#edCode").inputValue();
+	const link = await page.evaluate(async () => navigator.clipboard.readText());
+	expect(link).toBe(`${BASE_URL}/?${code}`);
+	await expect(page.locator("#edLinkText")).toBeHidden();
+	const opened = await page.context().newPage();
+	await opened.goto(link);
+	await expect(opened.locator("#lvName")).toHaveText("Linked");
+	await page.close();
+});
+
+test("when the clipboard fails, Copy link selects the link in its own box, and Copy code still copies the code", async ({
+	browser,
+}) => {
+	const {page} = await open(browser, "");
+	await page.evaluate(() => {
+		navigator.clipboard.writeText = async () => Promise.reject(new Error("denied"));
+	});
+	await page.locator("#titleEdit").click();
+	await page.locator("#edCopyLink").click();
+	await expect(page.locator("#edCodeNote")).toHaveText("Selected. Copy the link from the box.");
+	const code = await page.locator("#edCode").inputValue();
+	const box = page.locator("#edLinkText");
+	await expect(box).toBeFocused();
+	expect(await box.inputValue()).toBe(`${BASE_URL}/?${code}`);
+	expect(await box.evaluate((el: HTMLInputElement) => [el.selectionStart, el.selectionEnd])).toStrictEqual([
+		0,
+		`${BASE_URL}/?${code}`.length,
+	]);
+	await page.locator("#edName").click();
+	await expect(box).toBeHidden();
+	await page.close();
+});
+
 test("a shared level with a + in its code survives the address bar", async ({browser}) => {
 	const code = encodeLevel({name: "a>>>?", map: ["S.X"], k: {}});
 	expect(code).toContain("+");

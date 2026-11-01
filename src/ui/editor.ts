@@ -449,6 +449,36 @@ export function initEditor(): void {
 			selectCodeForCopying();
 		}
 	});
+	$("edCopy").insertAdjacentHTML("afterend", '<button class="act" id="edCopyLink" type="button">Copy link</button>');
+	$("edCodeNote").insertAdjacentHTML(
+		"afterend",
+		'<input id="edLinkText" type="text" readonly hidden aria-label="Share link" style="flex:1 1 100%;min-width:0">',
+	);
+	const linkBox = document.getElementById("edLinkText") as HTMLInputElement;
+	linkBox.addEventListener("blur", () => {
+		linkBox.hidden = true;
+	});
+	document.getElementById("edCopyLink")!.addEventListener("click", () => {
+		const code = $("edCode").value;
+		if (!code) return;
+		const link = `${location.origin}${location.pathname}?${code}`;
+		const selectLink = (): void => {
+			linkBox.value = link;
+			linkBox.hidden = false;
+			linkBox.focus();
+			linkBox.setSelectionRange(0, link.length);
+			$("edCodeNote").textContent = "Selected. Copy the link from the box.";
+		};
+		try {
+			navigator.clipboard.writeText(link).then(() => {
+				linkBox.hidden = true;
+				$("edCodeNote").textContent = "Copied.";
+				return undefined;
+			}, selectLink);
+		} catch {
+			selectLink();
+		}
+	});
 	$("edImport").addEventListener("click", () => {
 		try {
 			const L = decodeLevel($("edImportText").value);

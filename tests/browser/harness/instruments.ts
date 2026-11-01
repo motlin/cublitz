@@ -465,21 +465,26 @@ export function installInstruments(options: InstrumentOptions): void {
 			const r = el.getBoundingClientRect();
 			rects[`${i}:${el.tagName}#${el.id}.${el.className}`] = [r.x, r.y, r.width, r.height];
 		});
-		const fields = [...document.querySelectorAll<HTMLInputElement>("input, select, textarea")].map((el) => [
-			el.id,
-			el.value,
-			el.checked,
-			el.disabled,
-			el.selectionStart,
-			el.selectionEnd,
-		]);
+		// A share link holds the page's own address, which is the one thing the two sides are meant to differ in.
+		const pageUrl = location.origin + location.pathname;
+		const fields = [...document.querySelectorAll<HTMLInputElement>("input, select, textarea")].map((el) => {
+			const skip = el.value.startsWith(pageUrl) ? pageUrl.length : 0;
+			return [
+				el.id,
+				el.value.slice(skip),
+				el.checked,
+				el.disabled,
+				el.selectionStart && el.selectionStart - skip,
+				el.selectionEnd && el.selectionEnd - skip,
+			];
+		});
 		return {
 			dom: serialize(document.documentElement, true).split("><").join(">\n<"),
 			computed,
 			rects,
 			cssom: cssom(),
 			fields,
-			selection: String(window.getSelection()),
+			selection: String(window.getSelection()).replace(pageUrl, ""),
 			focus: describe(document.activeElement),
 			scroll: [
 				window.scrollX,

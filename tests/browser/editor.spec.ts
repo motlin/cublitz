@@ -104,6 +104,7 @@ test("errors: no start, no target, two tries at save, test and check", async ({b
 		expect(await pair.legacy.locator("#edCodeNote").textContent()).toBe("Place at least one target.");
 		for (const id of ["#edCheck", "#edTest", "#edSave"]) await pair.click(id, `${id} without a target`);
 		await pair.click("#edCopy", "copy with no code does nothing");
+		await pair.click("#edCopyLink", "copy link with no code does nothing");
 	});
 });
 

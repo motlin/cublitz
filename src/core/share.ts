@@ -61,12 +61,17 @@ function validSharedLevel(L: Record<string, unknown>): boolean {
 
 /**
  * The level in a link's raw query, or null when the query holds no share code. Read location.search itself, because
- * query parsing turns the code's + into a space. A link comes from anyone, so unlike decodeLevel this checks all of it.
+ * query parsing turns the code's + into a space. Other parameters are ignored, because social sites add their own. A
+ * link comes from anyone, so unlike decodeLevel this checks all of it.
  */
 export function levelFromSearch(search: string): LevelSource | null {
-	const prefix = "?CUBLITZ:";
-	if (!search.startsWith(prefix)) return null;
-	const level = decodeLevel("CUBLITZ:" + decodeURIComponent(search.slice(prefix.length)));
+	const prefix = "CUBLITZ:";
+	const code = search
+		.slice(1)
+		.split("&")
+		.find((parameter) => parameter.startsWith(prefix));
+	if (code === undefined) return null;
+	const level = decodeLevel(prefix + decodeURIComponent(code.slice(prefix.length)));
 	if (!validSharedLevel(level)) throw new Error("bad");
 	return level;
 }
