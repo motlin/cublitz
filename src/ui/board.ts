@@ -258,8 +258,8 @@ function placeViews(): void {
 	});
 }
 
-/** Tips every cube of the block over the one bottom edge they share. */
-export function rollBlock(d: Direction, rotation: string): Animation[] {
+/** Aims every cube of the block at the one bottom edge they share, and returns their rollers. */
+function hingeBlock(d: Direction): HTMLElement[] {
 	const c = C(),
 		units = S.st.units!;
 	const xs = units.map((u) => u.x),
@@ -271,12 +271,29 @@ export function rollBlock(d: Direction, rotation: string): Animation[] {
 		const ox = d === "E" || d === "W" ? `${(pivotX - u.x) * c}px` : "50%",
 			oy = d === "N" || d === "S" ? `${(pivotY - u.y) * c}px` : "50%";
 		roller.style.transformOrigin = `${ox} ${oy} ${-u.z * c}px`;
-		return roller.animate([{transform: "none"}, {transform: rotation}], {
+		return roller;
+	});
+}
+
+/** Tips every cube of the block over the one bottom edge they share. */
+export function rollBlock(d: Direction, rotation: string): Animation[] {
+	return hingeBlock(d).map((roller) =>
+		roller.animate([{transform: "none"}, {transform: rotation}], {
 			duration: 170,
 			easing: "cubic-bezier(.45,.05,.55,.95)",
 			fill: "forwards",
-		});
-	});
+		}),
+	);
+}
+
+/** Rocks the block over that same edge and back, for a move it can't make. */
+export function tiltBlock(d: Direction, rotation: string): Animation[] {
+	return hingeBlock(d).map((roller) =>
+		roller.animate([{transform: "none"}, {transform: rotation}, {transform: "none"}], {
+			duration: 220,
+			easing: "ease-out",
+		}),
+	);
 }
 
 /** The cubes of a block swelling together as a new one joins. */

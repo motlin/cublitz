@@ -16,6 +16,7 @@ import {
 	rollBlock,
 	rollerEl,
 	shadowEl,
+	tiltBlock,
 } from "./board.ts";
 import {$, domValue} from "./dom.ts";
 import {clearHint, clearHintState, forgetHintPosition, hintAfterMove} from "./hint.ts";
@@ -151,16 +152,21 @@ export function move(d: Direction): void {
 		SFX.play("blocked");
 		if (!reduced) {
 			S.busy = true;
+			const settle = (): void => {
+				S.busy = false;
+				flushQueue();
+			};
+			if (S.st.units) {
+				void Promise.all(tiltBlock(d, TILT[d]).map(async (a) => a.finished)).then(settle);
+				return;
+			}
 			rollerEl.style.transformOrigin = ORIGIN[d];
 			rollerEl
 				.animate([{transform: "none"}, {transform: TILT[d]}, {transform: "none"}], {
 					duration: 220,
 					easing: "ease-out",
 				})
-				.finished.then(() => {
-					S.busy = false;
-					flushQueue();
-				});
+				.finished.then(settle);
 		}
 		return;
 	}

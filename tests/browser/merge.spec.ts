@@ -113,6 +113,137 @@ test("a misaligned block is told why it can't merge", async ({browser}) => {
 	await page.close();
 });
 
+const roundedMatrix = (matrix: number[]): number[] => matrix.map((value) => Math.round(value * 100) / 100 + 0);
+
+/** Presses a refused key, freezes the tilt midway, and returns how each animated cube moves in board coordinates. */
+const frozenTilt = async (
+	page: Page,
+	key: string,
+	hinge: [number, number],
+): Promise<{pivoted: number[]; moved: number[]}[]> =>
+	page.evaluate(
+		([pressedKey, pivotX, pivotY]) => {
+			document.dispatchEvent(new KeyboardEvent("keydown", {key: pressedKey, bubbles: true}));
+			const translate = (x: number, y: number, z: number): DOMMatrix => new DOMMatrix().translate(x, y, z);
+			const asArray = (matrix: DOMMatrix): number[] => Array.from(matrix.toFloat64Array());
+			const tilts = document
+				.getAnimations()
+				.filter(
+					(animation) => ((animation.effect as KeyframeEffect).target as HTMLElement).className === "roller",
+				);
+			const samples = tilts.map((animation) => {
+				animation.pause();
+				animation.currentTime = 110;
+				const roller = (animation.effect as KeyframeEffect).target as HTMLElement;
+				const style = getComputedStyle(roller);
+				const rotation = new DOMMatrix(style.transform);
+				// The computed origin leaves out a z of zero
+				const [originX = 0, originY = 0, originZ = 0] = style.transformOrigin.split(" ").map(parseFloat);
+				const place = new DOMMatrix(roller.parentElement!.style.transform);
+				const moved = place
+					.multiply(translate(originX, originY, originZ))
+					.multiply(rotation)
+					.multiply(translate(-originX, -originY, -originZ))
+					.multiply(place.inverse());
+				const size = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--c"));
+				const pivot = translate(pivotX * size, pivotY * size, 1);
+				return {
+					pivoted: asArray(pivot.multiply(rotation).multiply(pivot.inverse())),
+					moved: asArray(moved),
+				};
+			});
+			tilts.forEach((animation) => {
+				animation.finish();
+			});
+			return samples;
+		},
+		[key, ...hinge] as const,
+	);
+
+/** Each pivot is the cell coordinate of the bottom edge the block should hinge on when that direction is refused. */
+const REFUSED_TILTS: {
+	name: string;
+	map: string[];
+	setup: string;
+	cubes: number;
+	pivots: Partial<Record<Direction, [number, number]>>;
+}[] = [
+	{
+		name: "a 1x2 block lying east-west",
+		map: ["S+"],
+		setup: "E",
+		cubes: 2,
+		pivots: {E: [2, 0], W: [0, 0], N: [0, 0], S: [0, 1]},
+	},
+	{
+		name: "a 1x3 block lying east-west",
+		map: ["S++"],
+		setup: "EE",
+		cubes: 3,
+		pivots: {E: [3, 0], W: [0, 0], N: [0, 0], S: [0, 1]},
+	},
+	{
+		name: "a 1x2 block lying north-south",
+		map: ["S", "+"],
+		setup: "S",
+		cubes: 2,
+		pivots: {E: [1, 0], W: [0, 0], N: [0, 0], S: [0, 2]},
+	},
+	{
+		name: "a 1x3 block lying north-south",
+		map: ["S", "+", "+"],
+		setup: "SS",
+		cubes: 3,
+		pivots: {E: [1, 0], W: [0, 0], N: [0, 0], S: [0, 3]},
+	},
+	{
+		name: "a 1x2 block standing up",
+		map: ["S+."],
+		setup: "EE",
+		cubes: 2,
+		pivots: {E: [3, 0], N: [2, 0], S: [2, 1]},
+	},
+	{
+		name: "a 1x3 block standing up",
+		map: ["S++."],
+		setup: "EEE",
+		cubes: 3,
+		pivots: {E: [4, 0], N: [3, 0], S: [3, 1]},
+	},
+	{
+		name: "a 1x2 block beside a loose cube",
+		map: ["S+", "  ", "+ "],
+		setup: "E",
+		cubes: 2,
+		pivots: {E: [2, 0], W: [0, 0], N: [0, 0], S: [0, 1]},
+	},
+];
+
+for (const {name, map, setup, cubes, pivots} of REFUSED_TILTS) {
+	test(`a refused move tilts ${name} as one rigid piece`, async ({browser}) => {
+		const page = await open(browser, "no-preference");
+		await page.locator('#levels button[title="Stick Together"]').click();
+		await page.evaluate(
+			`startLevel(parseLevel({name: "T", map: ${JSON.stringify(map)}, k: {"+": ["cube", "w"]}}), -3)`,
+		);
+		await roll(page, setup);
+		const rest = await unitPlaces(page);
+		for (const [direction, pivot] of Object.entries(pivots)) {
+			const samples = await frozenTilt(page, KEYS[direction as Direction], pivot);
+			await settled(page);
+			const expected = samples.map(({pivoted}) => roundedMatrix(pivoted));
+			expect({direction, moved: samples.map(({moved}) => roundedMatrix(moved))}).toStrictEqual({
+				direction,
+				moved: expected,
+			});
+			expect(samples.length).toBe(cubes);
+			expect(expected[0]).not.toStrictEqual([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+			expect(await unitPlaces(page)).toStrictEqual(rest);
+		}
+		await page.close();
+	});
+}
+
 const cell = (x: number, y: number) => `#edGrid [data-x="${x}"][data-y="${y}"]`;
 const decode = (code: string): LevelSource =>
 	JSON.parse(Buffer.from(code.replace("CUBLITZ:", ""), "base64").toString()) as LevelSource;
