@@ -64,6 +64,9 @@ const send = async (
 	});
 };
 
+/** Lifting at speed makes Linux Chromium drop the click of the next tap, even 1.5s later. Holding still first keeps it. */
+export const holdBeforeLift = async (): Promise<void> => sleep(150);
+
 /** One finger drags from a point to another, then lifts. */
 export async function drag(cdp: CDPSession, from: Point, to: Point, steps = 10): Promise<void> {
 	await send(cdp, "touchStart", [{id: 1, x: from[0], y: from[1]}]);
@@ -97,6 +100,7 @@ export async function gesture(
 		await sleep(12);
 		await send(cdp, "touchMove", at(i / steps));
 	}
+	await holdBeforeLift();
 	let live = at(1);
 	for (const id of lift.length ? lift : live.map((finger) => finger.id)) {
 		await sleep(12);
@@ -235,7 +239,7 @@ export async function together(cdp: CDPSession, paths: [Point, Point][], steps =
 		await sleep(gap);
 		await send(cdp, "touchMove", at(i / steps));
 	}
-	await sleep(gap);
+	await holdBeforeLift();
 	await send(cdp, "touchEnd", []);
 	await sleep(60);
 }

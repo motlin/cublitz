@@ -454,7 +454,8 @@ test("rotating in the middle of a roll refits once the roll ends", async ({brows
 test("a phone in WebKit gets the same layout and finger logic", async ({playwright}) => {
 	// WebKit has no way to send real multi-touch, so this shows layout and the logic on PointerEvents, not gesture
 	// handling, and nothing here can stand in for a real iPhone.
-	const browser = await playwright.webkit.launch();
+	// The config's launch args are Chromium's, and Linux WebKit refuses to start on an option it does not know.
+	const browser = await playwright.webkit.launch({args: []});
 	const report: Record<string, unknown> = {};
 	for (const screen of SCREENS) {
 		const context = await browser.newContext({
@@ -475,7 +476,7 @@ test("a phone in WebKit gets the same layout and finger logic", async ({playwrig
 		const page = await context.newPage();
 		await page.goto(BASE_URL + OPEN_FLOOR);
 		await sleep(150);
-		const thumbs = await page.evaluate(`(async () => {
+		await page.evaluate(`(async () => {
 			const v = document.querySelector("#viewport");
 			const r = v.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
 			const fire = (type, pointerId, clientX, clientY) => v.dispatchEvent(new PointerEvent(type, {bubbles: true, pointerType: "touch", pointerId, clientX, clientY}));
@@ -485,9 +486,10 @@ test("a phone in WebKit gets the same layout and finger logic", async ({playwrig
 			fire("pointermove", 1, x, y - 20);
 			fire("pointerup", 2, x + 60, y + 30);
 			fire("pointerup", 1, x, y - 40);
-			await new Promise((done) => setTimeout(done, 300));
-			return {x: S.st.x, y: S.st.y};
 		})()`);
+		// The roll commits when its animation ends, which took over 1.8s in Linux WebKit.
+		await settle(page);
+		const thumbs = await page.evaluate("({x: S.st.x, y: S.st.y})");
 		await page.evaluate("undo()");
 		await page.locator("#menuBtn").tap();
 		await page.locator("#levels button", {hasText: /^16$/}).tap();

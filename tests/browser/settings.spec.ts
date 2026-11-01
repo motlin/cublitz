@@ -3,6 +3,7 @@ import {expect, type Page, test} from "@playwright/test";
 import type {SolveGolden} from "../support/golden.ts";
 import {keyFor} from "../support/paths.ts";
 import {atLevel, DESKTOP, MOBILE, withPair} from "./harness/pair.ts";
+import {holdBeforeLift} from "./harness/touch.ts";
 
 const golden = JSON.parse(readFileSync(new URL("../golden/solve.json", import.meta.url), "utf8")) as SolveGolden[];
 const pathOf = (index: number): string => golden[index]!.path!;
@@ -155,6 +156,7 @@ const swipe = async (page: Page, dx: number, dy: number): Promise<void> => {
 	const point = (px: number, py: number) => [{x: px, y: py}];
 	await client.send("Input.dispatchTouchEvent", {type: "touchStart", touchPoints: point(x, y)});
 	await client.send("Input.dispatchTouchEvent", {type: "touchMove", touchPoints: point(x + dx, y + dy)});
+	await holdBeforeLift();
 	await client.send("Input.dispatchTouchEvent", {type: "touchEnd", touchPoints: []});
 	await client.detach();
 };

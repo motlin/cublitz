@@ -25,7 +25,8 @@ const GENERATE = `(async () => {
 })()`;
 
 const generateIn = async (engine: BrowserType): Promise<{levels: unknown[]; candidates: unknown[]}> => {
-	const browser = await engine.launch();
+	// The config's launch args are Chromium's, and Linux WebKit refuses to start on an option it does not know.
+	const browser = await engine.launch({args: []});
 	try {
 		const context = await browser.newContext();
 		await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, async (route) => route.abort());
