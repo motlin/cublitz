@@ -4,11 +4,11 @@ import viteConfig from "../../vite.config.ts";
 
 const read = (path: string): string => readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
 
-it("pins the template's tools, keeping the Node version the goldens depend on", () => {
+it("pins the template's tools, including its Node, which the goldens depend on", () => {
 	expect(read(".mise/config.toml")).toBe(`[tools]
 just = "1.58.0"
-# Not the template's Node: generated levels depend on the V8 version, and tests/golden/ was produced on this one.
-node = "26.5.0"
+# Same as the template. Generated levels depend on the V8 version, so re-check tests/golden/ when changing it.
+node = "26.13.0"
 pnpm = "12.12.1"
 pre-commit = "4.6.2"
 # pre-commit and its pre-commit-hooks and yamllint hooks run on Python. Pin it

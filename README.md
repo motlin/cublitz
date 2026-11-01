@@ -65,7 +65,7 @@ The differential tests run with `mobile` told that query does not match, since t
 
 Tool versions are pinned in `.mise/config.toml`.
 
-The toolchain is synced from `~/projects/typescript-template` on Vite+. A few things differ from it on purpose. Node stays on the version `tests/golden/` was generated with. `vp fmt` skips `legacy/`, `index.html`, `src/styles/`, `src/core/levels.ts` and `tests/golden/`, because formatting them would change the shipped bytes. The `lint` block in `vite.config.ts` ends with overrides that turn off the rules the existing code breaks, with a count for each, and the Storybook overrides are gone because the project has no stories.
+The toolchain is synced from `~/projects/typescript-template` on Vite+. Node matches the template, but changing it needs a check that `tests/golden/` still matches, because generated levels depend on the V8 version. A few things differ from it on purpose. `vp fmt` skips `legacy/`, `index.html`, `src/styles/`, `src/core/levels.ts` and `tests/golden/`, because formatting them would change the shipped bytes. The `lint` block in `vite.config.ts` ends with overrides that turn off the rules the existing code breaks, with a count for each, and the Storybook overrides are gone because the project has no stories.
 
 ## How the safety net works
 
