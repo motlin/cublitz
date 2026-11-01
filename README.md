@@ -34,8 +34,17 @@ The shipped game differs from `legacy/original.html` in exactly these ways, whic
 - Infinite levels shuffle the palette with the seeded generator, so a seed gives the same levels in every engine
 - The level bar links to the merge levels after the campaign
 - The editor's tool bar has a Loose cube tool
+- On a phone-sized touch screen, play is one fixed screen that fits the level, and touch gestures go by finger count
 
 `tests/support/intentional-divergences.ts` holds each one as an exact edit to the original's text. The harness applies those edits to an in-memory copy of the original and compares `dist/` against that copy, so any other difference still fails. A unit test checks the list above against that file.
+
+## The phone layout
+
+A touch screen no larger than a phone, meaning `(pointer: coarse)` and at most 932px wide or 500px tall, gets its own layout and gestures from `src/ui/touch.ts`. Nothing of it runs or exists anywhere else: the stylesheet `src/styles/touch.css` is added by the script only once that query matches, because the page outside the script has to stay the original's, and a large touch screen behaves as it always did.
+
+Play is one fixed screen that never scrolls. The board fills what the top bar and the dock leave, sized by `fitBoard` in `src/ui/touch-geometry.ts` so that the whole level shows. The level list and other header controls open as a sheet from the menu button. One moving finger on the board is a swipe, resolved on lift to the nearest grid axis as drawn. Two fingers that land together, or that both move, zoom and pan even if one of them is off the board, and a finger that has been down and still is ignored, as `src/ui/gestures.ts` lays out. So a pinch whose first finger stays down for a moment before the second lands, and which then moves only the second, reads as a swipe. On the editor's grid one finger paints and two zoom and pan. Undo, Restart and Hint stay in a row that never scrolls, and the other actions open above it from the More button. The page itself never zooms on these screens, wherever a pinch lands, because fixed play has no gesture that could bring a zoomed page back; a pinch with no finger on the board or the grid does nothing.
+
+The differential tests run with `mobile` told that query does not match, since the original has nothing to compare the layout with, so they still show `dist/` is the original under touch emulation. `tests/browser/touch.spec.ts` covers the layout itself with real touch input. WebKit there shows only layout and the finger logic, and emulation says nothing about how a real iPhone handles its own gestures.
 
 ## Merge levels
 

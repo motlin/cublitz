@@ -9,6 +9,7 @@ import {mode, setMode} from "./modes.ts";
 import {loadLevel, loadMergeLevel, mergeIndex, move, restart, SHARED, undo} from "./play.ts";
 import {S} from "./session.ts";
 import {dismissTip, tipOpen} from "./tips.ts";
+import {takesTouch} from "./touch.ts";
 
 export const KEYMAP: Record<string, Direction> = {
 	ArrowUp: "N",
@@ -82,6 +83,7 @@ export function initInput(): void {
 
 	// Swipe
 	$("viewport").addEventListener("pointerdown", (e) => {
+		if (takesTouch(e)) return;
 		touch0 = [e.clientX, e.clientY];
 	});
 	$("viewport").addEventListener("pointerup", (e) => {

@@ -47,6 +47,21 @@ async function afterLoad(page: Page, mobile: boolean): Promise<void> {
 type Side = {label: string; context: BrowserContext; page: Page; externalRequests: string[]};
 type Action = (page: Page) => Promise<unknown>;
 
+/** The phone layout is a recorded divergence the original has no way to match, and tests/browser/touch.spec.ts covers it.
+ * Told the query does not match, dist still has to be the original under touch emulation, which is what these pages compare. */
+const withoutPhoneLayout = (): void => {
+	const real = window.matchMedia.bind(window);
+	window.matchMedia = (query: string): MediaQueryList => {
+		if (!query.includes("pointer: coarse")) return real(query);
+		return {
+			matches: false,
+			media: query,
+			addEventListener() {},
+			removeEventListener() {},
+		} as unknown as MediaQueryList;
+	};
+};
+
 /** The same scripted session against the original, with only its intentional divergences applied, and dist/, compared
  * after every step. */
 export class Pair {
@@ -87,6 +102,7 @@ export class Pair {
 				else await route.abort();
 			});
 			await context.addInitScript(installInstruments, instruments);
+			if (options.mobile) await context.addInitScript(withoutPhoneLayout);
 			if (options.setup) await context.addInitScript(options.setup);
 			const page = await context.newPage();
 			await page.goto(BASE_URL + path, {waitUntil: "load"});

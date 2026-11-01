@@ -1,4 +1,4 @@
-import {FACES, solidColor, workColor} from "../core/cube.ts";
+import {DIRS, FACES, solidColor, workColor} from "../core/cube.ts";
 import {solidColorOf, workColorOf} from "../core/prism.ts";
 import {doorOpen, openColors, pressed} from "../core/rules.ts";
 import type {Cell, Direction, Face, Level, Need, PieceColor, Unit} from "../core/types.ts";
@@ -8,6 +8,7 @@ import {buildProbes, scheduleOverlays} from "./overlays.ts";
 import {S} from "./session.ts";
 import {renderSolution, solState} from "./solution.ts";
 import {COLORS, GLYPH, WGLYPH} from "./text.ts";
+import {afterBoardRender, compactCell, isCompact} from "./touch.ts";
 
 type DoorPiece = {el: HTMLElement; x: number; y: number; c: PieceColor};
 
@@ -30,6 +31,7 @@ let doorEls: DoorPiece[] = [];
 export const C = (): number => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--c"));
 
 function cellSize(L: Level): number {
+	if (isCompact()) return compactCell(L);
 	const vw = $("viewport").clientWidth || 600;
 	const span = L.cols * 0.95 + L.rows * 0.31 + 1.2;
 	return Math.max(24, Math.min(62, Math.floor(vw / span)));
@@ -214,6 +216,7 @@ export function renderBoard(): void {
 	if (hintState) renderHint();
 	if (solState) renderSolution();
 	scheduleOverlays();
+	afterBoardRender();
 }
 
 function makeCube(): Omit<CubeView, "shadow"> {
@@ -359,4 +362,20 @@ export function pulse(x: number, y: number, cls: string): void {
 	t.classList.remove(cls);
 	void t.offsetWidth;
 	t.classList.add(cls);
+}
+
+let aimed: HTMLElement[] = [];
+/** Marks the tiles a roll that way would land on, so a swipe shows where it goes before the finger lifts. */
+export function aimTiles(d: Direction | null): void {
+	aimed.forEach((t) => t.classList.remove("aim"));
+	aimed = [];
+	if (!d || S.won) return;
+	const [dx, dy] = DIRS[d];
+	const cubes = S.st.units ?? [{x: S.st.x, y: S.st.y}];
+	for (const {x, y} of cubes) {
+		const t = tiles[x + dx + "," + (y + dy)];
+		if (!t || cubes.some((u) => u.x === x + dx && u.y === y + dy)) continue;
+		t.classList.add("aim");
+		aimed.push(t);
+	}
 }

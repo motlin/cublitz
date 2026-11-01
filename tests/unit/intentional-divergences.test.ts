@@ -20,6 +20,7 @@ describe("the intentional divergences", () => {
 			"Infinite levels shuffle the palette with the seeded generator, so a seed gives the same levels in every engine",
 			"The level bar links to the merge levels after the campaign",
 			"The editor's tool bar has a Loose cube tool",
+			"On a phone-sized touch screen, play is one fixed screen that fits the level, and touch gestures go by finger count",
 		]);
 	});
 

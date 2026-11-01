@@ -6,6 +6,7 @@ import {SFX} from "./sfx.ts";
 import {clearTipsSeen, readTipsSeen, type TipsSeen, writeTipsSeen} from "./storage.ts";
 import {COLORS, WGLYPH} from "./text.ts";
 import {renderTitle} from "./title.ts";
+import {isCompact, touchTipBody} from "./touch.ts";
 
 // Tutorial pop-ups: shown the first time a level contains something new
 type TipKey = "roll" | "paint" | "gate" | "need" | "switch" | "button" | "wgate" | "wash" | "white";
@@ -129,7 +130,7 @@ function showNextTip(): void {
 	SFX.play("tip");
 	const T = TIPS[t.key];
 	$("tipTitle").textContent = T.title;
-	$("tipBody").textContent = T.body;
+	$("tipBody").textContent = isCompact() ? touchTipBody(t.key, T.body) : T.body;
 	$("tipArt").innerHTML = tipArt(T.art(t.c as PieceColor));
 	$("tipCount").textContent = tipTotal > 1 ? `New · ${tipTotal - tipQueue.length + 1} of ${tipTotal}` : "New";
 	$("tipOk").textContent = tipQueue.length > 1 ? "Next" : "Got it";

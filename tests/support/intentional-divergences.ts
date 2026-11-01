@@ -35,6 +35,11 @@ export const INTENTIONAL_DIVERGENCES: IntentionalDivergence[] = [
 		from: "}).join('');\n$('edTools').addEventListener",
 		to: '}).join(\'\') + `<button type="button" data-tool="cube" aria-pressed="false"><span class="ec loose" style="--ec:20px;--pc:var(--blue);${\'background:linear-gradient(#1b1e29,#1b1e29) center/12% 44% no-repeat,linear-gradient(#1b1e29,#1b1e29) center/44% 12% no-repeat,linear-gradient(var(--clay),var(--clay)) center/72% 72% no-repeat,linear-gradient(135deg,var(--tile-hi),var(--tile))\'}"></span>Loose cube</button>`;\n$(\'edTools\').addEventListener',
 	},
+	{
+		name: "On a phone-sized touch screen, play is one fixed screen that fits the level, and touch gestures go by finger count",
+		from: "$('viewport').addEventListener('pointerdown', e => { touch0 = [e.clientX, e.clientY]; });",
+		to: "$('viewport').addEventListener('pointerdown', e => { if (e.pointerType === 'touch' && matchMedia('(pointer: coarse) and (max-width: 932px), (pointer: coarse) and (max-height: 500px)').matches) return; touch0 = [e.clientX, e.clientY]; });",
+	},
 ];
 
 export function withIntentionalDivergences(html: string): string {

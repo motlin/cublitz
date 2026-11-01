@@ -39,6 +39,7 @@ test("importing every ui module touches nothing in the browser", async () => {
 		"dom.ts",
 		"editor-grid.ts",
 		"editor.ts",
+		"gestures.ts",
 		"hint.ts",
 		"hud.ts",
 		"infinite-mode.ts",
@@ -55,6 +56,8 @@ test("importing every ui module touches nothing in the browser", async () => {
 		"text.ts",
 		"tips.ts",
 		"title.ts",
+		"touch-geometry.ts",
+		"touch.ts",
 	]);
 	expect(touched).toStrictEqual([]);
 });

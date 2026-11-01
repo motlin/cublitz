@@ -1,0 +1,166 @@
+/* The phone layout. The page holds this element only on a touch screen of phone size, as its media attribute says, and
+   game.css stays the original's. Play is one fixed screen with no page scroll: the markup's stage, side panel and cards
+   give up their boxes, so their children share one grid. */
+/* The page itself never zooms. Fixed play has no gesture that could bring a zoomed page back, so a pinch anywhere,
+   title and editor included, would strand the controls off screen. The board and the editor's grid have their own zoom. */
+html { touch-action: pan-x pan-y; }
+kbd { display: none; }
+.tag { display: none; }
+body { padding-block: 8px; padding-left: max(8px, env(safe-area-inset-left, 0px)); padding-right: max(8px, env(safe-area-inset-right, 0px)); }
+.app { gap: 8px; }
+
+html:has(#playView:not([hidden])), html:has(#playView:not([hidden])) body { overflow: hidden; overscroll-behavior: none; }
+.app:has(> #playView:not([hidden])) > #topbar {
+  display: none; position: fixed; inset: 0; z-index: 30; overflow-y: auto; align-content: flex-start;
+  background: var(--ground); touch-action: pan-y;
+  padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) 16px max(12px, env(safe-area-inset-left, 0px));
+}
+.app.menu-open:has(> #playView:not([hidden])) > #topbar { display: flex; }
+#menuClose { display: none; }
+.app.menu-open #menuClose { display: grid; place-items: center; position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; padding: 0; font-size: 22px; }
+.brand { padding-right: 52px; }
+.hdr-right { justify-content: flex-start; }
+.modes button, .soundbtn, .palbtn { min-height: 44px; }
+.lvbtn, #levels button { min-width: 44px; height: 44px !important; }
+.app.menu-open .palette { position: static; width: 100%; }
+
+#playView {
+  position: fixed; inset: 0; z-index: 1; gap: 0; align-items: stretch; touch-action: manipulation; overscroll-behavior: none;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto auto auto minmax(0, 1fr) auto auto auto;
+  grid-template-areas: "head stats" "tip tip" "hint hint" "sol sol" "inf inf" "board board" "status status" "actions actions" "net dpad";
+}
+.stage { display: contents; touch-action: manipulation; }
+#playView aside, #playView aside > .card:not(.infcard) { display: contents; }
+#playView aside .label { display: none; }
+
+.levelhead { grid-area: head; display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 8px; align-items: center; padding: 4px 8px 2px; }
+#menuBtn { grid-row: 1 / span 2; width: 44px; height: 44px; justify-content: center; padding: 0; font-size: 18px; }
+.levelhead h2 { grid-column: 2; font-size: 15px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lh-right { grid-column: 2; min-width: 0; }
+.levelhead .num { display: block; font-size: 10px; line-height: 1.2; }
+#backEdit { white-space: nowrap; min-height: 32px; padding: 4px 6px; font-size: 12px; }
+.lh-right:has(#backEdit:not([hidden])) .num { display: none; }
+#playView aside > .card:not(.infcard) .stats { grid-area: stats; display: flex; gap: 12px; padding: 6px 10px 2px; align-self: center; }
+#playView .stat { text-align: center; }
+#playView .stat .v { font-size: 17px; line-height: 1.1; }
+#playView .stat .k { font-size: 10px; white-space: nowrap; }
+
+.tip { grid-area: tip; padding: 0 10px 2px; font-size: 12px; max-width: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tip:empty { display: none; }
+.tip.open { white-space: normal; max-height: 30dvh; overflow-y: auto; touch-action: pan-y; }
+#hintBox { grid-area: hint; } #solBox { grid-area: sol; }
+.hintbox { margin: 2px 8px; padding: 6px 10px; max-width: none; max-height: 34dvh; min-height: 0; }
+.hintbox p { font-size: 13px; overflow-y: auto; min-height: 0; touch-action: pan-y; }
+.hb-actions { flex: none; flex-wrap: nowrap; overflow-x: auto; touch-action: pan-x; }
+.hb-actions button { flex: none; }
+.infcard { grid-area: inf; margin: 2px 8px; padding: 4px 8px; display: flex; gap: 10px; align-items: center; overflow-x: auto; touch-action: pan-x; }
+.infcard > * { flex: none; }
+.infcard > .inf-rank { flex: 0 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.infcard .inf-rank b { font-size: 15px; }
+.infcard .stats { display: flex; margin: 0; gap: 8px; }
+.infcard .inf-best, .infcard .note:empty { display: none; }
+.infcard .btnrow { margin: 0; flex-wrap: nowrap; }
+
+.viewport {
+  grid-area: board; min-height: 0; min-width: 0; padding: 0; overflow: hidden; perspective-origin: 50% 50%;
+  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.tile.aim > i { outline: 2px solid var(--yellow); outline-offset: -1px; }
+#fitBtn { position: absolute; right: 8px; top: 8px; z-index: 4; min-width: 44px; min-height: 44px; justify-content: center; }
+.status{ grid-area: status; display: block; height: 32px; min-height: 0; padding: 0 10px; font-size: 12px; line-height: 16px; overflow-y: auto; touch-action: pan-y; }
+
+#playView aside > .card:not(.infcard) .btnrow { grid-area: actions; position: relative; margin: 0; padding: 4px 6px; flex-wrap: nowrap; gap: 4px; }
+#playView aside > .card:not(.infcard) .btnrow .act { flex: 1 1 auto; min-height: 44px; min-width: 44px; padding: 6px; font-size: 13px; justify-content: center; }
+/* What does not fit the row opens above it from More, over the board so nothing has to refit. */
+#solBtn, #editCopy, .infcard .btnrow { display: none; }
+#playView.more-open #solBtn, #playView.more-open #editCopy { display: flex; position: absolute; right: 6px; z-index: 6; flex: none; padding: 6px 12px; background: var(--panel); }
+#playView.more-open #editCopy { bottom: calc(100% + 2px); }
+#playView.more-open #solBtn { bottom: calc(100% + 50px); }
+#playView.more-open .infcard .btnrow { display: flex; position: fixed; right: 6px; bottom: calc(216px + env(safe-area-inset-bottom, 0px)); z-index: 6; }
+#playView.more-open .infcard .btnrow .act { min-height: 44px; padding: 6px 10px; font-size: 13px; background: var(--panel); }
+.netwrap { grid-area: net; gap: 8px; flex-wrap: nowrap; padding: 2px 8px 6px; min-width: 0; }
+.net { flex: none; grid-template-columns: repeat(3, 24px); grid-template-rows: repeat(4, 24px); gap: 2px; }
+.nf { font-size: 9px; border-radius: 4px; }
+.nf.need::before { inset: -2px; border-radius: 6px; }
+.legend { font-size: 11px; line-height: 1.25; gap: 3px; min-width: 0; max-height: 102px; overflow-y: auto; touch-action: pan-y; }
+.dpad { grid-area: dpad; display: grid; grid-template-columns: repeat(3, 48px); grid-template-rows: repeat(2, 46px); gap: 4px; padding: 2px 8px 6px; }
+.dpad button { font-size: 0; touch-action: manipulation; }
+/* The glyphs run along the axes the board draws, so an arrow rolls the way it points: 28 and 11 degrees come from
+   gridAxes in touch-geometry.ts. */
+.dpad button::before { display: inline-block; font-size: 22px; line-height: 1; }
+.dpad .up::before { content: "↑"; transform: rotate(28deg); }
+.dpad .down::before { content: "↓"; transform: rotate(28deg); }
+.dpad .left::before { content: "←"; transform: rotate(11deg); }
+.dpad .right::before { content: "→"; transform: rotate(11deg); }
+
+@media (orientation: landscape) {
+  #playView {
+    --rail: 226px;
+    padding-right: calc(var(--rail) + env(safe-area-inset-right, 0px));
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto auto minmax(0, 1fr) auto;
+    grid-template-areas: "head" "tip" "hint" "sol" "inf" "board" "status";
+  }
+  #playView aside > .card:not(.infcard) .stats, .netwrap, #playView aside > .card:not(.infcard) .btnrow, .dpad {
+    position: fixed; width: var(--rail); right: env(safe-area-inset-right, 0px); box-sizing: border-box; grid-area: auto;
+  }
+  #playView aside > .card:not(.infcard) .stats { top: 4px; justify-content: flex-end; padding: 2px 10px; }
+  .netwrap { top: calc(36px + env(safe-area-inset-top, 0px)); }
+  .legend { max-height: 102px; }
+  #playView aside > .card:not(.infcard) .btnrow { bottom: calc(102px + env(safe-area-inset-bottom, 0px)); }
+  #playView.more-open .infcard .btnrow { right: calc(6px + env(safe-area-inset-right, 0px)); bottom: calc(204px + env(safe-area-inset-bottom, 0px)); }
+  .dpad { bottom: env(safe-area-inset-bottom, 0px); justify-content: end; }
+}
+
+/* A phone with toolbars showing leaves too little height to stack the rail, so the face map moves beside the arrows. */
+@media (orientation: landscape) and (max-height: 310px) {
+  #playView { --rail: 250px; }
+  .netwrap { display: contents; }
+  .dpad { width: auto; }
+  .net { position: fixed; bottom: calc(5px + env(safe-area-inset-bottom, 0px)); right: calc(170px + env(safe-area-inset-right, 0px)); }
+  #playView aside > .card:not(.infcard) .btnrow { bottom: calc(110px + env(safe-area-inset-bottom, 0px)); }
+  #playView.more-open #solBtn { bottom: calc(100% + 2px); right: 104px; }
+  #playView.more-open .infcard .btnrow { bottom: calc(110px + env(safe-area-inset-bottom, 0px)); right: calc(var(--rail) + 4px + env(safe-area-inset-right, 0px)); }
+  .legend { position: fixed; top: 38px; right: env(safe-area-inset-right, 0px); width: var(--rail); box-sizing: border-box; padding: 0 10px; max-height: calc(100dvh - 38px - 166px - env(safe-area-inset-bottom, 0px)); }
+}
+
+/* On the shortest portrait screens the hint would leave the board a sliver, so its words scroll in a smaller box. */
+@media (orientation: portrait) and (max-height: 600px) {
+  #playView:has(#hintBox:not([hidden]), #solBox:not([hidden])) .tip { display: none; }
+  .hintbox { max-height: 24dvh; margin: 2px 8px; padding: 4px 8px; }
+  .hintbox p { font-size: 12px; line-height: 1.3; margin: 0; }
+}
+
+/* Cards float over the screen and keep their buttons in view however long the words are. */
+.tipcard, .win { position: fixed; inset: 0; z-index: 20; padding: 12px; touch-action: manipulation; }
+.tipcard .card, .win .card { box-sizing: border-box; max-width: min(460px, 100%); max-height: calc(100dvh - 24px); overflow: hidden; padding: 12px 14px; gap: 8px; }
+.tipcard h3 { font-size: 22px; }
+.tipcard p { font-size: 14px; line-height: 1.4; flex: 0 1 auto; min-height: 0; overflow-y: auto; touch-action: pan-y; }
+.tipcard .act, .win .act { flex: none; min-height: 44px; }
+.tip-art { flex: none; padding: 8px; }
+@media (max-height: 500px) { .tip-art { display: none; } .win h3 { font-size: 22px; } .win p { overflow-y: auto; min-height: 0; } }
+
+/* The title */
+.title { min-height: 0; padding-block: 8px; gap: 8px; }
+@media (max-height: 500px) {
+  .title-stage { --s: 48px; }
+  .tf { font-size: 14px; border-radius: 6px; }
+  .title-name { font-size: 40px; margin: 0; }
+  .title-actions { margin-top: 0; }
+  button.act.big { font-size: 15px; padding: 10px 16px; }
+  .title-links, .title-progress { font-size: 11px; }
+}
+
+/* The editor keeps a scrolling page: one finger on the grid paints, and the strip of tools stays above it. */
+.editor { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.ed-main { padding: 8px; gap: 8px; }
+.ed-toolbar { position: sticky; top: 0; z-index: 5; gap: 6px; padding: 4px 0; background: var(--panel); }
+.ed-tools, .ed-faces, .ed-colors { flex-wrap: nowrap; overflow-x: auto; touch-action: pan-x; padding: 2px; }
+.ed-tools button, .ed-faces button { flex: none; min-height: 40px; }
+.ed-colors button { flex: none; width: 36px; height: 36px; }
+.ed-gridwrap { overflow: auto; max-height: 82dvh; padding: 2px; }
+.ed-grid { margin: 0 auto; }
+.step { width: 44px; height: 44px; }
+.size { flex: none; }

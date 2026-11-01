@@ -15,6 +15,7 @@ import {openSharedLink} from "./ui/shared-link.ts";
 import {initSolution} from "./ui/solution.ts";
 import {initTips} from "./ui/tips.ts";
 import {initTitle} from "./ui/title.ts";
+import {initTouch} from "./ui/touch.ts";
 
 // The ui modules do nothing until they are called, so this list alone decides what happens at startup.
 // It follows the original script from top to bottom. Listeners on one target fire in the order they were
@@ -33,6 +34,7 @@ initEditor();
 initPalette();
 initTitle();
 initSound();
+initTouch();
 
 loadEditorDraft();
 window.claude?.hot?.snapshot?.(() => (S && S.lvl >= 0 ? {lvl: S.lvl, st: S.st, hist: S.hist, mode} : {mode}));

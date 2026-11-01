@@ -10,8 +10,10 @@ import {blankGrid, draftFromLevel, edCellHTML, edToLevel, LOOSE_CUBE_STYLE, newE
 import {setMode} from "./modes.ts";
 import {startLevel} from "./play.ts";
 import {unlocked} from "./session.ts";
+import {fingerGestures, type CameraMove, type FingerEvent} from "./gestures.ts";
 import {type EditorCell, type EditorDraft, loadDraft, mine, setMine, writeDraft} from "./storage.ts";
 import {cap, COLORS, esc, GLYPH, WGLYPH} from "./text.ts";
+import {addFingerSurface, isCompact, takesTouch} from "./touch.ts";
 
 // Editor
 type Tool =
@@ -70,7 +72,9 @@ export function loadIntoEditor(L: LevelSource, name: string, id: string | null):
 export function renderEditor(): void {
 	if (!ED) return;
 	const wrap = $("edGridWrap");
-	const size = Math.max(22, Math.min(42, Math.floor(((wrap.clientWidth || 560) - 8) / ED.cols) - 2));
+	const size = isCompact()
+		? touchCellSize()
+		: Math.max(22, Math.min(42, Math.floor(((wrap.clientWidth || 560) - 8) / ED.cols) - 2));
 	const g = $("edGrid");
 	g.style.setProperty("--ec", size + "px");
 	g.style.setProperty("--cols", domValue(ED.cols));
@@ -144,13 +148,14 @@ function applyTool(x: number, y: number): void {
 	draft.grid[y]![x] = next;
 	changed();
 }
-function cellFromEvent(e: MouseEvent): [number, number] | null {
+function cellFromEvent(e: FingerEvent): [number, number] | null {
 	const el = document.elementFromPoint(e.clientX, e.clientY);
 	const c = el && el.closest<HTMLElement>("#edGrid .ec");
 	return c ? [Number(c.dataset["x"]), Number(c.dataset["y"])] : null;
 }
 function resize(dc: number, dr: number): void {
 	const draft = ED!;
+	gridZoom = 1;
 	const cols = Math.max(3, Math.min(18, draft.cols + dc)),
 		rows = Math.max(3, Math.min(12, draft.rows + dr));
 	const g = blankGrid(cols, rows);
@@ -207,9 +212,74 @@ function renderMine(): void {
 		.join("");
 }
 
+// On a phone the grid starts from the size that fits, so the whole level shows, and two fingers zoom from there.
+const TOUCH_MIN_CELL = 10;
+const TOUCH_MAX_CELL = 56;
+/** A second finger this soon after the first means it was the start of a pinch, not a stroke. */
+const PINCH_GRACE = 400;
+let gridZoom = 1;
+let stroke: {at: number; grid: string} | null = null;
+
+function touchFitCell(): number {
+	const draft = ED!;
+	const room = innerHeight - document.querySelector(".ed-toolbar")!.getBoundingClientRect().height - 24;
+	const wide = $("edGridWrap").clientWidth - 8;
+	return Math.max(TOUCH_MIN_CELL, Math.floor(Math.min(wide / draft.cols, room / draft.rows)) - 2);
+}
+function touchCellSize(): number {
+	return Math.min(Math.max(TOUCH_MAX_CELL, touchFitCell()), Math.round(touchFitCell() * gridZoom));
+}
+function zoomGrid({ratio, dx, dy, x, y}: CameraMove): void {
+	const wrap = $("edGridWrap"),
+		g = $("edGrid");
+	const before = touchCellSize();
+	// The zoom keeps its fractions, or a slow pinch's small steps would each round back to the same tile size.
+	const fit = touchFitCell();
+	gridZoom = Math.max(1, Math.min(Math.max(TOUCH_MAX_CELL, fit) / fit, gridZoom * ratio));
+	const after = touchCellSize();
+	g.style.setProperty("--ec", after + "px");
+	// The spot between the fingers stays under them.
+	const rect = wrap.getBoundingClientRect();
+	const fromX = x - rect.left,
+		fromY = y - rect.top;
+	const scale = (after + 2) / (before + 2);
+	const top = wrap.scrollTop;
+	wrap.scrollLeft = (wrap.scrollLeft + fromX) * scale - fromX - dx;
+	wrap.scrollTop = (wrap.scrollTop + fromY) * scale - fromY - dy;
+	// A grid with no room to pan that way hands the drag to the page, which is what scrolls it there.
+	if (wrap.scrollTop === top && scale === 1) scrollBy(0, -dy);
+}
+function touchPaint(e: FingerEvent): void {
+	const p = cellFromEvent(e);
+	if (p) applyTool(...p);
+}
+
 let needSel: ElementById<"edNeed">;
 export function initEditor(): void {
+	const fingers = fingerGestures(
+		{
+			press: (e) => {
+				stroke = {at: performance.now(), grid: JSON.stringify(ED!.grid)};
+				touchPaint(e);
+			},
+			drag: touchPaint,
+			cameraStart: () => {
+				if (stroke && performance.now() - stroke.at < PINCH_GRACE && stroke.grid !== JSON.stringify(ED!.grid)) {
+					ED!.grid = JSON.parse(stroke.grid) as EditorDraft["grid"];
+					changed();
+				}
+				stroke = null;
+			},
+			camera: zoomGrid,
+		},
+		{eagerCamera: true, together: PINCH_GRACE},
+	);
+	addFingerSurface(fingers, $("edGrid"));
 	$("edGrid").addEventListener("pointerdown", (e) => {
+		if (takesTouch(e)) {
+			e.preventDefault();
+			return;
+		}
 		const p = cellFromEvent(e);
 		if (!p) return;
 		e.preventDefault();
