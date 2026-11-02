@@ -286,6 +286,12 @@ const MUTATIONS: Mutation[] = [
 		grep: "no longer say that paint never comes off",
 	},
 	{
+		name: "intentional divergence: the rolling tip goes back to the original",
+		from: "Swipe or use the arrows to roll. Roll the cube to the target.",
+		to: "Use the arrow keys, WASD, or swipe on a phone to roll your cube one tile at a time. Each roll tips it over an edge, so a different side ends up on the floor. It can only roll onto tiles, never off the edge. Reach the glowing target to finish the level.",
+		grep: "rolling tip is two short sentences",
+	},
+	{
 		name: "intentional divergence: the palette goes back to the random comparator sort",
 		from: "shuffle(PALETTE_ORDER, R)",
 		to: "[...PALETTE_ORDER].sort(() => R() - .5)",

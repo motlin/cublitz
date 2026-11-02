@@ -277,11 +277,13 @@ for (const screen of SCREENS) {
 			await context.close();
 		});
 
-		test("the first tip's button is on screen and teaches the gestures", async ({browser}) => {
+		test("the first tip is short and its button is on screen", async ({browser}) => {
 			const {context, page} = await openPhone(browser, screen, {});
 			await page.locator("#titlePlay").tap();
 			await expect(page.locator("#tip")).toBeVisible();
-			expect(await page.locator("#tipBody").textContent()).toContain("Two fingers to zoom and pan");
+			expect(await page.locator("#tipBody").textContent()).toBe(
+				"Swipe or use the arrows to roll. Roll the cube to the target.",
+			);
 			expect(await unreachable(page, ["#tipOk"])).toStrictEqual([]);
 			await page.screenshot({path: test.info().outputPath("tip.png")});
 			await page.locator("#tipOk").tap();

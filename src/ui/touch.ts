@@ -261,9 +261,7 @@ function sync(): void {
 }
 
 /** A phone's words for the two tips that read differently there. */
-export function touchTipBody(key: string, body: string): string {
-	if (key === "roll")
-		return "Swipe to roll your cube one tile at a time, the way the tiles run. Two fingers to zoom and pan. Each roll tips it over an edge, so a different side ends up on the floor. It can only roll onto tiles, never off the edge. Reach the glowing target to finish the level.";
+export function touchTipBody(body: string): string {
 	return body.replace("The face map on the right shows", "The face map shows");
 }
 

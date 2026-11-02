@@ -37,6 +37,7 @@ The shipped game differs from `legacy/original.html` in exactly these ways, whic
 - On a phone-sized touch screen, play is one fixed screen that fits the level, and touch gestures go by finger count
 - The editor has a Copy link button beside Copy code
 - The page can be installed as an app that plays offline
+- The rolling tip is two short sentences
 
 `tests/support/intentional-divergences.ts` holds each one as an exact edit to the original's text. The harness applies those edits to an in-memory copy of the original and compares `dist/` against that copy, so any other difference still fails. A unit test checks the list above against that file.
 

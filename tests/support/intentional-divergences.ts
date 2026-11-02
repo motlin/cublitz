@@ -74,6 +74,11 @@ $('edImport').onclick = () => {`,
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 `,
 	},
+	{
+		name: "The rolling tip is two short sentences",
+		from: "'Use the arrow keys, WASD, or swipe on a phone to roll your cube one tile at a time. Each roll tips it over an edge, so a different side ends up on the floor. It can only roll onto tiles, never off the edge. Reach the glowing target to finish the level.'",
+		to: "'Swipe or use the arrows to roll. Roll the cube to the target.'",
+	},
 ];
 
 export function withIntentionalDivergences(html: string): string {

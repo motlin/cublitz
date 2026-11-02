@@ -123,6 +123,16 @@ test("the white gates tip and level 23's tip no longer say that paint never come
 	});
 });
 
+test("the rolling tip is two short sentences", async ({browser}) => {
+	await withPair(browser, {storage: atLevel(0, false)}, async (pair) => {
+		const opened = await pair.click("#titlePlay");
+		expect(opened.tip.title).toBe("Rolling");
+		const shown = await Promise.all(pair.pages.map(async (page) => page.locator("#tipBody").textContent()));
+		const expected = "Swipe or use the arrows to roll. Roll the cube to the target.";
+		expect(shown).toStrictEqual([expected, expected]);
+	});
+});
+
 // A search that really reaches 400000 states takes many seconds, so the set of seen states reports its size.
 test("the solver's default limit is 400000 states", async ({browser}) => {
 	const solveAtSize = (size: number): string => `(() => {

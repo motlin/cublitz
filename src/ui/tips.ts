@@ -18,7 +18,7 @@ const TIPS: Record<TipKey, Tip> = {
 	roll: {
 		title: "Rolling",
 		art: () => [["start"], ["arrow"], ["floor"], ["arrow"], ["goal"]],
-		body: "Use the arrow keys, WASD, or swipe on a phone to roll your cube one tile at a time. Each roll tips it over an edge, so a different side ends up on the floor. It can only roll onto tiles, never off the edge. Reach the glowing target to finish the level.",
+		body: "Swipe or use the arrows to roll. Roll the cube to the target.",
 	},
 	paint: {
 		title: "Wet paint",
@@ -130,7 +130,7 @@ function showNextTip(): void {
 	SFX.play("tip");
 	const T = TIPS[t.key];
 	$("tipTitle").textContent = T.title;
-	$("tipBody").textContent = isCompact() ? touchTipBody(t.key, T.body) : T.body;
+	$("tipBody").textContent = isCompact() ? touchTipBody(T.body) : T.body;
 	$("tipArt").innerHTML = tipArt(T.art(t.c as PieceColor));
 	$("tipCount").textContent = tipTotal > 1 ? `New · ${tipTotal - tipQueue.length + 1} of ${tipTotal}` : "New";
 	$("tipOk").textContent = tipQueue.length > 1 ? "Next" : "Got it";
