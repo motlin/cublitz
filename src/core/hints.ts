@@ -104,13 +104,13 @@ export function hintTexts(L: Level, st: State, m: Milestone): [string, string] {
 		case "wash":
 			return [
 				"Next, roll onto the highlighted paint remover.",
-				`It wipes all six faces back to bare at once. Paint you still need, like a color for a gate or a solid coat for a switch, should be used before you get there.`,
+				`It wipes all six faces back to bare at once. Use up any paint you still need first, like a gate's color or a switch's solid coat.`,
 			];
 		case "wgate": {
 			const pf = preFace(m.d, m.f),
 				bare = FACES.filter((k) => !st.f[k]).length;
 			return [
-				`Your next goal is the highlighted ${wgateName(m.f)}. You have ${bare} bare face${bare === 1 ? "" : "s"} left, so spend them carefully.`,
+				`Your next goal is the highlighted ${wgateName(m.f)}. You have ${bare} bare face${bare === 1 ? "" : "s"} left.`,
 				`Roll onto it heading ${dirWord(m.d)}. That roll moves your ${FNAME[pf]} face to the ${FNAME[m.f]}, so keep your ${FNAME[pf]} face bare until then. Plan which faces the puddles on the way are allowed to paint.`,
 			];
 		}

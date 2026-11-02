@@ -178,20 +178,20 @@ describe("hintTexts", () => {
 	it("wash", () => {
 		expect(textFor({map: ["SZ"]}, "E", {f: {...blank(), t: "r"}})).toStrictEqual([
 			"Next, roll onto the highlighted paint remover.",
-			"It wipes all six faces back to bare at once. Paint you still need, like a color for a gate or a solid coat for a switch, should be used before you get there.",
+			"It wipes all six faces back to bare at once. Use up any paint you still need first, like a gate's color or a switch's solid coat.",
 		]);
 	});
 
 	it("white gate with several bare faces", () => {
 		expect(textFor({map: ["S1"], k: {"1": ["wgate", "t"]}}, "E")).toStrictEqual([
-			"Your next goal is the highlighted top white gate. You have 6 bare faces left, so spend them carefully.",
+			"Your next goal is the highlighted top white gate. You have 6 bare faces left.",
 			"Roll onto it heading east. That roll moves your west face to the top, so keep your west face bare until then. Plan which faces the puddles on the way are allowed to paint.",
 		]);
 	});
 
 	it("white gate with one bare face", () => {
 		expect(textFor({map: ["SW"]}, "E", {f: {...solid("r"), e: ""}})[0]).toBe(
-			"Your next goal is the highlighted white gate. You have 1 bare face left, so spend them carefully.",
+			"Your next goal is the highlighted white gate. You have 1 bare face left.",
 		);
 	});
 

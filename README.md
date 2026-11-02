@@ -38,6 +38,23 @@ The shipped game differs from `legacy/original.html` in exactly these ways, whic
 - The editor has a Copy link button beside Copy code
 - The page can be installed as an app that plays offline
 - The rolling tip is two short sentences
+- The wet paint tip is shorter
+- The color gates tip is shorter
+- The picky targets tip is shorter
+- The switches tip is shorter
+- The white gates tip is shorter
+- The paint remover tip is shorter
+- The white pieces tip is shorter
+- The buttons and boxes tip is shorter
+- Prism's tip is reworded
+- Two Rooms' tip is reworded
+- Ladder's tip is reworded
+- Spectrum's tip is reworded
+- Blank Slate's tip is reworded
+- Eastern Window's tip is reworded
+- The infinite mode tip is shorter
+- The paint remover hint is shorter
+- The white gate hint no longer says to spend bare faces carefully
 
 `tests/support/intentional-divergences.ts` holds each one as an exact edit to the original's text. The harness applies those edits to an in-memory copy of the original and compares `dist/` against that copy, so any other difference still fails. A unit test checks the list above against that file.
 

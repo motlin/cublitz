@@ -64,7 +64,7 @@ export function loadInfLevel(): void {
 	const go = (lv: GeneratedLevel): void => {
 		if (!infinite || run!.n !== n) return;
 		(lv as LevelSource).tip =
-			`Every canvas is freshly generated. Par is ${lv.par}. Undo is allowed, but every roll you make counts toward your score.`;
+			`Every canvas is new. Par is ${lv.par}. You can undo, but every roll counts toward your score.`;
 		startLevel(lv, -2);
 		pregenerate();
 	};

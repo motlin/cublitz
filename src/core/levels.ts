@@ -37,7 +37,7 @@ const SOURCES: LevelSource[] = [
   ".r.b.      ",
   "S....RBRB.X",
   ".....      "]},
- {"name":"Prism","tip":"Finish with green on top and blue facing north, after clearing a red gate and a blue wall.","need":{"t":"g","n":"b"},"par":22,"map":[
+ {"name":"Prism","tip":"Clear a red gate and a blue wall, then finish with green on top and blue facing north.","need":{"t":"g","n":"b"},"par":22,"map":[
   "..r..  ..b. ",
   "S.....R....",
   "..g..  ....",
@@ -92,7 +92,7 @@ const SOURCES: LevelSource[] = [
   "     2     ",
   "   .....   ",
   "   ..4..5X "]},
- {"name":"Two Rooms","tip":"Red box on the red button, blue box on the blue button. You will need to change color halfway.","k":{"1":["box",
+ {"name":"Two Rooms","tip":"Red box on the red button, blue box on the blue button. You’ll have to change color halfway.","k":{"1":["box",
   "r"],"2":["button",
   "r"],"3":["door",
   "r"],"4":["box",
@@ -111,11 +111,11 @@ const SOURCES: LevelSource[] = [
   "S....YY.b.gg....",
   ".y...YY.....1..3X",
   ".....  ......2.."]},
- {"name":"Ladder","tip":"Meet three new paints: orange, purple and cyan. The wall runs orange, purple, cyan, orange, so orange has to be on two opposite faces.","par":19,"map":[
+ {"name":"Ladder","tip":"Three new paints: orange, purple and cyan. The wall runs orange, purple, cyan, orange, so orange goes on two opposite faces.","par":19,"map":[
   ".o.p..      ",
   "S.....OPCO.X",
   ".c....      "]},
- {"name":"Spectrum","tip":"Four faces, four colors. Arrive with cyan on top, orange north, purple south and blue west.","need":{"t":"c","n":"o","s":"p","w":"b"},"par":18,"map":[
+ {"name":"Spectrum","tip":"Arrive with cyan on top, orange north, purple south and blue west.","need":{"t":"c","n":"o","s":"p","w":"b"},"par":18,"map":[
   "..o...",
   "S...p.",
   ".c....",
@@ -139,11 +139,11 @@ const SOURCES: LevelSource[] = [
   "..cc.12.oo.3.",
   "...... .oo...5..X",
   "...... ....4p"]},
- {"name":"Blank Slate","tip":"White gates want a bare, unpainted face. This one needs a bare face down, and the paint field is in the way.","par":10,"map":[
+ {"name":"Blank Slate","tip":"White gates want an unpainted face. This one needs it facing down, and the paint field is in the way.","par":10,"map":[
   "..rrr.  ",
   "S.rrr.W.X",
   "..rrr.  "]},
- {"name":"Eastern Window","tip":"The arrow on a white gate names the side that must still be bare when you land. Here that is east.","k":{"4":["wgate",
+ {"name":"Eastern Window","tip":"A white gate’s arrow points at the side that must still be bare when you land. Here, east.","k":{"4":["wgate",
   "e"]},"par":10,"map":[
   "Sbbb  ",
   " bbb  ",

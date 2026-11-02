@@ -292,6 +292,30 @@ const MUTATIONS: Mutation[] = [
 		grep: "rolling tip is two short sentences",
 	},
 	{
+		name: "intentional divergence: the wet paint tip goes back to the original",
+		from: "Roll onto a puddle and the face touching the floor takes its color. It stays that color until another puddle covers it.",
+		to: "When your cube rolls onto a puddle, the face touching the floor gets painted that color. The paint stays on that face until another puddle covers it.",
+		grep: "tutorial pop-ups after the rolling tip are reworded",
+	},
+	{
+		name: "intentional divergence: Prism's tip goes back to the original",
+		from: "Clear a red gate and a blue wall, then finish with green on top and blue facing north.",
+		to: "Finish with green on top and blue facing north, after clearing a red gate and a blue wall.",
+		grep: "level 8 Prism",
+	},
+	{
+		name: "intentional divergence: the infinite mode tip goes back to the original",
+		from: "Every canvas is new. Par is ",
+		to: "Every canvas is freshly generated. Par is ",
+		grep: "infinite mode tip is short",
+	},
+	{
+		name: "intentional divergence: the white gate hint says to spend bare faces carefully again",
+		from: "} left.`",
+		to: "} left, so spend them carefully.`",
+		grep: "hints at every tier while solving level 2[1-5]",
+	},
+	{
 		name: "intentional divergence: the palette goes back to the random comparator sort",
 		from: "shuffle(PALETTE_ORDER, R)",
 		to: "[...PALETTE_ORDER].sort(() => R() - .5)",

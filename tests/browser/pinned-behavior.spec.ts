@@ -116,7 +116,7 @@ test("the white gates tip and level 23's tip no longer say that paint never come
 			]),
 		);
 		const expected = [
-			"White gates want a bare, unpainted side. A plain one needs a bare face down. One with an arrow needs the side it points to still bare when you land, and one with a ring needs a bare top. Paint stays on until a paint remover wipes it, so every puddle you cross uses up a white face. A solid cube can never get through.",
+			"White gates want a bare side. A plain one needs a bare face down. An arrow means the side it points to must still be bare when you land, and a ring means a bare top. Paint stays on until a paint remover wipes it, so every puddle you cross uses up a white face. A solid cube never gets through.",
 			"West bare for the first wall, top bare for the second. Nothing here takes paint off.",
 		];
 		expect(shown).toStrictEqual([expected, expected]);
@@ -130,6 +130,62 @@ test("the rolling tip is two short sentences", async ({browser}) => {
 		const shown = await Promise.all(pair.pages.map(async (page) => page.locator("#tipBody").textContent()));
 		const expected = "Swipe or use the arrows to roll. Roll the cube to the target.";
 		expect(shown).toStrictEqual([expected, expected]);
+	});
+});
+
+test("the infinite mode tip is short", async ({browser}) => {
+	await withPair(browser, {storage: atLevel(0)}, async (pair) => {
+		await pair.click("#titleInf");
+		const shown = await Promise.all(pair.pages.map(async (page) => page.locator("#lvTip").textContent()));
+		expect(shown[0]).toMatch(
+			/^Every canvas is new\. Par is \d+\. You can undo, but every roll counts toward your score\.$/,
+		);
+		expect(shown[1]).toBe(shown[0]);
+	});
+});
+
+// Violet Vault, Fresh Start and Clean Sweep between them bring up every tutorial pop-up after the rolling tip.
+test("the tutorial pop-ups after the rolling tip are reworded", async ({browser}) => {
+	const shown: Record<string, (string | null)[]> = {};
+	for (const index of [18, 25, 29]) {
+		await withPair(browser, {storage: atLevel(index, false)}, async (pair) => {
+			await pair.click("#titlePlay");
+			while (!pair.last.tip.hidden) {
+				const title = pair.last.tip.title;
+				shown[title] = await Promise.all(
+					pair.pages.map(async (page) => page.locator("#tipBody").textContent()),
+				);
+				await pair.press("Enter", `dismiss tip ${title}`);
+			}
+		});
+	}
+	const both = (text: string): (string | null)[] => [text, text];
+	expect(shown).toStrictEqual({
+		Rolling: both("Swipe or use the arrows to roll. Roll the cube to the target."),
+		"Wet paint": both(
+			"Roll onto a puddle and the face touching the floor takes its color. It stays that color until another puddle covers it. The face map on the right shows every side.",
+		),
+		"Color gates": both(
+			"A colored gate only lets you through if the face that lands on it is that color. Every roll turns a different face down, so count your rolls.",
+		),
+		"Picky targets": both(
+			"A colored target wants that color on top. A colored bar on one edge means that side of the cube needs the color too. The face map on the right shows every side.",
+		),
+		"Solid cubes and switches": both(
+			"A switch only works for a cube painted its color on all six faces. A solid cube glows. Roll it onto a matching switch to flip it, and every door of that color opens.",
+		),
+		"Buttons and boxes": both(
+			"A button holds its doors open only while something of its color sits on it. Step off and they shut. A solid cube can push a box of its own color, and a box left on the button keeps the doors open for good.",
+		),
+		"White gates": both(
+			"White gates want a bare side. A plain one needs a bare face down. An arrow means the side it points to must still be bare when you land, and a ring means a bare top. Paint stays on until a paint remover wipes it, so every puddle you cross uses up a white face. A solid cube never gets through.",
+		),
+		"Paint remover": both(
+			"A paint remover wipes every face of your cube back to bare at once. Use it when puddles or a solid coat have used up the bare sides a white gate needs. It ends a solid coat too, so finish with switches and boxes first.",
+		),
+		"White pieces": both(
+			"A cube with no paint on any face counts as white. It doesn’t glow or act solid, but it can flip white switches, hold down white buttons and push white boxes. Picked up paint? A paint remover makes you white again.",
+		),
 	});
 });
 
