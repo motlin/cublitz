@@ -1,6 +1,6 @@
 import {afterEach, expect, test, vi} from "vite-plus/test";
 import {LEVELS} from "../../../src/core/levels.ts";
-import {beaten, loadProgress, unlocked} from "../../../src/ui/session.ts";
+import {beaten, eraseProgress, loadProgress, nextLevel, unlocked} from "../../../src/ui/session.ts";
 import {STORAGE_KEYS} from "../../../src/ui/storage.ts";
 
 const withSave = (progress: Record<string, number>) => {
@@ -11,7 +11,11 @@ const withSave = (progress: Record<string, number>) => {
 	});
 	loadProgress();
 };
-afterEach(() => vi.unstubAllGlobals());
+// Progress lives in the session module, so it is cleared while the stub still takes the write.
+afterEach(() => {
+	eraseProgress();
+	vi.unstubAllGlobals();
+});
 
 const open = () =>
 	LEVELS.map((level, index) => [level.name, unlocked(index), beaten(level) ?? null]).filter(([, isOpen]) => isOpen);
@@ -52,5 +56,26 @@ test("a save that beat both keeps both scores and opens Stripes", () => {
 		["Crown", true, 17],
 		["Checkpoints", true, 19],
 		["Stripes", true, null],
+	]);
+});
+
+const CROWN = LEVELS.findIndex((level) => level.name === "Crown");
+
+test("Next level after Crown skips Checkpoints when an old save already beat it", () => {
+	withSave({"First Roll": 6, "First Coat": 6, "Blue Fence": 12, "Keep the Red": 19, Checkpoints: 21, Crown: 17});
+	expect(LEVELS[nextLevel(CROWN)]?.name).toBe("Stripes");
+});
+
+test("Next level after Crown goes to Checkpoints when it is not beaten yet", () => {
+	withSave({"First Roll": 6, "First Coat": 6, "Blue Fence": 12, "Keep the Red": 19, Crown: 17});
+	expect(LEVELS[nextLevel(CROWN)]?.name).toBe("Checkpoints");
+});
+
+test("Next level goes to the following level when every later level is beaten, and stays on the last level", () => {
+	withSave(Object.fromEntries(LEVELS.map((level) => [level.name!, 99])));
+	expect([nextLevel(0), nextLevel(CROWN), nextLevel(LEVELS.length - 1)]).toStrictEqual([
+		1,
+		CROWN + 1,
+		LEVELS.length - 1,
 	]);
 });

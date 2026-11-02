@@ -1,7 +1,8 @@
 import {parseLevel} from "./level.ts";
 import type {Level, LevelSource} from "./types.ts";
 
-// The campaign, verbatim from the original script: its order and key order are part of the game.
+// The campaign from the original script, with Crown and Checkpoints swapped and some tips reworded. Its key order is
+// part of the game, and progress finds a level by name, so a save from the original order still works.
 const SOURCES: LevelSource[] = [
  {"name":"First Roll","tip":"Roll the cube to the target. Watch the face map on the right: every roll tips the cube onto a new side.","par":6,"map":[
   "S...",

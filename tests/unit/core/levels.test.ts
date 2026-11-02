@@ -1,14 +1,11 @@
-import {readFileSync} from "node:fs";
 import {describe, expect, it} from "vite-plus/test";
 import {initState} from "../../../src/core/level.ts";
 import {LEVELS} from "../../../src/core/levels.ts";
 import {solve} from "../../../src/core/solver.ts";
-import type {SolveGolden} from "../../support/golden.ts";
+import {readSolveGolden} from "../../support/golden.ts";
 import {loadExpectedEngine} from "../../support/original-engine.ts";
 
-const golden = JSON.parse(
-	readFileSync(new URL("../../golden/solve-post-fix.json", import.meta.url), "utf8"),
-) as SolveGolden[];
+const golden = readSolveGolden("solve-post-fix.json");
 
 describe("LEVELS", () => {
 	const solved = LEVELS.map((level, index) => {
@@ -22,7 +19,7 @@ describe("LEVELS", () => {
 		};
 	});
 
-	it("is the original's data, parsed, in the same order and with the same key order", () => {
+	it("is the original's data with the intentional divergences applied, parsed, with the same key order", () => {
 		expect(JSON.stringify(LEVELS)).toBe(JSON.stringify(loadExpectedEngine().LEVELS));
 	});
 

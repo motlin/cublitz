@@ -1,12 +1,9 @@
-import {readFileSync} from "node:fs";
 import {expect, test} from "@playwright/test";
-import type {SolveGolden} from "../support/golden.ts";
+import {readSolveGolden} from "../support/golden.ts";
 import {findBlockedMove, findDeadEnd, findMissedGoal, keyFor} from "../support/paths.ts";
 import {atLevel, engine, type Pair, withPair} from "./harness/pair.ts";
 
-const golden = JSON.parse(
-	readFileSync(new URL("../golden/solve-post-fix.json", import.meta.url), "utf8"),
-) as SolveGolden[];
+const golden = readSolveGolden("solve-post-fix.json");
 const pathOf = (index: number): string => golden[index]!.path!;
 const level = (index: number) => engine.LEVELS[index]!;
 const openLevel = async (pair: Pair): Promise<void> => {
@@ -351,7 +348,12 @@ test("navigation: brand, mode buttons, levels list, hash and window resize", asy
 	});
 });
 
-const RESUME = {lvl: 1, st: {x: 2, y: 1, f: {t: "", b: "r", n: "", s: "", e: "", w: ""}, boxes: [], sw: []}, hist: []};
+const RESUME = {
+	lvl: 1,
+	name: "First Coat",
+	st: {x: 2, y: 1, f: {t: "", b: "r", n: "", s: "", e: "", w: ""}, boxes: [], sw: []},
+	hist: [],
+};
 
 test("window.claude.hot hooks: data resumes a level, with and without ready", async ({browser}) => {
 	for (const useReady of [false, true]) {

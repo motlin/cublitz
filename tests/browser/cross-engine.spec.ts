@@ -1,11 +1,8 @@
-import {readFileSync} from "node:fs";
 import {type BrowserType, expect, test} from "@playwright/test";
-import type {InfiniteGolden} from "../support/golden.ts";
+import {readInfiniteGolden} from "../support/golden.ts";
 import {BASE_URL, DIST_PATH} from "./harness/pair.ts";
 
-const golden = JSON.parse(
-	readFileSync(new URL("../golden/infinite-post-fix.json", import.meta.url), "utf8"),
-) as InfiniteGolden[];
+const golden = readInfiniteGolden("infinite-post-fix.json");
 const DEEP_CASES = [1, 4, 9, 77, 2024, 31337].flatMap((seed) => [6, 10, 15, 21, 27].map((n) => [seed, n]));
 const CASES = [...golden.map(({seed, n}) => [seed, n]), ...DEEP_CASES];
 const CANDIDATE_LEVEL_NUMBERS = [0, 2, 4, 6, 8, 10, 12, 14, 20, 33];

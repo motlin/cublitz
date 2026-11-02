@@ -4,19 +4,20 @@ import {readFileSync} from "node:fs";
 // Each is an exact edit to the original's text, so everything else about the expected page stays the original.
 export type IntentionalDivergence = {name: string; from: string; to: string};
 
-// The original's text for the two campaign levels whose order is swapped.
-const CHECKPOINTS = ` {"name":"Checkpoints","tip":"Green first, then red. Which face carries which?","par":19,"map":[
-  "...g.  .R...",
-  "S....G..R..X",
-  ".r...  .R...",
-  "....   .R..."]},
-`;
-const CROWN = ` {"name":"Crown","tip":"The gates want yellow on the bottom. The target wants yellow on top.","need":{"t":"y"},"par":17,"map":[
-  ".....  ...",
-  ".y...YY...",
-  "S....YY..X",
-  ".....  ..."]},
-`;
+export function readOriginalHtml(): string {
+	return readFileSync(new URL("../../legacy/original.html", import.meta.url), "utf8");
+}
+
+// The original's text for a campaign level, from its line up to the next level's line.
+const levelText = (name: string, nextName: string): string => {
+	const html = readOriginalHtml();
+	const start = html.indexOf(` {"name":"${name}"`);
+	const end = html.indexOf(` {"name":"${nextName}"`, start);
+	if (start < 0 || end < 0) throw new Error(`The original has no level ${name} followed by ${nextName}`);
+	return html.slice(start, end);
+};
+const CHECKPOINTS = levelText("Checkpoints", "Crown");
+const CROWN = levelText("Crown", "Stripes");
 
 export const INTENTIONAL_DIVERGENCES: IntentionalDivergence[] = [
 	{
@@ -183,6 +184,21 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
 		from: CHECKPOINTS + CROWN,
 		to: CROWN + CHECKPOINTS,
 	},
+	{
+		name: "Next level goes to the first later level not yet beaten, so a save that beat Checkpoints before Crown skips it",
+		from: "S.lvl < 0 ? setMode('edit') : loadLevel(Math.min(S.lvl + 1, LEVELS.length - 1));",
+		to: "S.lvl < 0 ? setMode('edit') : loadLevel((next => next < 0 ? Math.min(S.lvl + 1, LEVELS.length - 1) : next)(LEVELS.findIndex((L, i) => i > S.lvl && !progress[L.name])));",
+	},
+	{
+		name: "A hot-reload snapshot holds its level's name",
+		from: "{ lvl:S.lvl, st:S.st, hist:S.hist, mode }",
+		to: "{ lvl:S.lvl, name:S.L.name, st:S.st, hist:S.hist, mode }",
+	},
+	{
+		name: "A hot-reload snapshot is restored only onto the level with its name",
+		from: "LEVELS[data.lvl] && unlocked(data.lvl)",
+		to: "LEVELS[data.lvl] && LEVELS[data.lvl].name === data.name && unlocked(data.lvl)",
+	},
 ];
 
 export function withIntentionalDivergences(html: string): string {
@@ -191,8 +207,5 @@ export function withIntentionalDivergences(html: string): string {
 		return page.replace(from, () => to);
 	}, html);
 }
-
-export const readOriginalHtml = (): string =>
-	readFileSync(new URL("../../legacy/original.html", import.meta.url), "utf8");
 
 export const readExpectedHtml = (): string => withIntentionalDivergences(readOriginalHtml());

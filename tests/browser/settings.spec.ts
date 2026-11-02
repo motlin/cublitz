@@ -1,13 +1,10 @@
-import {readFileSync} from "node:fs";
 import {expect, type Page, test} from "@playwright/test";
-import type {SolveGolden} from "../support/golden.ts";
+import {readSolveGolden} from "../support/golden.ts";
 import {keyFor} from "../support/paths.ts";
 import {atLevel, DESKTOP, MOBILE, withPair} from "./harness/pair.ts";
 import {holdBeforeLift} from "./harness/touch.ts";
 
-const golden = JSON.parse(
-	readFileSync(new URL("../golden/solve-post-fix.json", import.meta.url), "utf8"),
-) as SolveGolden[];
+const golden = readSolveGolden("solve-post-fix.json");
 const pathOf = (index: number): string => golden[index]!.path!;
 
 test("palette: swatches, picker, sliders, numbers, hex, resets and persistence", async ({browser}) => {

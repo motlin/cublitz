@@ -4,11 +4,8 @@ import {mkdtempSync, readdirSync, readFileSync, rmSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {expect, test} from "@playwright/test";
-import type {InfiniteGolden, SolveGolden} from "../support/golden.ts";
+import {readInfiniteGolden, readSolveGolden} from "../support/golden.ts";
 import {BASE_URL, DIST_PATH, EXPECTED_PATH, LEGACY_PATH, withPair} from "./harness/pair.ts";
-
-const readGolden = (name: string): unknown =>
-	JSON.parse(readFileSync(new URL(`../golden/${name}`, import.meta.url), "utf8"));
 
 test("the legacy artifact is the source file, byte for byte", async ({request}) => {
 	const body = await (await request.get(BASE_URL + LEGACY_PATH)).body();
@@ -70,9 +67,9 @@ test("the goldens match the original script running in the browser", async ({pag
 	await page.goto(BASE_URL + LEGACY_PATH);
 	// A string, because const and let at the top of a classic script are not properties of window.
 	const solved = await page.evaluate("LEVELS.map(level => [solve(level, initState(level)), solve.hitLimit])");
-	expect(solved).toStrictEqual((readGolden("solve.json") as SolveGolden[]).map((g) => [g.path, g.hitLimit]));
+	expect(solved).toStrictEqual(readSolveGolden("solve.json").map((g) => [g.path, g.hitLimit]));
 
-	const infinite = readGolden("infinite.json") as InfiniteGolden[];
+	const infinite = readInfiniteGolden("infinite.json");
 	const cases = JSON.stringify(infinite.map((g) => [g.seed, g.n]));
 	const generated = await page.evaluate(`(async () => {
 		const out = [];
@@ -105,7 +102,8 @@ for (const seed of [1, 4, 9, 77, 2024, 31337]) {
 }
 
 test("the post-fix goldens match the expected page and dist in the browser", async ({page}) => {
-	const infinite = readGolden("infinite-post-fix.json") as InfiniteGolden[];
+	const solve = readSolveGolden("solve-post-fix.json").map((g) => [g.name, g.path, g.hitLimit]);
+	const infinite = readInfiniteGolden("infinite-post-fix.json");
 	const generate = `(async () => {
 		const out = [];
 		for (const [seed, n] of ${JSON.stringify(infinite.map((g) => [g.seed, g.n]))}) {
@@ -117,21 +115,13 @@ test("the post-fix goldens match the expected page and dist in the browser", asy
 	const generated = [];
 	for (const path of [EXPECTED_PATH, DIST_PATH]) {
 		await page.goto(BASE_URL + path);
-		generated.push(await page.evaluate(generate));
-	}
-	const levels = infinite.map((g) => g.level);
-	expect(generated).toStrictEqual([levels, levels]);
-});
-
-test("the post-fix solve golden matches the expected page and dist in the browser", async ({page}) => {
-	const expected = (readGolden("solve-post-fix.json") as SolveGolden[]).map((g) => [g.name, g.path, g.hitLimit]);
-	for (const path of [EXPECTED_PATH, DIST_PATH]) {
-		await page.goto(BASE_URL + path);
 		const solved = await page.evaluate(
 			"LEVELS.map(level => [level.name, solve(level, initState(level)), solve.hitLimit])",
 		);
-		expect(solved).toStrictEqual(expected);
+		generated.push({solved, infinite: await page.evaluate(generate)});
 	}
+	const expected = {solved: solve, infinite: infinite.map((g) => g.level)};
+	expect(generated).toStrictEqual([expected, expected]);
 });
 
 test("the screenshot comparison on its own notices a one-element paint change", async ({browser}) => {

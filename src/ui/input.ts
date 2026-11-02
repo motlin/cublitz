@@ -1,4 +1,3 @@
-import {LEVELS} from "../core/levels.ts";
 import type {Direction} from "../core/types.ts";
 import {renderBoard} from "./board.ts";
 import {$} from "./dom.ts";
@@ -7,7 +6,7 @@ import {hint} from "./hint.ts";
 import {campaignLvl, loadInfLevel} from "./infinite-mode.ts";
 import {mode, setMode} from "./modes.ts";
 import {loadLevel, loadMergeLevel, mergeIndex, move, restart, SHARED, undo} from "./play.ts";
-import {S} from "./session.ts";
+import {nextLevel, S} from "./session.ts";
 import {dismissTip, tipOpen} from "./tips.ts";
 import {takesTouch} from "./touch.ts";
 
@@ -47,7 +46,7 @@ export function initInput(): void {
 		else if (S.lvl === SHARED) loadLevel(campaignLvl);
 		else if (mergeIndex(S.lvl) >= 0) loadMergeLevel(mergeIndex(S.lvl) + 1);
 		else if (S.lvl < 0) setMode("edit");
-		else loadLevel(Math.min(S.lvl + 1, LEVELS.length - 1));
+		else loadLevel(nextLevel(S.lvl));
 	});
 	document.querySelectorAll<HTMLElement>(".dpad button").forEach((b) => {
 		b.addEventListener("click", () => {

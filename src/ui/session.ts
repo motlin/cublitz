@@ -33,6 +33,12 @@ export const eraseProgress = (): void => {
 };
 export const beaten = (L: {name?: string}): number | undefined => progress[L.name!];
 export const unlocked = (i: number): boolean => i === 0 || !!beaten(LEVELS[i - 1]!) || !!beaten(LEVELS[i]!);
+/** Where Next level goes from campaign level i: the first later level not beaten yet, which skips a level an old save
+ * beat out of order, or else the following level, staying on the last. */
+export function nextLevel(i: number): number {
+	const next = LEVELS.findIndex((L, j) => j > i && !beaten(L));
+	return next < 0 ? Math.min(i + 1, LEVELS.length - 1) : next;
+}
 
 export let reduced = false;
 export const loadReducedMotion = (): void => {

@@ -1,13 +1,10 @@
-import {readFileSync} from "node:fs";
 import {expect, test} from "@playwright/test";
-import type {SolveGolden} from "../support/golden.ts";
+import {readSolveGolden} from "../support/golden.ts";
 import {atLevel, engine, type Pair, withPair} from "./harness/pair.ts";
 
 // Behavior a session never reaches on its own, so each one is driven here on purpose.
 
-const golden = JSON.parse(
-	readFileSync(new URL("../golden/solve-post-fix.json", import.meta.url), "utf8"),
-) as SolveGolden[];
+const golden = readSolveGolden("solve-post-fix.json");
 
 const ROLL_KEYS = ["w", "a", "s", "d", "ArrowUp", "ArrowLeft", "ArrowDown", "ArrowRight"];
 
@@ -94,6 +91,7 @@ test("the rating averages the last ten canvases, dropping the eleventh back", as
 test("hot data for a locked level is ignored and the first open level loads", async ({browser}) => {
 	const data = {
 		lvl: 20,
+		name: engine.LEVELS[20]!.name,
 		st: {x: 0, y: 0, f: {t: "", b: "", n: "", s: "", e: "", w: ""}, boxes: [], sw: []},
 		hist: [],
 	};
@@ -103,6 +101,40 @@ test("hot data for a locked level is ignored and the first open level loads", as
 			expect(pair.last.errors).toStrictEqual([]);
 		});
 	}
+});
+
+// Before Crown and Checkpoints swapped places, Checkpoints was level 5, so a save or a hot snapshot from then can
+// hold Checkpoints beaten ahead of Crown, or a Checkpoints state stored under index 4, which is now Crown's.
+const OLD_ORDER_SAVE = {
+	...atLevel(4),
+	"cubist-progress-v2": JSON.stringify({...JSON.parse(atLevel(4)["cubist-progress-v2"]!), Checkpoints: 21}),
+};
+
+test("hot data from the old order, a Checkpoints state under index 4, is not restored onto Crown", async ({
+	browser,
+}) => {
+	const st = {x: 0, y: 1, f: {t: "", b: "", n: "", s: "", e: "", w: ""}, boxes: [], sw: []};
+	for (const useReady of [false, true]) {
+		await withPair(
+			browser,
+			{storage: OLD_ORDER_SAVE, hot: {data: {lvl: 4, st, hist: [st]}, useReady}},
+			async (pair) => {
+				const opened = await pair.click("#titlePlay");
+				expect(opened.hud).toStrictEqual({name: "Crown", num: "Level 5 of 30", moves: "0", par: "17"});
+				expect(opened.errors).toStrictEqual([]);
+			},
+		);
+	}
+});
+
+test("Next level after Crown skips Checkpoints when an old save already beat it", async ({browser}) => {
+	await withPair(browser, {storage: OLD_ORDER_SAVE}, async (pair) => {
+		await pair.click("#titlePlay");
+		const won = await pair.roll(golden[4]!.path!);
+		expect(won.win.hidden).toBe(false);
+		const next = await pair.click("#winNext");
+		expect(next.hud).toStrictEqual({name: "Stripes", num: "Level 7 of 30", moves: "0", par: "26"});
+	});
 });
 
 test("the white gates tip and level 23's tip no longer say that paint never comes off", async ({browser}) => {

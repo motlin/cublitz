@@ -1,11 +1,8 @@
-import {readFileSync} from "node:fs";
 import {expect, test} from "@playwright/test";
-import type {InfiniteGolden} from "../support/golden.ts";
+import {type InfiniteGolden, readInfiniteGolden} from "../support/golden.ts";
 import {atLevel, engine, withPair} from "./harness/pair.ts";
 
-const golden = JSON.parse(
-	readFileSync(new URL("../golden/infinite-post-fix.json", import.meta.url), "utf8"),
-) as InfiniteGolden[];
+const golden = readInfiniteGolden("infinite-post-fix.json");
 const SEED = 12345;
 const canvas = (n: number): InfiniteGolden => golden.find((g) => g.seed === SEED && g.n === n)!;
 const pinnedRun = {

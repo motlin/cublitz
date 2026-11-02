@@ -1,4 +1,3 @@
-import {readFileSync} from "node:fs";
 import {describe, expect, it} from "vite-plus/test";
 import {
 	infCandidate,
@@ -12,12 +11,10 @@ import {
 	shuffle,
 } from "../../../src/core/infinite.ts";
 import type {GeneratedLevel} from "../../../src/core/infinite.ts";
-import type {InfiniteGolden} from "../../support/golden.ts";
+import {readInfiniteGolden} from "../../support/golden.ts";
 import {loadExpectedEngine} from "../../support/original-engine.ts";
 
-const golden = JSON.parse(
-	readFileSync(new URL("../../golden/infinite-post-fix.json", import.meta.url), "utf8"),
-) as InfiniteGolden[];
+const golden = readInfiniteGolden("infinite-post-fix.json");
 const original = loadExpectedEngine();
 const generate = (seed: number, n: number): GeneratedLevel => {
 	const batch = infSearch(seed, n);

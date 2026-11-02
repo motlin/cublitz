@@ -6,34 +6,26 @@ import {grepMatchedPassingTest, type PlaywrightReport, verdict} from "./harness-
 
 // Mutates throwaway copies of dist/ and confirms the differential harness fails on each one.
 // dist/ itself is never touched and every copy is deleted afterwards.
-type Mutation = {name: string; from: string; to: string; grep: string};
+// A mutation either replaces text that occurs exactly once, or computes the mutant itself, returning null when the
+// copy no longer holds what it looks for. Either way a miss is reported as INVALID, so the other mutations still run.
+type Mutation = {name: string; grep: string} & ({from: string; to: string} | {mutate: (html: string) => string | null});
 
-// The bundled text of the two campaign levels whose order is an intentional divergence.
-const CROWN_BLOCK = `	{
-		"name": "Crown",
-		"tip": "The gates want yellow on the bottom. The target wants yellow on top.",
-		"need": { "t": "y" },
-		"par": 17,
-		"map": [
-			".....  ...",
-			".y...YY...",
-			"S....YY..X",
-			".....  ..."
-		]
-	},
-`;
-const CHECKPOINTS_BLOCK = `	{
-		"name": "Checkpoints",
-		"tip": "Green first, then red. Which face carries which?",
-		"par": 19,
-		"map": [
-			"...g.  .R...",
-			"S....G..R..X",
-			".r...  .R...",
-			"....   .R..."
-		]
-	},
-`;
+const replaceOnce = (html: string, from: string, to: string): string | null =>
+	html.split(from).length === 2 ? html.replace(from, () => to) : null;
+
+// Swaps two adjacent campaign levels, each cut from the start of its object to the start of the next level's
+// object, so the bundler's formatting of the level data does not matter.
+const swapLevels = (html: string, first: string, second: string, following: string): string | null => {
+	const starts = [first, second, following].map((name) => {
+		const anchor = new RegExp(String.raw`\{\s*"?name"?\s*:\s*"${name}"`, "g");
+		const found = [...html.matchAll(anchor)];
+		const [only] = found;
+		return found.length === 1 && only ? only.index : -1;
+	});
+	const [a, b, c] = starts as [number, number, number];
+	if (a < 0 || !(a < b && b < c)) return null;
+	return html.slice(0, a) + html.slice(b, c) + html.slice(a, b) + html.slice(c);
+};
 
 const MUTATIONS: Mutation[] = [
 	{
@@ -272,8 +264,8 @@ const MUTATIONS: Mutation[] = [
 	},
 	{
 		name: "hooks: hot data resumes a locked level",
-		from: "LEVELS[data.lvl] && unlocked(data.lvl) && data.st",
-		to: "LEVELS[data.lvl] && data.st",
+		from: "data.name && unlocked(data.lvl) && data.st",
+		to: "data.name && data.st",
 		grep: "locked level",
 	},
 	{
@@ -344,9 +336,20 @@ const MUTATIONS: Mutation[] = [
 	},
 	{
 		name: "intentional divergence: Checkpoints goes back before Crown",
-		from: CROWN_BLOCK + CHECKPOINTS_BLOCK,
-		to: CHECKPOINTS_BLOCK + CROWN_BLOCK,
+		mutate: (html) => swapLevels(html, "Crown", "Checkpoints", "Stripes"),
 		grep: "level 5 Crown",
+	},
+	{
+		name: "intentional divergence: Next level goes back to the following level even when it is beaten",
+		from: "const next = LEVELS.findIndex((L, j) => j > i && !beaten(L));",
+		to: "const next = -1;",
+		grep: "Next level after Crown skips Checkpoints",
+	},
+	{
+		name: "intentional divergence: a hot-reload snapshot is restored without checking its level's name",
+		from: "LEVELS[data.lvl]?.name === data.name && ",
+		to: "",
+		grep: "hot data from the old order",
 	},
 	{
 		name: "intentional divergence: the palette goes back to the random comparator sort",
@@ -408,12 +411,14 @@ try {
 		cpSync("dist", copy, {recursive: true});
 		const file = join(copy, "index.html");
 		const html = readFileSync(file, "utf8");
-		if (html.split(mutation.from).length !== 2)
-			throw new Error(`"${mutation.from}" must occur exactly once in dist/index.html`);
-		writeFileSync(
-			file,
-			html.replace(mutation.from, () => mutation.to),
-		);
+		const mutant = "mutate" in mutation ? mutation.mutate(html) : replaceOnce(html, mutation.from, mutation.to);
+		if (mutant === null) {
+			invalid++;
+			console.log(`INVALID  ${mutation.name} -> the mutation's text is not in dist/index.html exactly once`);
+			rmSync(copy, {recursive: true});
+			continue;
+		}
+		writeFileSync(file, mutant);
 		const {status, report} = runHarness(copy, mutation.grep);
 		const result = verdict(status, report);
 		if (result.kind === "caught") console.log(`caught   ${mutation.name} -> ${result.detail}`);

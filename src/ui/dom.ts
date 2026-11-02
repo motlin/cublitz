@@ -127,7 +127,8 @@ export const targetElement = (e: Event): Element => e.target as Element;
 export const targetInput = (e: Event): HTMLInputElement => e.target as HTMLInputElement;
 export const targetSelect = (e: Event): HTMLSelectElement => e.target as HTMLSelectElement;
 
-export type HotData = {lvl?: number; st?: State; hist?: State[]; mode?: string};
+/** A hot-reload snapshot. name is the level's, so a snapshot from before a level moved is not restored onto another. */
+export type HotData = {lvl?: number; name?: string | undefined; st?: State; hist?: State[]; mode?: string};
 declare global {
 	/** The two extras the game looks for: claude.ai's hot-reload hooks and Safari's old audio name. */
 	interface Window {

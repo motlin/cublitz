@@ -38,9 +38,17 @@ initSound();
 initTouch();
 
 loadEditorDraft();
-window.claude?.hot?.snapshot?.(() => (S && S.lvl >= 0 ? {lvl: S.lvl, st: S.st, hist: S.hist, mode} : {mode}));
+window.claude?.hot?.snapshot?.(() =>
+	S && S.lvl >= 0 ? {lvl: S.lvl, name: S.L.name, st: S.st, hist: S.hist, mode} : {mode},
+);
 function start(data?: HotData): void {
-	const restoring = data && typeof data.lvl === "number" && LEVELS[data.lvl] && unlocked(data.lvl) && data.st?.boxes;
+	const restoring =
+		data &&
+		typeof data.lvl === "number" &&
+		LEVELS[data.lvl] &&
+		LEVELS[data.lvl]?.name === data.name &&
+		unlocked(data.lvl) &&
+		data.st?.boxes;
 	if (restoring) loadLevel(data.lvl!, data);
 	else {
 		const firstOpen = LEVELS.findIndex((L) => !beaten(L));
