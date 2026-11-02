@@ -9,6 +9,7 @@ import {initModes, mode, setMode} from "./ui/modes.ts";
 import {initOverlays} from "./ui/overlays.ts";
 import {initPalette} from "./ui/palette.ts";
 import {loadLevel} from "./ui/play.ts";
+import {initPwa} from "./ui/pwa.ts";
 import {beaten, loadProgress, loadReducedMotion, S, unlocked} from "./ui/session.ts";
 import {initSound} from "./ui/sfx.ts";
 import {openSharedLink} from "./ui/shared-link.ts";
@@ -52,3 +53,4 @@ function start(data?: HotData): void {
 // and a host's accessor on hot sees every read.
 // oxlint-disable-next-line no-unused-expressions
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+initPwa();

@@ -1,6 +1,7 @@
 import {readFileSync} from "node:fs";
 import {defineConfig, type Plugin} from "vite-plus";
 import {keepOriginalGlobalScope, topLevelNames} from "./scripts/original-global-scope.ts";
+import {serviceWorker, SW_FILE} from "./scripts/service-worker-build.ts";
 import {inlineStylesheets, plainRegionComments} from "./scripts/single-file-page.ts";
 
 process.title = "cublitz";
@@ -33,7 +34,9 @@ function shipSingleFilePage(): Plugin {
 		generateBundle(_options, bundle) {
 			const page = bundle["index.html"];
 			if (page?.type !== "asset") throw new Error("index.html is missing from the bundle");
-			const chunks = Object.values(bundle).filter((output) => output.type === "chunk");
+			const chunks = Object.values(bundle)
+				.filter((output) => output.type === "chunk")
+				.filter((chunk) => chunk.fileName !== SW_FILE);
 			const [chunk] = chunks;
 			if (!chunk || chunks.length !== 1) throw new Error(`Expected one script chunk, got ${chunks.length}`);
 			if (/<\/script/i.test(chunk.code)) throw new Error("The script would close its own inline tag");
@@ -44,7 +47,8 @@ function shipSingleFilePage(): Plugin {
 				topLevelNames(originalScript()),
 			);
 			page.source = raw.replace(APP_TAG, () => `<script>\n${script}</script>`);
-			for (const output of Object.values(bundle)) if (output !== page) delete bundle[output.fileName];
+			for (const output of Object.values(bundle))
+				if (output !== page && output.fileName !== SW_FILE) delete bundle[output.fileName];
 		},
 	};
 }
@@ -333,7 +337,7 @@ export default defineConfig({
 			typeCheck: true,
 		},
 	},
-	plugins: [shipSingleFilePage()],
+	plugins: [shipSingleFilePage(), serviceWorker()],
 	build: {
 		outDir: "dist",
 		emptyOutDir: true,

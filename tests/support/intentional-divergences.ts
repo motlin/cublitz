@@ -54,6 +54,26 @@ $('edCopyLink').addEventListener('click', () => {
 });
 $('edImport').onclick = () => {`,
 	},
+	{
+		name: "The page can be installed as an app that plays offline",
+		from: "window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});\n",
+		to: `window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+[
+  ['link', { rel:'manifest', href:'/manifest.webmanifest' }],
+  ['meta', { name:'theme-color', content:'#161923' }],
+  ['meta', { name:'mobile-web-app-capable', content:'yes' }],
+  ['meta', { name:'apple-mobile-web-app-capable', content:'yes' }],
+  ['meta', { name:'apple-mobile-web-app-status-bar-style', content:'black-translucent' }],
+  ['meta', { name:'apple-mobile-web-app-title', content:'Cublitz' }],
+  ['link', { rel:'apple-touch-icon', href:'/icons/apple-touch-icon.png' }],
+].forEach(([tag, attrs]) => {
+  const el = document.createElement(tag);
+  Object.entries(attrs).forEach(([name, value]) => el.setAttribute(name, value));
+  document.head.appendChild(el);
+});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+`,
+	},
 ];
 
 export function withIntentionalDivergences(html: string): string {

@@ -17,7 +17,7 @@ test("the legacy artifact is the source file, byte for byte", async ({request}) 
 	);
 });
 
-test("dist is one page, the original byte for byte outside the body of its classic inline script", async ({
+test("dist is one page, the original byte for byte outside the body of its classic inline script, and its app files", async ({
 	request,
 }) => {
 	const scriptBody = /(?<=<script>\n)[\s\S]*(?=<\/script>)/;
@@ -26,7 +26,19 @@ test("dist is one page, the original byte for byte outside the body of its class
 	expect(dist.replace(scriptBody, "")).toBe(legacy.replace(scriptBody, ""));
 	expect(scriptBody.test(dist)).toBe(true);
 	const distDir = process.env["CUBLITZ_DIST_DIR"] ?? "dist";
-	expect(readdirSync(distDir)).toStrictEqual(["index.html"]);
+	expect(
+		readdirSync(distDir, {recursive: true, encoding: "utf8"}).toSorted((a, b) => a.localeCompare(b)),
+	).toStrictEqual([
+		"_headers",
+		"icons",
+		"icons/apple-touch-icon.png",
+		"icons/icon-192.png",
+		"icons/icon-512.png",
+		"icons/icon-maskable-512.png",
+		"index.html",
+		"manifest.webmanifest",
+		"sw.js",
+	]);
 });
 
 // The original is a sloppy classic script and the bundle stays one: a setting read back from localStorage as a

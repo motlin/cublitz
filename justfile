@@ -58,6 +58,13 @@ golden: install
 prove-harness *args: build
     pnpm run prove-harness {{ args }}
 
+# Render the app icons in public/icons/ from scripts/icons/ (needs rsvg-convert)
+icons:
+    rsvg-convert -w 192 -h 192 scripts/icons/icon.svg -o public/icons/icon-192.png
+    rsvg-convert -w 512 -h 512 scripts/icons/icon.svg -o public/icons/icon-512.png
+    rsvg-convert -w 512 -h 512 scripts/icons/icon-maskable.svg -o public/icons/icon-maskable-512.png
+    rsvg-convert -w 180 -h 180 scripts/icons/icon-maskable.svg -o public/icons/apple-touch-icon.png
+
 # Upload dist/ to the production Cloudflare Pages deployment
 deploy: build
     pnpm run deploy

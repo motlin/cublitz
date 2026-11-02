@@ -14,7 +14,7 @@ The `src/ui/` modules call each other in cycles, because the game's flow is cycl
 
 Localstorage values are read back as they are and not validated, because a hand-edited value has to behave as it always did. The types in `src/ui/storage.ts` describe what the game writes.
 
-`index.html` is the original page with links in place of its two `<style>` elements and `src/main.ts` in place of its inline script. A small plugin in `vite.config.ts` writes `dist/` with the stylesheets back in their elements and the bundle as a classic inline script in the same spot, so `dist/` is one file that differs from the original only inside its `<script>` tag. Vite's own output would minify the CSS and defer it and the script to external files. The bundle has to stay a sloppy classic script like the original.
+`index.html` is the original page with links in place of its two `<style>` elements and `src/main.ts` in place of its inline script. A small plugin in `vite.config.ts` writes `dist/` with the stylesheets back in their elements and the bundle as a classic inline script in the same spot, so `dist/index.html` is one file that differs from the original only inside its `<script>` tag. Beside it ship only the files that make it an installable app, described below. Vite's own output would minify the CSS and defer it and the script to external files. The bundle has to stay a sloppy classic script like the original.
 
 The original's top-level names are also the page's global scope, which anything using the console or a page script can see. `scripts/original-global-scope.ts` keeps that scope exactly: the build reads the names and kinds from `legacy/original.html`, leaves those global and moves every other helper into a private function. The build fails if the bundle lacks one of them.
 
@@ -36,6 +36,7 @@ The shipped game differs from `legacy/original.html` in exactly these ways, whic
 - The editor's tool bar has a Loose cube tool
 - On a phone-sized touch screen, play is one fixed screen that fits the level, and touch gestures go by finger count
 - The editor has a Copy link button beside Copy code
+- The page can be installed as an app that plays offline
 
 `tests/support/intentional-divergences.ts` holds each one as an exact edit to the original's text. The harness applies those edits to an in-memory copy of the original and compares `dist/` against that copy, so any other difference still fails. A unit test checks the list above against that file.
 
@@ -46,6 +47,14 @@ A touch screen no larger than a phone, meaning `(pointer: coarse)` and at most 9
 Play is one fixed screen that never scrolls. The board fills what the top bar and the dock leave, sized by `fitBoard` in `src/ui/touch-geometry.ts` so that the whole level shows. The level list and other header controls open as a sheet from the menu button. One moving finger on the board is a swipe, resolved on lift to the nearest grid axis as drawn. Two fingers that land together, or that both move, zoom and pan even if one of them is off the board, and a finger that has been down and still is ignored, as `src/ui/gestures.ts` lays out. So a pinch whose first finger stays down for a moment before the second lands, and which then moves only the second, reads as a swipe. On the editor's grid one finger paints and two zoom and pan. Undo, Restart and Hint stay in a row that never scrolls, and the other actions open above it from the More button. The page itself never zooms on these screens, wherever a pinch lands, because fixed play has no gesture that could bring a zoomed page back; a pinch with no finger on the board or the grid does nothing.
 
 The differential tests run with `mobile` told that query does not match, since the original has nothing to compare the layout with, so they still show `dist/` is the original under touch emulation. `tests/browser/touch.spec.ts` covers the layout itself with real touch input. WebKit there shows only layout and the finger logic, and emulation says nothing about how a real iPhone handles its own gestures.
+
+## Installing as an app
+
+The game installs from the browser as a standalone app and plays offline: campaign, merge levels, editor and shared `?CUBLITZ:` links. `src/ui/pwa.ts` adds the manifest link, `theme-color` and Safari's `apple-*` tags to the head and registers `/sw.js`, from the script because the page outside it has to stay the original's. `src/pwa/manifest.ts` holds the manifest and the files the worker keeps, and `src/pwa/worker.ts` its logic.
+
+`scripts/service-worker-build.ts` builds `src/pwa/sw.ts` to `dist/sw.js` and writes `dist/manifest.webmanifest`. It versions the worker's cache with a hash of the built page, the manifest and the icons, so each deploy that changes them is a new worker. A launch loads the page from the network when it can and from the cache when it cannot, the new worker takes over at once, and it deletes the old build's cache, so nobody has to clear anything after a deploy. `public/_headers` stops Cloudflare caching `sw.js` and the manifest, and gives the manifest its type. The icons in `public/icons/` are rendered from `scripts/icons/*.svg` by `just icons`.
+
+`tests/browser/pwa.spec.ts` checks that Chromium reads the manifest without errors and finds the page installable, that the worker takes control, that a reload offline still plays, that a new deploy shows on the next launch, and that the phone layout stays inside emulated safe-area insets. None of that proves an iPhone home screen install: whether Safari picks up the tags added by the script, the icon it shows, how standalone mode draws the status bar over the page, and how iOS evicts the worker's cache all need a real device. The Google Fonts files are not cached by the worker, so offline the game falls back to its system fonts unless the browser's own cache still holds them.
 
 ## Merge levels
 
@@ -63,6 +72,7 @@ The differential tests run with `mobile` told that query does not match, since t
 | `just golden`        | Regenerates `tests/golden/` from `legacy/original.html`             |
 | `just prove-harness` | Confirms the harness fails on mutated throwaway copies of `dist/`   |
 | `just deploy`        | Uploads `dist/` to the Cloudflare Pages project `cublitz`           |
+| `just icons`         | Renders the app icons in `public/icons/` from `scripts/icons/`      |
 
 Tool versions are pinned in `.mise/config.toml`.
 

@@ -2,7 +2,8 @@
 	"$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
 	// src/**/*.mdx mirrors the Storybook stories glob in .storybook/main.ts;
 	// fallow's storybook plugin only detects *.stories.* files, not docs pages.
-	"entry": ["src/index.{ts,tsx,js,jsx}", "src/main.{ts,tsx,js,jsx}", "src/**/*.mdx", "scripts/*.ts"],
+	// src/pwa/sw.ts is the service worker, which scripts/service-worker-build.ts builds by path.
+	"entry": ["src/index.{ts,tsx,js,jsx}", "src/main.{ts,tsx,js,jsx}", "src/**/*.mdx", "src/pwa/sw.ts", "scripts/*.ts"],
 	"ignorePatterns": [".storybook/**"],
 	"rules": {
 		"unused-dependencies": "error",

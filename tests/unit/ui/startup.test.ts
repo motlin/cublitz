@@ -48,6 +48,7 @@ test("importing every ui module touches nothing in the browser", async () => {
 		"overlays.ts",
 		"palette.ts",
 		"play.ts",
+		"pwa.ts",
 		"session.ts",
 		"sfx.ts",
 		"shared-link.ts",
