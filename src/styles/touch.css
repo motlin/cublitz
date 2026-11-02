@@ -40,7 +40,8 @@ html:has(#playView:not([hidden])), html:has(#playView:not([hidden])) body { over
 .levelhead h2 { grid-column: 2; font-size: 15px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lh-right { grid-column: 2; min-width: 0; }
 .levelhead .num { display: block; font-size: 10px; line-height: 1.2; }
-#backEdit { white-space: nowrap; min-height: 32px; padding: 4px 6px; font-size: 12px; }
+/* Wider fallback fonts, such as DejaVu on Linux phones, leave its column too narrow for one line, so it wraps to two. */
+#backEdit { max-width: 100%; text-wrap: balance; min-height: 32px; padding: 4px 6px; font-size: 12px; line-height: 1.2; }
 .lh-right:has(#backEdit:not([hidden])) .num { display: none; }
 #playView aside > .card:not(.infcard) .stats { grid-area: stats; display: flex; gap: 12px; padding: 6px 10px 2px; align-self: center; }
 #playView .stat { text-align: center; }
