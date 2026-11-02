@@ -7,7 +7,8 @@ import {setMode} from "./modes.ts";
 import {SHARED, startLevel} from "./play.ts";
 import {S} from "./session.ts";
 
-function showBadLink(): void {
+function showBadLink(): void
+{
 	const note = document.createElement("p");
 	note.id = "shareError";
 	note.className = "ed-result bad";
@@ -17,11 +18,15 @@ function showBadLink(): void {
 }
 
 /** Plays the level in a link's raw query. A broken link stays on the title screen and says so. */
-export function openSharedLink(search: string): void {
+export function openSharedLink(search: string): void
+{
 	let source: LevelSource | null;
-	try {
+	try
+	{
 		source = levelFromSearch(search);
-	} catch {
+	}
+	catch
+	{
 		showBadLink();
 		return;
 	}
@@ -31,7 +36,8 @@ export function openSharedLink(search: string): void {
 	startLevel(L, SHARED);
 	setMode("play");
 	// A big level can take seconds to solve, so the board paints first with par unknown.
-	setTimeout(() => {
+	setTimeout(() =>
+	{
 		const sol = solve(L, initState(L), 600000);
 		L.par = sol ? sol.length : null;
 		if (S.L === L) $("par").textContent = domValue(L.par ?? "?");

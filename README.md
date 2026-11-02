@@ -100,7 +100,7 @@ The game installs from the browser as a standalone app and plays offline: campai
 
 Tool versions are pinned in `.mise/config.toml`.
 
-The toolchain is synced from `~/projects/typescript-template` on Vite+. Node matches the template, but changing it needs a check that `tests/golden/` still matches, because generated levels depend on the V8 version. A few things differ from it on purpose. `vp fmt` skips `legacy/`, `index.html`, `src/styles/`, `src/core/levels.ts` and `tests/golden/`, because formatting them would change the shipped bytes. The `lint` block in `vite.config.ts` ends with overrides that turn off the rules the existing code breaks, with a count for each, and the Storybook overrides are gone because the project has no stories.
+The toolchain is synced from `~/projects/typescript-template` on Vite+. Node matches the template, but changing it needs a check that `tests/golden/` still matches, because generated levels depend on the V8 version. Formatting uses [oxfmt-next-line](https://www.npmjs.com/package/oxfmt-next-line), a fork of oxfmt that puts opening braces on their own line, installed by mise and configured in `.oxfmtrc.json`; `vite.config.ts` sets `check.fmt: false` so `vp check` does not run Vite+'s bundled oxfmt. A few things differ from the template on purpose. The formatter skips `legacy/`, `index.html`, `src/styles/`, `src/core/levels.ts` and `tests/golden/`, because formatting them would change the shipped bytes. The `lint` block in `vite.config.ts` ends with overrides that turn off the rules the existing code breaks, with a count for each, and the Storybook overrides are gone because the project has no stories.
 
 ## How the safety net works
 

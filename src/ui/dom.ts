@@ -1,7 +1,8 @@
 import type {Face, State} from "../core/types.ts";
 
 /** Every element the game looks up by id, with its tag. A jsdom test holds this against index.html. */
-export const ELEMENT_TAGS = {
+export const ELEMENT_TAGS =
+{
 	backEdit: "button",
 	board: "div",
 	edCheck: "button",
@@ -128,12 +129,23 @@ export const targetInput = (e: Event): HTMLInputElement => e.target as HTMLInput
 export const targetSelect = (e: Event): HTMLSelectElement => e.target as HTMLSelectElement;
 
 /** A hot-reload snapshot. name is the level's, so a snapshot from before a level moved is not restored onto another. */
-export type HotData = {lvl?: number; name?: string | undefined; st?: State; hist?: State[]; mode?: string};
-declare global {
+export type HotData =
+{
+	lvl?: number;
+	name?: string | undefined;
+	st?: State;
+	hist?: State[];
+	mode?: string;
+};
+declare global
+{
 	/** The two extras the game looks for: claude.ai's hot-reload hooks and Safari's old audio name. */
-	interface Window {
-		claude?: {
-			hot?: {
+	interface Window
+	{
+		claude?:
+		{
+			hot?:
+			{
 				snapshot?: (take: () => HotData) => void;
 				ready?: (start: (data?: HotData) => void) => void;
 				data?: HotData;

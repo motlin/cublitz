@@ -5,7 +5,8 @@ import {type CustomColors, readColors, writeColors} from "./storage.ts";
 import {cap, COLORS, GLYPH} from "./text.ts";
 
 // Paint colors
-const VAR: Record<Paint, string> = {
+const VAR: Record<Paint, string> =
+{
 	r: "--red",
 	o: "--orange",
 	y: "--yellow",
@@ -31,17 +32,21 @@ export const toHex = (rgb: number[]): string =>
 		)
 		.join("");
 
-function applyColors(): void {
-	for (const k of PALETTE_PAINTS) {
+function applyColors(): void
+{
+	for (const k of PALETTE_PAINTS)
+	{
 		if (custom[k]) document.documentElement.style.setProperty(VAR[k], custom[k]);
 		else document.documentElement.style.removeProperty(VAR[k]);
 	}
 	$("palDots").innerHTML = PALETTE_PAINTS.map((k) => `<i style="background:${COLORS[k]}"></i>`).join("");
 }
-function saveColors(): void {
+function saveColors(): void
+{
 	writeColors(custom);
 }
-function setColor(k: Paint, hex: string): void {
+function setColor(k: Paint, hex: string): void
+{
 	hex = hex.toLowerCase();
 	if (hex === DEFAULT_HEX[k]) Reflect.deleteProperty(custom, k);
 	else custom[k] = hex;
@@ -49,7 +54,8 @@ function setColor(k: Paint, hex: string): void {
 	saveColors();
 	renderPalette(true);
 }
-function renderPalette(keepFocus?: boolean): void {
+function renderPalette(keepFocus?: boolean): void
+{
 	$("palSwatches").innerHTML = PALETTE_PAINTS.map(
 		(k) =>
 			`<button type="button" data-k="${k}" aria-pressed="${k === palSel}" aria-label="${CNAME[k]}" class="${custom[k] ? "changed" : ""}" style="--pc:${COLORS[k]}">${GLYPH[k]}</button>`,
@@ -61,7 +67,8 @@ function renderPalette(keepFocus?: boolean): void {
 	const set = (
 		id: "palPick" | "palHex" | "palR" | "palG" | "palB" | "palRn" | "palGn" | "palBn",
 		v: string | number | undefined,
-	) => {
+	) =>
+	{
 		const el = $(id);
 		if (!keepFocus || document.activeElement !== el) el.value = domValue(v);
 	};
@@ -76,13 +83,15 @@ function renderPalette(keepFocus?: boolean): void {
 	$("palResetOne").disabled = !custom[palSel];
 	$("palResetAll").disabled = !Object.keys(custom).length;
 }
-export function openPalette(open: boolean | string): void {
+export function openPalette(open: boolean | string): void
+{
 	$("palette").hidden = !open;
 	$("palBtn").setAttribute("aria-expanded", domValue(open));
 	if (open) renderPalette();
 }
 const channel = (id: "palR" | "palG" | "palB" | "palRn" | "palGn" | "palBn"): number => Number($(id).value) || 0;
-const fromChannels = (src: "r" | "n"): void => {
+const fromChannels = (src: "r" | "n"): void =>
+{
 	const rgb =
 		src === "n"
 			? [channel("palRn"), channel("palGn"), channel("palBn")]
@@ -91,61 +100,86 @@ const fromChannels = (src: "r" | "n"): void => {
 };
 
 let rootCS: CSSStyleDeclaration;
-export function initPalette(): void {
+export function initPalette(): void
+{
 	rootCS = getComputedStyle(document.documentElement);
 	for (const k of PALETTE_PAINTS) DEFAULT_HEX[k] = rootCS.getPropertyValue(VAR[k]).trim().toLowerCase();
 	custom = readColors();
-	$("palBtn").addEventListener("click", () => {
+	$("palBtn").addEventListener("click", () =>
+	{
 		openPalette($("palette").hidden);
 	});
-	$("palClose").addEventListener("click", () => {
+	$("palClose").addEventListener("click", () =>
+	{
 		openPalette(false);
-		$("palBtn").focus({preventScroll: true});
+		$("palBtn").focus(
+			{
+				preventScroll: true,
+			},
+		);
 	});
-	document.addEventListener("keydown", (e) => {
-		if (e.key === "Escape" && !$("palette").hidden) {
+	document.addEventListener("keydown", (e) =>
+	{
+		if (e.key === "Escape" && !$("palette").hidden)
+		{
 			openPalette(false);
-			$("palBtn").focus({preventScroll: true});
+			$("palBtn").focus(
+				{
+					preventScroll: true,
+				},
+			);
 		}
 	});
-	document.addEventListener("pointerdown", (e) => {
+	document.addEventListener("pointerdown", (e) =>
+	{
 		if (!$("palette").hidden && !targetElement(e).closest("#palette, #palBtn")) openPalette(false);
 	});
-	$("palSwatches").addEventListener("click", (e) => {
+	$("palSwatches").addEventListener("click", (e) =>
+	{
 		const b = targetElement(e).closest("button");
-		if (b) {
+		if (b)
+		{
 			palSel = b.dataset["k"] as Paint;
 			renderPalette();
 		}
 	});
-	$("palPick").addEventListener("input", (e) => {
+	$("palPick").addEventListener("input", (e) =>
+	{
 		setColor(palSel, targetInput(e).value);
 	});
-	(["palR", "palG", "palB"] as const).forEach((id) => {
-		$(id).addEventListener("input", () => {
+	(["palR", "palG", "palB"] as const).forEach((id) =>
+	{
+		$(id).addEventListener("input", () =>
+		{
 			fromChannels("r");
 		});
 	});
-	(["palRn", "palGn", "palBn"] as const).forEach((id) => {
-		$(id).addEventListener("input", () => {
+	(["palRn", "palGn", "palBn"] as const).forEach((id) =>
+	{
+		$(id).addEventListener("input", () =>
+		{
 			fromChannels("n");
 		});
 	});
-	$("palHex").addEventListener("input", (e) => {
+	$("palHex").addEventListener("input", (e) =>
+	{
 		let v = targetInput(e).value.trim();
 		if (!v.startsWith("#")) v = "#" + v;
 		if (/^#[0-9a-fA-F]{6}$/.test(v)) setColor(palSel, v);
 	});
-	$("palHex").addEventListener("blur", () => {
+	$("palHex").addEventListener("blur", () =>
+	{
 		renderPalette();
 	});
-	$("palResetOne").addEventListener("click", () => {
+	$("palResetOne").addEventListener("click", () =>
+	{
 		Reflect.deleteProperty(custom, palSel);
 		applyColors();
 		saveColors();
 		renderPalette();
 	});
-	$("palResetAll").addEventListener("click", () => {
+	$("palResetAll").addEventListener("click", () =>
+	{
 		custom = {};
 		applyColors();
 		saveColors();

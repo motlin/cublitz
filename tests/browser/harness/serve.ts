@@ -10,7 +10,8 @@ process.title = "cublitz-harness";
 const root = resolve(import.meta.dirname, "../../..");
 const distDir = resolve(process.env["CUBLITZ_DIST_DIR"] ?? join(root, "dist"));
 const port = Number(process.env["CUBLITZ_PORT"] ?? "4817");
-const TYPES: Record<string, string> = {
+const TYPES: Record<string, string> =
+{
 	".html": "text/html; charset=utf-8",
 	".js": "text/javascript",
 	".css": "text/css",
@@ -20,10 +21,18 @@ const TYPES: Record<string, string> = {
 	".png": "image/png",
 };
 
-const respond = async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
+const respond = async (request: IncomingMessage, response: ServerResponse): Promise<void> =>
+{
 	const pathname = normalize(new URL(request.url ?? "/", "http://x").pathname);
-	if (pathname === "/legacy/expected.html") {
-		response.writeHead(200, {"content-type": "text/html; charset=utf-8", "cache-control": "no-store"});
+	if (pathname === "/legacy/expected.html")
+	{
+		response.writeHead(
+			200,
+			{
+				"content-type": "text/html; charset=utf-8",
+				"cache-control": "no-store",
+			},
+		);
 		response.end(readExpectedHtml());
 		return;
 	}
@@ -31,20 +40,28 @@ const respond = async (request: IncomingMessage, response: ServerResponse): Prom
 		pathname === "/legacy/original.html"
 			? join(root, "legacy/original.html")
 			: join(distDir, pathname === "/" ? "index.html" : pathname);
-	try {
+	try
+	{
 		const body = await readFile(file);
-		response.writeHead(200, {
-			"content-type": TYPES[extname(file)] ?? "application/octet-stream",
-			"cache-control": "no-store",
-		});
+		response.writeHead(
+			200,
+			{
+				"content-type": TYPES[extname(file)] ?? "application/octet-stream",
+				"cache-control": "no-store",
+			},
+		);
 		response.end(body);
-	} catch {
+	}
+	catch
+	{
 		response.writeHead(404).end("not found");
 	}
 };
 
-createServer((request, response) => {
+createServer((request, response) =>
+{
 	void respond(request, response);
-}).listen(port, "127.0.0.1", () => {
+}).listen(port, "127.0.0.1", () =>
+{
 	console.log(`serving ${distDir} on ${port}`);
 });

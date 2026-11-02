@@ -6,12 +6,16 @@ export const encodeLevel = (L: LevelSource): string =>
 	"CUBLITZ:" + btoa(unescape(encodeURIComponent(JSON.stringify(L))));
 
 /** Reads a share code or raw JSON. Only `map` is checked: the rest of the level is taken on trust. */
-export function decodeLevel(s: string): LevelSource {
+export function decodeLevel(s: string): LevelSource
+{
 	s = s.trim();
 	let json = s;
 	const pre = ["CUBLITZ:", "CUBITZ:", "CUBIST:"].find((p) => s.startsWith(p));
 	if (pre) json = decodeURIComponent(escape(atob(s.slice(pre.length).replace(/\s+/g, ""))));
-	const L = JSON.parse(json) as {map?: unknown} | null;
+	const L = JSON.parse(json) as
+	{
+		map?: unknown;
+	} | null;
 	if (!L || !Array.isArray(L.map) || !L.map.every((r) => typeof r === "string")) throw new Error("bad");
 	return L as LevelSource;
 }
@@ -30,7 +34,8 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isOneOf = (value: unknown, letters: readonly string[] | string): boolean =>
 	typeof value === "string" && value.length === 1 && letters.includes(value);
 
-function validLegendEntry(entry: unknown): boolean {
+function validLegendEntry(entry: unknown): boolean
+{
 	if (!Array.isArray(entry) || entry.length !== 2) return false;
 	const [kind, param] = entry as unknown[];
 	if (kind === "wgate") return isOneOf(param, FACES);
@@ -38,7 +43,8 @@ function validLegendEntry(entry: unknown): boolean {
 	return COLORED_KINDS.has(kind as string) && isOneOf(param, LEGEND_COLORS);
 }
 
-function validSharedLevel(L: Record<string, unknown>): boolean {
+function validSharedLevel(L: Record<string, unknown>): boolean
+{
 	const {name, map, k = {}, need = {}} = L;
 	if (!Object.keys(L).every((key) => LEVEL_KEYS.has(key))) return false;
 	if (typeof name !== "string" || !name.trim() || name.length > MAX_NAME) return false;
@@ -64,7 +70,8 @@ function validSharedLevel(L: Record<string, unknown>): boolean {
  * query parsing turns the code's + into a space. Other parameters are ignored, because social sites add their own. A
  * link comes from anyone, so unlike decodeLevel this checks all of it.
  */
-export function levelFromSearch(search: string): LevelSource | null {
+export function levelFromSearch(search: string): LevelSource | null
+{
 	const prefix = "CUBLITZ:";
 	const code = search
 		.slice(1)
@@ -80,7 +87,8 @@ export function levelFromSearch(search: string): LevelSource | null {
  * The level in what a player pasted into the editor's code box: a share code, raw JSON or a whole link. A pasted
  * code comes from anyone, so it is checked as strictly as a link.
  */
-export function levelFromCode(text: string): LevelSource {
+export function levelFromCode(text: string): LevelSource
+{
 	const s = text.trim();
 	const query = s.indexOf("?");
 	// A code's base64 never holds a ? or #, so outside raw JSON a ? starts a link's query and a # ends it.

@@ -3,7 +3,8 @@ import type {Level, State} from "../core/types.ts";
 import {type Progress, readProgress, writeProgress} from "./storage.ts";
 
 /** The level being played. lvl is -1 for a level from the editor, -2 in infinite mode and -3 for a level from a shared link. */
-export type Session = {
+export type Session =
+{
 	lvl: number;
 	L: Level;
 	st: State;
@@ -16,18 +17,22 @@ export type Session = {
 
 /** Null only until the page has booted, which is why a few callers still check it. */
 export let S: Session = null as unknown as Session;
-export const setSession = (session: Session): void => {
+export const setSession = (session: Session): void =>
+{
 	S = session;
 };
 
 export let progress: Progress = {};
-export const loadProgress = (): void => {
+export const loadProgress = (): void =>
+{
 	progress = readProgress();
 };
-export function saveProgress(): void {
+export function saveProgress(): void
+{
 	writeProgress(progress);
 }
-export const eraseProgress = (): void => {
+export const eraseProgress = (): void =>
+{
 	progress = {};
 	saveProgress();
 };
@@ -35,12 +40,14 @@ export const beaten = (L: {name?: string}): number | undefined => progress[L.nam
 export const unlocked = (i: number): boolean => i === 0 || !!beaten(LEVELS[i - 1]!) || !!beaten(LEVELS[i]!);
 /** Where Next level goes from campaign level i: the first level in the campaign not beaten yet, which goes back to a
  * level an old save skipped by beating a later one, or else the following level, staying on the last. */
-export function nextLevel(i: number): number {
+export function nextLevel(i: number): number
+{
 	const next = LEVELS.findIndex((L) => !beaten(L));
 	return next < 0 ? Math.min(i + 1, LEVELS.length - 1) : next;
 }
 
 export let reduced = false;
-export const loadReducedMotion = (): void => {
+export const loadReducedMotion = (): void =>
+{
 	reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 };

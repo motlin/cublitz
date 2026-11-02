@@ -10,30 +10,41 @@ import {clearSolution, solState} from "./solution.ts";
 import {esc} from "./text.ts";
 
 // Hints: next goal, then how, then a route to that goal
-export type HintState = {m: Milestone; tier: number; at: State | null};
+export type HintState =
+{
+	m: Milestone;
+	tier: number;
+	at: State | null;
+};
 export let hintState: HintState | null = null;
 
 const mKey = (m: Milestone | null): string => (m ? [m.type, "c" in m ? m.c : undefined, m.x, m.y].join(":") : "");
 
-function clearTrail(): void {
+function clearTrail(): void
+{
 	scheduleOverlays();
 }
-export function clearHint(keepState?: boolean): void {
+export function clearHint(keepState?: boolean): void
+{
 	$("hintBox").hidden = true;
 	if (!keepState) hintState = null;
 	scheduleOverlays();
 }
-export const clearHintState = (): void => {
+export const clearHintState = (): void =>
+{
 	hintState = null;
 };
 /** Drops the trail while undoing: the next press has to plan again from there. */
-export function forgetHintPosition(): void {
-	if (hintState) {
+export function forgetHintPosition(): void
+{
+	if (hintState)
+	{
 		clearTrail();
 		hintState.at = null;
 	}
 }
-export function renderHint(): void {
+export function renderHint(): void
+{
 	const {m, tier} = hintState!,
 		L = S.L;
 	scheduleOverlays();
@@ -49,20 +60,24 @@ export function renderHint(): void {
 	$("hintMore").textContent = tier === 1 ? "How do I do that?" : "Show me a route";
 	$("hintBox").hidden = false;
 }
-export function hint(more?: boolean): void {
+export function hint(more?: boolean): void
+{
 	if (S.busy || S.won || S.lvl === -2) return;
 	if (solState) clearSolution();
-	if (hintState && hintState.at === S.st) {
+	if (hintState && hintState.at === S.st)
+	{
 		hintState.tier = Math.min(3, hintState.tier + 1);
 		renderHint();
 		return;
 	}
 	setStatus("Thinking…");
 	const at = S.st;
-	setTimeout(() => {
+	setTimeout(() =>
+	{
 		if (S.st !== at || S.won) return;
 		const sol = solve(S.L, S.st, 1500000);
-		if (!sol) {
+		if (!sol)
+		{
 			clearHint();
 			setStatus(
 				solve.hitLimit
@@ -75,35 +90,47 @@ export function hint(more?: boolean): void {
 		const m = nextMilestone(S.L, S.st, sol)!;
 		const same = hintState && mKey(hintState.m) === mKey(m);
 		SFX.play("hint");
-		hintState = {m, tier: same ? Math.min(3, hintState!.tier + (more ? 1 : 0)) : 1, at};
+		hintState =
+		{
+			m,
+			tier: same ? Math.min(3, hintState!.tier + (more ? 1 : 0)) : 1,
+			at,
+		};
 		setStatus("");
 		renderHint();
 	}, 30);
 }
 // Called after each successful roll
-export function hintAfterMove(r: MoveSuccess): string | undefined {
+export function hintAfterMove(r: MoveSuccess): string | undefined
+{
 	if (!hintState) return undefined;
 	clearTrail();
-	if (milestoneReached(hintState.m, r)) {
+	if (milestoneReached(hintState.m, r))
+	{
 		clearHint();
 		return "That was the hinted step.";
 	}
 	hintState.at = null; // the next press re-plans from here
-	if (hintState.tier >= 3) {
+	if (hintState.tier >= 3)
+	{
 		$("hintText")
 			.querySelectorAll(".how")
-			.forEach((e, i) => {
+			.forEach((e, i) =>
+			{
 				if (i === 1) e.remove();
 			});
 	}
 	return "";
 }
 
-export function initHints(): void {
-	$("hintMore").addEventListener("click", () => {
+export function initHints(): void
+{
+	$("hintMore").addEventListener("click", () =>
+	{
 		hint(true);
 	});
-	$("hintClose").addEventListener("click", () => {
+	$("hintClose").addEventListener("click", () =>
+	{
 		clearHint();
 	});
 }

@@ -2,14 +2,21 @@ import {readFileSync} from "node:fs";
 
 // The owner's approved changes from legacy/original.html, and the only differences the differential tests allow.
 // Each is an exact edit to the original's text, so everything else about the expected page stays the original.
-export type IntentionalDivergence = {name: string; from: string; to: string};
+export type IntentionalDivergence =
+{
+	name: string;
+	from: string;
+	to: string;
+};
 
-export function readOriginalHtml(): string {
+export function readOriginalHtml(): string
+{
 	return readFileSync(new URL("../../legacy/original.html", import.meta.url), "utf8");
 }
 
 // The original's text for a campaign level, from its line up to the next level's line.
-const levelText = (name: string, nextName: string): string => {
+const levelText = (name: string, nextName: string): string =>
+{
 	const html = readOriginalHtml();
 	const start = html.indexOf(` {"name":"${name}"`);
 	const end = html.indexOf(` {"name":"${nextName}"`, start);
@@ -283,8 +290,10 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
 	},
 ];
 
-export function withIntentionalDivergences(html: string): string {
-	return INTENTIONAL_DIVERGENCES.reduce((page, {name, from, to}) => {
+export function withIntentionalDivergences(html: string): string
+{
+	return INTENTIONAL_DIVERGENCES.reduce((page, {name, from, to}) =>
+	{
 		if (page.split(from).length !== 2) throw new Error(`"${name}" must match the original exactly once`);
 		return page.replace(from, () => to);
 	}, html);

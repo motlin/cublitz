@@ -10,12 +10,24 @@ export const staleCaches = (names: string[], version: string): string[] =>
 	names.filter((name) => name.startsWith(PREFIX) && name !== cacheName(version));
 
 /** Fetches every file the game needs past the HTTP cache, so a new build never stores an old file. */
-export async function precache(caches: CacheStorage, origin: string, version: string): Promise<void> {
+export async function precache(caches: CacheStorage, origin: string, version: string): Promise<void>
+{
 	const cache = await caches.open(cacheName(version));
-	await cache.addAll(PRECACHE_URLS.map((url) => new Request(new URL(url, origin), {cache: "reload"})));
+	await cache.addAll(
+		PRECACHE_URLS.map(
+			(url) =>
+				new Request(
+					new URL(url, origin),
+					{
+						cache: "reload",
+					},
+				),
+		),
+	);
 }
 
-export async function dropStaleCaches(caches: CacheStorage, version: string): Promise<void> {
+export async function dropStaleCaches(caches: CacheStorage, version: string): Promise<void>
+{
 	await Promise.all(staleCaches(await caches.keys(), version).map(async (name) => caches.delete(name)));
 }
 
@@ -30,16 +42,21 @@ export function respond(
 	caches: CacheStorage,
 	version: string,
 	fetcher: (request: Request) => Promise<Response>,
-): Promise<Response> | undefined {
+): Promise<Response> | undefined
+{
 	const url = new URL(request.url);
 	if (request.method !== "GET" || url.origin !== origin) return undefined;
 	const cached = async (path: string): Promise<Response | undefined> =>
 		(await caches.open(cacheName(version))).match(path);
 	if (request.mode === "navigate")
-		return (async () => {
-			try {
+		return (async () =>
+		{
+			try
+			{
 				return await fetcher(request);
-			} catch (error) {
+			}
+			catch (error)
+			{
 				const page = await cached("/");
 				if (page) return page;
 				throw error;

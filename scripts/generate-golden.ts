@@ -4,7 +4,8 @@ import {loadExpectedEngine, loadOriginalEngine} from "../tests/support/original-
 
 const engine = loadOriginalEngine();
 const expected = loadExpectedEngine();
-const write = (name: string, value: unknown): void => {
+const write = (name: string, value: unknown): void =>
+{
 	writeFileSync(new URL(`../tests/golden/${name}`, import.meta.url), `${JSON.stringify(value, null, "\t")}\n`);
 };
 

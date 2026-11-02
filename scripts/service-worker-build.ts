@@ -8,9 +8,11 @@ export const SW_FILE = "sw.js";
 const PLACEHOLDER = "__CUBLITZ_SW_VERSION__";
 
 /** A version for the build: a hash of every file the worker keeps, in order, so any change to one is a new version. */
-export function buildVersion(files: (string | Uint8Array)[]): string {
+export function buildVersion(files: (string | Uint8Array)[]): string
+{
 	const hash = createHash("sha256");
-	for (const file of files) {
+	for (const file of files)
+	{
 		const bytes = typeof file === "string" ? Buffer.from(file, "utf8") : file;
 		hash.update(`${bytes.length}:`).update(bytes);
 	}
@@ -22,15 +24,24 @@ export function buildVersion(files: (string | Uint8Array)[]): string {
  * a hash of the page, the manifest and the icons into the worker as its cache version. The icons and the _headers
  * file for Cloudflare are copied from public/ as they are.
  */
-export function serviceWorker(): Plugin {
+export function serviceWorker(): Plugin
+{
 	return {
 		name: "service-worker",
 		apply: "build",
 		enforce: "post",
-		buildStart() {
-			this.emitFile({type: "chunk", id: resolve("src/pwa/sw.ts"), fileName: SW_FILE});
+		buildStart()
+		{
+			this.emitFile(
+				{
+					type: "chunk",
+					id: resolve("src/pwa/sw.ts"),
+					fileName: SW_FILE,
+				},
+			);
 		},
-		generateBundle(_options, bundle) {
+		generateBundle(_options, bundle)
+		{
 			const page = bundle["index.html"];
 			const worker = bundle[SW_FILE];
 			if (page?.type !== "asset") throw new Error("index.html is missing from the bundle");
@@ -44,7 +55,13 @@ export function serviceWorker(): Plugin {
 			const version = buildVersion([String(page.source), manifest, ...icons]);
 			if (!worker.code.includes(PLACEHOLDER)) throw new Error(`${SW_FILE} lost its version placeholder`);
 			worker.code = worker.code.replaceAll(PLACEHOLDER, version);
-			this.emitFile({type: "asset", fileName: "manifest.webmanifest", source: manifest});
+			this.emitFile(
+				{
+					type: "asset",
+					fileName: "manifest.webmanifest",
+					source: manifest,
+				},
+			);
 		},
 	};
 }

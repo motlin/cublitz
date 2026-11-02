@@ -8,29 +8,40 @@ import {scheduleOverlays} from "./overlays.ts";
 import {reduced, S} from "./session.ts";
 
 // Show solution: arrows laid down a few at a time
-export type SolutionState = {path: string; revealed: number; at: State; used: boolean};
+export type SolutionState =
+{
+	path: string;
+	revealed: number;
+	at: State;
+	used: boolean;
+};
 export let solState: SolutionState | null = null;
 let solTimer: ReturnType<typeof setInterval> | null = null;
 
-export function stopAutoReveal(): void {
+export function stopAutoReveal(): void
+{
 	clearInterval(solTimer!);
 	solTimer = null;
 	$("solAll").textContent = "Reveal the rest";
 }
-export function clearSolution(): void {
+export function clearSolution(): void
+{
 	stopAutoReveal();
 	$("solBox").hidden = true;
 	solState = null;
 	scheduleOverlays();
 }
-export function planSolution(keepRevealed?: number): void {
+export function planSolution(keepRevealed?: number): void
+{
 	const at = S.st;
 	$("solText").textContent = "Working out the solution…";
 	$("solBox").hidden = false;
-	setTimeout(() => {
+	setTimeout(() =>
+	{
 		if (S.st !== at || S.won) return;
 		const path = solve(S.L, S.st, 2500000);
-		if (!path) {
+		if (!path)
+		{
 			$("solText").innerHTML = solve.hitLimit
 				? "<b>Too many possibilities.</b> The solver gave up from this position. Try restarting the level."
 				: "<b>No way out from here.</b> Undo a few rolls or restart, then ask again.";
@@ -39,13 +50,20 @@ export function planSolution(keepRevealed?: number): void {
 			return;
 		}
 		const revealed = Math.min(path.length, keepRevealed ?? 1);
-		solState = {path, revealed, at, used: true};
+		solState =
+		{
+			path,
+			revealed,
+			at,
+			used: true,
+		};
 		S.usedSolution = true;
 		(["solNext", "solGoal", "solAll"] as const).forEach((id) => ($(id).hidden = false));
 		renderSolution();
 	}, 30);
 }
-export function renderSolution(): void {
+export function renderSolution(): void
+{
 	scheduleOverlays();
 	if (!solState?.path) return;
 	const {path, revealed} = solState;
@@ -56,12 +74,14 @@ export function renderSolution(): void {
 	$("solNext").disabled = $("solGoal").disabled = $("solAll").disabled = done;
 	if (done) stopAutoReveal();
 }
-function revealMore(n: number): void {
+function revealMore(n: number): void
+{
 	if (!solState?.path) return;
 	solState.revealed = Math.min(solState.path.length, solState.revealed + n);
 	renderSolution();
 }
-function revealToNextGoal(): void {
+function revealToNextGoal(): void
+{
 	if (!solState?.path) return;
 	let st = S.st;
 	for (let i = 0; i < solState.revealed; i++)
@@ -69,48 +89,60 @@ function revealToNextGoal(): void {
 	const m = nextMilestone(S.L, st, solState.path.slice(solState.revealed));
 	revealMore(m ? m.i + 1 : solState.path.length);
 }
-export function showSolution(): void {
+export function showSolution(): void
+{
 	if (S.busy || S.won || S.lvl === -2) return;
 	clearHint();
-	if (solState && solState.at === S.st) {
+	if (solState && solState.at === S.st)
+	{
 		revealMore(1);
 		return;
 	}
 	planSolution(1);
 }
 // Called after each successful roll
-export function solutionAfterMove(d: Direction): void {
+export function solutionAfterMove(d: Direction): void
+{
 	if (!solState) return;
-	if (solState.path?.startsWith(d)) {
+	if (solState.path?.startsWith(d))
+	{
 		solState.path = solState.path.slice(1);
 		solState.revealed = Math.max(0, solState.revealed - 1);
 		solState.at = S.st;
-		if (!solState.path) {
+		if (!solState.path)
+		{
 			clearSolution();
 			return;
 		}
 		if (solState.revealed === 0) solState.revealed = 1;
 		renderSolution();
-	} else {
+	}
+	else
+	{
 		stopAutoReveal();
 		planSolution(solState.revealed);
 	}
 }
 
-export function initSolution(): void {
+export function initSolution(): void
+{
 	$("solBtn").addEventListener("click", showSolution);
-	$("solNext").addEventListener("click", () => {
+	$("solNext").addEventListener("click", () =>
+	{
 		revealMore(1);
 	});
 	$("solGoal").addEventListener("click", revealToNextGoal);
-	$("solAll").addEventListener("click", () => {
-		if (solTimer) {
+	$("solAll").addEventListener("click", () =>
+	{
+		if (solTimer)
+		{
 			stopAutoReveal();
 			return;
 		}
 		$("solAll").textContent = "Pause";
 		solTimer = setInterval(
-			() => {
+			() =>
+			{
 				if (!solState?.path || solState.revealed >= solState.path.length) stopAutoReveal();
 				else revealMore(1);
 			},

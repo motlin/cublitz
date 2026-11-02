@@ -10,11 +10,13 @@ import {renderTitle} from "./title.ts";
 export type Mode = "title" | "play" | "edit";
 export let mode: Mode = "title";
 
-export function setMode(m: Mode): void {
+export function setMode(m: Mode): void
+{
 	mode = m;
 	$("titleView").hidden = m !== "title";
 	$("topbar").hidden = m === "title";
-	if (m === "title") {
+	if (m === "title")
+	{
 		renderTitle();
 		$("palette").hidden = true;
 	}
@@ -24,40 +26,52 @@ export function setMode(m: Mode): void {
 	$("modePlay").setAttribute("aria-pressed", domValue(m === "play"));
 	$("modeEdit").setAttribute("aria-pressed", domValue(m === "edit"));
 	const h = m === "edit" ? "#editor" : "";
-	if (location.hash !== h) {
-		try {
+	if (location.hash !== h)
+	{
+		try
+		{
 			history.replaceState(null, "", h || location.pathname + location.search);
-		} catch {
+		}
+		catch
+		{
 			location.hash = h;
 		}
 	}
-	if (m === "play" && S) {
+	if (m === "play" && S)
+	{
 		renderBoard();
 		if ($("tip").hidden) queueTips(S.L);
 	}
 	if (m === "edit") renderEditor();
 }
 
-export function initModes(): void {
-	$("modePlay").addEventListener("click", () => {
-		if (infinite || !S || (S.lvl < 0 && mergeIndex(S.lvl) < 0)) {
+export function initModes(): void
+{
+	$("modePlay").addEventListener("click", () =>
+	{
+		if (infinite || !S || (S.lvl < 0 && mergeIndex(S.lvl) < 0))
+		{
 			leaveInfinite();
 			loadLevel(campaignLvl);
 		}
 		setMode("play");
 	});
-	$("modeEdit").addEventListener("click", () => {
+	$("modeEdit").addEventListener("click", () =>
+	{
 		setMode("edit");
 	});
-	$("backEdit").addEventListener("click", () => {
+	$("backEdit").addEventListener("click", () =>
+	{
 		setMode("edit");
 	});
-	$("editCopy").addEventListener("click", () => {
+	$("editCopy").addEventListener("click", () =>
+	{
 		loadIntoEditor(S.L, S.lvl === -1 ? S.L.name! : S.L.name + " remix", S.lvl === -1 ? editorId() : null);
 		leaveInfinite();
 		setMode("edit");
 	});
-	addEventListener("hashchange", () => {
+	addEventListener("hashchange", () =>
+	{
 		setMode(location.hash === "#editor" ? "edit" : mode === "title" ? "title" : "play");
 	});
 }

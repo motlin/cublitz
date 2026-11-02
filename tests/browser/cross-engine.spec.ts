@@ -21,24 +21,49 @@ const GENERATE = `(async () => {
 	return {levels, candidates};
 })()`;
 
-const generateIn = async (engine: BrowserType): Promise<{levels: unknown[]; candidates: unknown[]}> => {
+const generateIn = async (
+	engine: BrowserType,
+): Promise<
+{
+	levels: unknown[];
+	candidates: unknown[];
+}> =>
+{
 	// The config's launch args are Chromium's, and Linux WebKit refuses to start on an option it does not know.
-	const browser = await engine.launch({args: []});
-	try {
+	const browser = await engine.launch(
+		{
+			args: [],
+		},
+	);
+	try
+	{
 		const context = await browser.newContext();
 		await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, async (route) => route.abort());
 		const page = await context.newPage();
 		await page.goto(BASE_URL + DIST_PATH);
 		return await page.evaluate(GENERATE);
-	} finally {
+	}
+	finally
+	{
 		await browser.close();
 	}
 };
 
-test("one seed generates the same levels in Chromium, Firefox and WebKit", async ({playwright}) => {
+test("one seed generates the same levels in Chromium, Firefox and WebKit", async ({playwright}) =>
+{
 	const [chromium, firefox, webkit] = await Promise.all(
 		[playwright.chromium, playwright.firefox, playwright.webkit].map(generateIn),
 	);
-	expect({firefox, webkit}).toStrictEqual({firefox: chromium, webkit: chromium});
+	expect(
+		{
+			firefox,
+			webkit,
+		},
+	).toStrictEqual(
+		{
+			firefox: chromium,
+			webkit: chromium,
+		},
+	);
 	expect(chromium?.levels.slice(0, golden.length)).toStrictEqual(golden.map(({level}) => level));
 });

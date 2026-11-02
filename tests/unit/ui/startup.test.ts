@@ -14,23 +14,29 @@ const BROWSER_GLOBALS = [
 	"ResizeObserver",
 	"requestAnimationFrame",
 ];
-afterEach(() => {
+afterEach(() =>
+{
 	vi.unstubAllGlobals();
 	vi.resetModules();
 });
 
 // The modules call each other in cycles, which is only safe because nothing runs until main.ts calls init.
-test("importing every ui module touches nothing in the browser", async () => {
+test("importing every ui module touches nothing in the browser", async () =>
+{
 	const touched: string[] = [];
 	const trap = (name: string) =>
-		new Proxy(() => {}, {
-			get: (_target, property) => touched.push(`${name}.${String(property)}`),
-			apply: () => touched.push(`${name}()`),
-			construct: () => {
-				touched.push(`new ${name}()`);
-				return {};
+		new Proxy(
+			() => {},
+			{
+				get: (_target, property) => touched.push(`${name}.${String(property)}`),
+				apply: () => touched.push(`${name}()`),
+				construct: () =>
+				{
+					touched.push(`new ${name}()`);
+					return {};
+				},
 			},
-		});
+		);
 	for (const name of BROWSER_GLOBALS) vi.stubGlobal(name, trap(name));
 	const modules = readdirSync("src/ui").toSorted();
 	for (const file of modules) await import(`../../../src/ui/${file}`);

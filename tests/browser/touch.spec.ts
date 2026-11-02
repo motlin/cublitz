@@ -1,5 +1,6 @@
 import {expect, type Page, test} from "@playwright/test";
-import {
+import
+{
 	boardBox,
 	clippedTiles,
 	cubeAt,
@@ -28,46 +29,63 @@ const LEVELS = ["1", "9", "16", "27", "30", "31", "M1", "M2", "M3", "M4"];
 const targetSizes = async (page: Page): Promise<string[]> =>
 	page.evaluate(() =>
 		[...document.querySelectorAll("#dpad button, #undoBtn, #resetBtn, #hintBtn, #menuBtn")]
-			.filter((el) => {
+			.filter((el) =>
+			{
 				const r = el.getBoundingClientRect();
 				return r.width < 44 || r.height < 44;
 			})
 			.map((el) => el.id || el.textContent),
 	);
 
-for (const screen of SCREENS) {
-	test.describe(screen.name, () => {
-		test("every level fits the screen with the controls in reach, and the page never scrolls", async ({
-			browser,
-		}) => {
+for (const screen of SCREENS)
+{
+	test.describe(screen.name, () =>
+	{
+		test("every level fits the screen with the controls in reach, and the page never scrolls", async ({browser}) =>
+		{
 			const {context, page} = await openPhone(browser, screen);
 			await page.locator("#titlePlay").tap();
 			const report: Record<string, unknown> = {};
-			for (const label of LEVELS) {
+			for (const label of LEVELS)
+			{
 				await openFromMenu(page, label);
-				report[label] = {
+				report[label] =
+				{
 					clipped: await clippedTiles(page),
 					unreachable: await unreachable(page, DOCK),
 					smallTargets: await targetSizes(page),
-					scrollable: await page.evaluate(() => {
+					scrollable: await page.evaluate(() =>
+					{
 						const doc = document.documentElement;
 						return doc.scrollHeight > innerHeight || doc.scrollWidth > innerWidth;
 					}),
 				};
 			}
-			await page.screenshot({path: test.info().outputPath("level-16.png")});
-			const clean = {clipped: 0, unreachable: [], smallTargets: [], scrollable: false};
+			await page.screenshot(
+				{
+					path: test.info().outputPath("level-16.png"),
+				},
+			);
+			const clean =
+			{
+				clipped: 0,
+				unreachable: [],
+				smallTargets: [],
+				scrollable: false,
+			};
 			expect(report).toStrictEqual(Object.fromEntries(LEVELS.map((label) => [label, clean])));
 			await context.close();
 		});
 
-		test("a swipe rolls along the drawn grid axis nearest to its direction", async ({browser}) => {
+		test("a swipe rolls along the drawn grid axis nearest to its direction", async ({browser}) =>
+		{
 			const {context, page, cdp} = await openPhone(browser, screen, atLevel(30), OPEN_FLOOR);
 			const axes = await measuredAxes(page);
 			const [cx, cy] = await viewportCentre(page);
 			const off = (a: number, b: number) => Math.abs(((a - b + 540) % 360) - 180);
 			const wrong: string[] = [];
-			for (let angle = -180; angle < 180; angle += 30) {
+			for (let angle = -180; angle < 180; angle += 30)
+			{
 				const nearest = Object.entries(axes).toSorted((a, b) => off(a[1], angle) - off(b[1], angle));
 				// Too near a boundary to say which side the rounding falls on.
 				if (off(nearest[1]![1], angle) - off(nearest[0]![1], angle) < 4) continue;
@@ -80,11 +98,22 @@ for (const screen of SCREENS) {
 			await context.close();
 		});
 
-		test("a resting thumb neither blocks nor bends a swipe", async ({browser}) => {
+		test("a resting thumb neither blocks nor bends a swipe", async ({browser}) =>
+		{
 			const {context, page, cdp} = await openPhone(browser, screen, atLevel(30), OPEN_FLOOR);
 			const [cx, cy] = await viewportCentre(page);
-			const up = (i: number) => ({id: 1, x: cx, y: cy + 20 - i * 12});
-			const thumb = {id: 2, x: cx + 90, y: cy + 40};
+			const up = (i: number) => (
+			{
+				id: 1,
+				x: cx,
+				y: cy + 20 - i * 12,
+			});
+			const thumb =
+			{
+				id: 2,
+				x: cx + 90,
+				y: cy + 40,
+			};
 			const results: Record<string, string> = {};
 			const swipeFrames = [0, 1, 2, 3, 4, 5].map(up);
 			await fingerScript(cdp, [...swipeFrames.map((f) => [f]), []]);
@@ -125,43 +154,76 @@ for (const screen of SCREENS) {
 				[],
 			]);
 			results["swiper lifts first"] = await rolled(page);
-			expect(results).toStrictEqual({
-				alone: "N",
-				"thumb lands mid-swipe": "N",
-				"thumb lifts first": "N",
-				"swiper lifts first": "N",
-			});
+			expect(results).toStrictEqual(
+				{
+					alone: "N",
+					"thumb lands mid-swipe": "N",
+					"thumb lifts first": "N",
+					"swiper lifts first": "N",
+				},
+			);
 			await context.close();
 		});
 
-		test("a short drag, and a drag that comes back, do not roll", async ({browser}) => {
+		test("a short drag, and a drag that comes back, do not roll", async ({browser}) =>
+		{
 			const {context, page, cdp} = await openPhone(browser, screen, atLevel(30), OPEN_FLOOR);
 			const [cx, cy] = await viewportCentre(page);
 			await drag(cdp, [cx, cy], [cx + 8, cy]);
-			const back = [0, 15, 30, 45, 30, 15, 0].map((dx) => [{id: 1, x: cx + dx, y: cy}]);
+			const back = [0, 15, 30, 45, 30, 15, 0].map((dx) => [
+				{
+					id: 1,
+					x: cx + dx,
+					y: cy,
+				},
+			]);
 			await fingerScript(cdp, [...back, []]);
-			expect(await cubeAt(page)).toStrictEqual({x: 3, y: 3, moves: 0});
+			expect(await cubeAt(page)).toStrictEqual(
+				{
+					x: 3,
+					y: 3,
+					moves: 0,
+				},
+			);
 			await context.close();
 		});
 
-		test("a drag marks the tile it would roll onto before the finger lifts", async ({browser}) => {
+		test("a drag marks the tile it would roll onto before the finger lifts", async ({browser}) =>
+		{
 			const {context, page, cdp} = await openPhone(browser, screen, atLevel(30), OPEN_FLOOR);
 			const [cx, cy] = await viewportCentre(page);
 			const aimed = async () =>
 				page.evaluate(() =>
-					[...document.querySelectorAll<HTMLElement>("#board .tile.aim")].map((tile) => {
+					[...document.querySelectorAll<HTMLElement>("#board .tile.aim")].map((tile) =>
+					{
 						const c = parseFloat(getComputedStyle(tile).width);
 						return [parseFloat(tile.style.left) / c, parseFloat(tile.style.top) / c];
 					}),
 				);
-			await fingerScript(cdp, [[{id: 1, x: cx, y: cy}], [{id: 1, x: cx + 50, y: cy}]]);
+			await fingerScript(cdp, [
+				[
+					{
+						id: 1,
+						x: cx,
+						y: cy,
+					},
+				],
+				[
+					{
+						id: 1,
+						x: cx + 50,
+						y: cy,
+					},
+				],
+			]);
 			expect(await aimed()).toStrictEqual([[4, 3]]);
 			await liftAll(cdp);
 			expect(await aimed()).toStrictEqual([]);
 			await context.close();
 		});
 
-		test("a double tap returns a zoomed board to the fit", async ({browser}) => {
+		test("a double tap returns a zoomed board to the fit", async ({browser}) =>
+		{
 			const {context, page, cdp} = await openPhone(browser, screen, atLevel(30), OPEN_FLOOR);
 			const [cx, cy] = await viewportCentre(page);
 			const fit = await boardBox(page);
@@ -182,7 +244,8 @@ for (const screen of SCREENS) {
 			await context.close();
 		});
 
-		test("two fingers zoom and pan the board without rolling, and it returns to fit", async ({browser}) => {
+		test("two fingers zoom and pan the board without rolling, and it returns to fit", async ({browser}) =>
+		{
 			const {context, page, cdp} = await openPhone(browser, screen);
 			await page.locator("#titlePlay").tap();
 			await openFromMenu(page, "16");
@@ -238,7 +301,8 @@ for (const screen of SCREENS) {
 			await context.close();
 		});
 
-		test("a pinch that lifts one finger at a time still counts as a pinch", async ({browser}) => {
+		test("a pinch that lifts one finger at a time still counts as a pinch", async ({browser}) =>
+		{
 			const {context, page, cdp} = await openPhone(browser, screen, atLevel(30), OPEN_FLOOR);
 			const [cx, cy] = await viewportCentre(page);
 			await gesture(
@@ -256,18 +320,37 @@ for (const screen of SCREENS) {
 				[1, 2],
 			);
 			await settle(page);
-			expect(await cubeAt(page)).toStrictEqual({x: 3, y: 3, moves: 0});
+			expect(await cubeAt(page)).toStrictEqual(
+				{
+					x: 3,
+					y: 3,
+					moves: 0,
+				},
+			);
 			await context.close();
 		});
 
-		test("the d-pad, undo, restart and the menu work by tapping", async ({browser}) => {
+		test("the d-pad, undo, restart and the menu work by tapping", async ({browser}) =>
+		{
 			const {context, page} = await openPhone(browser, screen, atLevel(30), OPEN_FLOOR);
 			await page.locator('#dpad [data-d="E"]').tap();
 			await settle(page);
-			expect(await cubeAt(page)).toStrictEqual({x: 4, y: 3, moves: 1});
+			expect(await cubeAt(page)).toStrictEqual(
+				{
+					x: 4,
+					y: 3,
+					moves: 1,
+				},
+			);
 			await page.locator("#undoBtn").tap();
 			await settle(page);
-			expect(await cubeAt(page)).toStrictEqual({x: 3, y: 3, moves: 0});
+			expect(await cubeAt(page)).toStrictEqual(
+				{
+					x: 3,
+					y: 3,
+					moves: 0,
+				},
+			);
 			await page.locator("#menuBtn").tap();
 			expect(
 				await unreachable(page, ["#modePlay", "#modeEdit", "#palBtn", "#menuClose", ".brand"]),
@@ -277,7 +360,8 @@ for (const screen of SCREENS) {
 			await context.close();
 		});
 
-		test("the first tip is short and its button is on screen", async ({browser}) => {
+		test("the first tip is short and its button is on screen", async ({browser}) =>
+		{
 			const {context, page} = await openPhone(browser, screen, {});
 			await page.locator("#titlePlay").tap();
 			await expect(page.locator("#tip")).toBeVisible();
@@ -285,15 +369,21 @@ for (const screen of SCREENS) {
 				"Swipe or use the arrows to roll. Roll the cube to the target.",
 			);
 			expect(await unreachable(page, ["#tipOk"])).toStrictEqual([]);
-			await page.screenshot({path: test.info().outputPath("tip.png")});
+			await page.screenshot(
+				{
+					path: test.info().outputPath("tip.png"),
+				},
+			);
 			await page.locator("#tipOk").tap();
 			await expect(page.locator("#tip")).toBeHidden();
 			await context.close();
 		});
 
-		test("winning a level shows Next on screen", async ({browser}) => {
+		test("winning a level shows Next on screen", async ({browser}) =>
+		{
 			const {context, page} = await openPhone(browser, screen, atLevel(30), OPEN_FLOOR);
-			for (const d of "EEESSS") {
+			for (const d of "EEESSS")
+			{
 				await page.locator(`#dpad [data-d="${d}"]`).tap();
 				await settle(page);
 			}
@@ -302,13 +392,15 @@ for (const screen of SCREENS) {
 			await context.close();
 		});
 
-		test("the title's Play button is on screen", async ({browser}) => {
+		test("the title's Play button is on screen", async ({browser}) =>
+		{
 			const {context, page} = await openPhone(browser, screen);
 			expect(await unreachable(page, ["#titlePlay"])).toStrictEqual([]);
 			await context.close();
 		});
 
-		test("the hint and the solution leave the board and controls in reach", async ({browser}) => {
+		test("the hint and the solution leave the board and controls in reach", async ({browser}) =>
+		{
 			const {context, page} = await openPhone(browser, screen);
 			await page.locator("#titlePlay").tap();
 			await openFromMenu(page, "16");
@@ -316,28 +408,40 @@ for (const screen of SCREENS) {
 			await sleep(200);
 			expect(await clippedTiles(page)).toBe(0);
 			expect(await unreachable(page, [...DOCK, "#hintClose"])).toStrictEqual([]);
-			await page.screenshot({path: test.info().outputPath("hint.png")});
+			await page.screenshot(
+				{
+					path: test.info().outputPath("hint.png"),
+				},
+			);
 			await context.close();
 		});
 
-		test("the editor grid paints with one finger and pans and zooms with two", async ({browser}) => {
+		test("the editor grid paints with one finger and pans and zooms with two", async ({browser}) =>
+		{
 			const {context, page, cdp} = await openPhone(browser, screen);
 			await page.locator("#titleEdit").tap();
-			await page.evaluate(() => {
+			await page.evaluate(() =>
+			{
 				for (let i = 0; i < 10; i++) document.querySelector<HTMLElement>('[data-resize="1,0"]')!.click();
 				for (let i = 0; i < 7; i++) document.querySelector<HTMLElement>('[data-resize="0,1"]')!.click();
 			});
 			await sleep(60);
-			const overflow = await page.evaluate(() => {
+			const overflow = await page.evaluate(() =>
+			{
 				const wrap = document.querySelector("#edGridWrap")!;
 				return wrap.scrollWidth - wrap.clientWidth;
 			});
 			expect(overflow).toBe(0);
-			await page.screenshot({path: test.info().outputPath("editor.png")});
+			await page.screenshot(
+				{
+					path: test.info().outputPath("editor.png"),
+				},
+			);
 			const grid = page.locator("#edGrid");
 			await grid.scrollIntoViewIfNeeded();
 			const code = async () => page.locator("#edCode").inputValue();
-			const cell = async (x: number, y: number): Promise<[number, number]> => {
+			const cell = async (x: number, y: number): Promise<[number, number]> =>
+			{
 				const box = (await page.locator(`#edGrid [data-x="${x}"][data-y="${y}"]`).boundingBox())!;
 				return [box.x + box.width / 2, box.y + box.height / 2];
 			};
@@ -364,7 +468,8 @@ for (const screen of SCREENS) {
 				],
 			]);
 			expect((await code()) === painted).toBe(true);
-			const zoomed = await page.evaluate(() => {
+			const zoomed = await page.evaluate(() =>
+			{
 				const wrap = document.querySelector("#edGridWrap")!;
 				return wrap.scrollWidth > wrap.clientWidth;
 			});
@@ -386,7 +491,8 @@ for (const screen of SCREENS) {
 			await context.close();
 		});
 
-		test("the editor's Copy link button can be tapped and copies the link", async ({browser}) => {
+		test("the editor's Copy link button can be tapped and copies the link", async ({browser}) =>
+		{
 			const {context, page} = await openPhone(browser, screen);
 			await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 			await page.locator("#titleEdit").tap();
@@ -404,13 +510,15 @@ for (const screen of SCREENS) {
 
 		test("the editor's share box selects all on a tap and loads a pasted code from a tapped Load", async ({
 			browser,
-		}) => {
+		}) =>
+		{
 			const {context, page} = await openPhone(browser, screen);
 			await page.locator("#titleEdit").tap();
 			await sleep(60);
 			const box = page.locator("#edCode");
 			await box.scrollIntoViewIfNeeded();
-			for (const selector of ["#edCode", "#edCopy", "#edCopyLink", "#edImport"]) {
+			for (const selector of ["#edCode", "#edCopy", "#edCopyLink", "#edImport"])
+			{
 				const size = (await page.locator(selector).boundingBox())!;
 				expect([selector, size.height >= 44 && size.width >= 44]).toStrictEqual([selector, true]);
 			}
@@ -422,7 +530,16 @@ for (const screen of SCREENS) {
 				),
 			).toBe(true);
 			const code =
-				"CUBLITZ:" + Buffer.from(JSON.stringify({name: "Tapped", map: ["S.X"], k: {}})).toString("base64");
+				"CUBLITZ:" +
+				Buffer.from(
+					JSON.stringify(
+						{
+							name: "Tapped",
+							map: ["S.X"],
+							k: {},
+						},
+					),
+				).toString("base64");
 			await box.fill(code);
 			await page.locator("#edImport").tap();
 			await expect(page.locator("#edName")).toHaveValue("Tapped");
@@ -430,7 +547,8 @@ for (const screen of SCREENS) {
 			await context.close();
 		});
 
-		test("the editor page scrolls, and its tools stay in reach", async ({browser}) => {
+		test("the editor page scrolls, and its tools stay in reach", async ({browser}) =>
+		{
 			const {context, page, cdp} = await openPhone(browser, screen);
 			await page.locator("#titleEdit").tap();
 			await sleep(60);
@@ -442,26 +560,45 @@ for (const screen of SCREENS) {
 			await drag(cdp, [help.x + 20, help.y + 8], [help.x + 20, Math.max(4, help.y - 120)]);
 			await sleep(200);
 			expect((await page.evaluate(() => scrollY)) > y0 || box.y < screen.height).toBe(true);
-			const sizes = await page.evaluate(() => {
+			const sizes = await page.evaluate(() =>
+			{
 				const b = document.querySelector("#edColors button")!.getBoundingClientRect();
 				const s = document.querySelector(".step")!.getBoundingClientRect();
-				return {roundColor: b.width === b.height, stepper: s.width >= 40 && s.height >= 40};
+				return {
+					roundColor: b.width === b.height,
+					stepper: s.width >= 40 && s.height >= 40,
+				};
 			});
-			expect(sizes).toStrictEqual({roundColor: true, stepper: true});
-			const stuck = await page.evaluate(() => {
+			expect(sizes).toStrictEqual(
+				{
+					roundColor: true,
+					stepper: true,
+				},
+			);
+			const stuck = await page.evaluate(() =>
+			{
 				const main = document.querySelector(".ed-main")!;
 				scrollTo(0, main.getBoundingClientRect().top + scrollY + 30);
 				const bar = document.querySelector(".ed-toolbar")!.getBoundingClientRect();
 				const tools = document.querySelector("#edTools")!;
-				return {barAtTop: bar.top === 0, oneRow: tools.scrollWidth > tools.clientWidth};
+				return {
+					barAtTop: bar.top === 0,
+					oneRow: tools.scrollWidth > tools.clientWidth,
+				};
 			});
-			expect(stuck).toStrictEqual({barAtTop: true, oneRow: true});
+			expect(stuck).toStrictEqual(
+				{
+					barAtTop: true,
+					oneRow: true,
+				},
+			);
 			await context.close();
 		});
 	});
 }
 
-test("rotating the phone refits the board and keeps the swipe mapping", async ({browser}) => {
+test("rotating the phone refits the board and keeps the swipe mapping", async ({browser}) =>
+{
 	const [portrait] = SCREENS;
 	const {context, page, cdp} = await openPhone(browser, portrait!);
 	await page.locator("#titlePlay").tap();
@@ -470,8 +607,14 @@ test("rotating the phone refits the board and keeps the swipe mapping", async ({
 	for (const [width, height] of [
 		[568, 320],
 		[320, 568],
-	] as const) {
-		await page.setViewportSize({width, height});
+	] as const)
+	{
+		await page.setViewportSize(
+			{
+				width,
+				height,
+			},
+		);
 		await sleep(250);
 		expect(await clippedTiles(page)).toBe(0);
 		expect(await unreachable(page, DOCK)).toStrictEqual([]);
@@ -486,59 +629,105 @@ test("rotating the phone refits the board and keeps the swipe mapping", async ({
 	await context.close();
 });
 
-test("rotating the phone builds the board once", async ({browser}) => {
+test("rotating the phone builds the board once", async ({browser}) =>
+{
 	const [portrait] = SCREENS;
 	const {context, page} = await openPhone(browser, portrait!, atLevel(30), OPEN_FLOOR);
-	await page.evaluate(() => {
-		const w = window as unknown as {boardBuilds: number};
+	await page.evaluate(() =>
+	{
+		const w = window as unknown as
+		{
+			boardBuilds: number;
+		};
 		w.boardBuilds = 0;
-		new MutationObserver((records) => {
+		new MutationObserver((records) =>
+		{
 			for (const r of records)
 				if ([...r.removedNodes].some((n) => n instanceof Element && n.classList.contains("tile")))
 					w.boardBuilds++;
-		}).observe(document.querySelector("#board")!, {childList: true});
+		}).observe(
+			document.querySelector("#board")!,
+			{
+				childList: true,
+			},
+		);
 	});
-	await page.setViewportSize({width: 568, height: 320});
+	await page.setViewportSize(
+		{
+			width: 568,
+			height: 320,
+		},
+	);
 	await sleep(400);
-	expect({builds: await page.evaluate("boardBuilds"), clipped: await clippedTiles(page)}).toStrictEqual({
-		builds: 1,
-		clipped: 0,
-	});
+	expect(
+		{
+			builds: await page.evaluate("boardBuilds"),
+			clipped: await clippedTiles(page),
+		},
+	).toStrictEqual(
+		{
+			builds: 1,
+			clipped: 0,
+		},
+	);
 	await context.close();
 });
 
-test("rotating in the middle of a roll refits once the roll ends", async ({browser}) => {
+test("rotating in the middle of a roll refits once the roll ends", async ({browser}) =>
+{
 	const [portrait] = SCREENS;
 	const {context, page} = await openPhone(browser, portrait!, atLevel(30), OPEN_FLOOR);
 	await page.evaluate('move("E")');
-	await page.setViewportSize({width: 568, height: 320});
+	await page.setViewportSize(
+		{
+			width: 568,
+			height: 320,
+		},
+	);
 	await settle(page);
 	await sleep(350);
 	expect(await clippedTiles(page)).toBe(0);
 	await context.close();
 });
 
-test("a phone in WebKit gets the same layout and finger logic", async ({playwright}) => {
+test("a phone in WebKit gets the same layout and finger logic", async ({playwright}) =>
+{
 	// WebKit has no way to send real multi-touch, so this shows layout and the logic on PointerEvents, not gesture
 	// handling, and nothing here can stand in for a real iPhone.
 	// The config's launch args are Chromium's, and Linux WebKit refuses to start on an option it does not know.
-	const browser = await playwright.webkit.launch({args: []});
+	const browser = await playwright.webkit.launch(
+		{
+			args: [],
+		},
+	);
 	const report: Record<string, unknown> = {};
-	for (const screen of SCREENS) {
-		const context = await browser.newContext({
-			viewport: {width: screen.width, height: screen.height},
-			hasTouch: true,
-			isMobile: true,
-			storageState: {
-				cookies: [],
-				origins: [
-					{
-						origin: BASE_URL,
-						localStorage: Object.entries(atLevel(30)).map(([name, value]) => ({name, value})),
-					},
-				],
+	for (const screen of SCREENS)
+	{
+		const context = await browser.newContext(
+			{
+				viewport:
+				{
+					width: screen.width,
+					height: screen.height,
+				},
+				hasTouch: true,
+				isMobile: true,
+				storageState:
+				{
+					cookies: [],
+					origins: [
+						{
+							origin: BASE_URL,
+							localStorage: Object.entries(atLevel(30)).map(([name, value]) => (
+							{
+								name,
+								value,
+							})),
+						},
+					],
+				},
 			},
-		});
+		);
 		await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, async (route) => route.abort());
 		const page = await context.newPage();
 		await page.goto(BASE_URL + OPEN_FLOOR);
@@ -559,18 +748,48 @@ test("a phone in WebKit gets the same layout and finger logic", async ({playwrig
 		const thumbs = await page.evaluate("({x: S.st.x, y: S.st.y})");
 		await page.evaluate("undo()");
 		await page.locator("#menuBtn").tap();
-		await page.locator("#levels button", {hasText: /^16$/}).tap();
+		await page
+			.locator(
+				"#levels button",
+				{
+					hasText: /^16$/,
+				},
+			)
+			.tap();
 		await sleep(80);
-		report[screen.name] = {thumbs, clipped: await clippedTiles(page), unreachable: await unreachable(page, DOCK)};
+		report[screen.name] =
+		{
+			thumbs,
+			clipped: await clippedTiles(page),
+			unreachable: await unreachable(page, DOCK),
+		};
 		await context.close();
 	}
 	await browser.close();
-	const clean = {thumbs: {x: 3, y: 2}, clipped: 0, unreachable: []};
+	const clean =
+	{
+		thumbs:
+		{
+			x: 3,
+			y: 2,
+		},
+		clipped: 0,
+		unreachable: [],
+	};
 	expect(report).toStrictEqual(Object.fromEntries(SCREENS.map((screen) => [screen.name, clean])));
 });
 
-test("desktop stays the original: no touch stylesheet, no touch controls", async ({browser}) => {
-	const context = await browser.newContext({viewport: {width: 1280, height: 800}});
+test("desktop stays the original: no touch stylesheet, no touch controls", async ({browser}) =>
+{
+	const context = await browser.newContext(
+		{
+			viewport:
+			{
+				width: 1280,
+				height: 800,
+			},
+		},
+	);
 	await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, async (route) => route.abort());
 	const page = await context.newPage();
 	await page.goto(BASE_URL);
@@ -585,26 +804,52 @@ test("desktop stays the original: no touch stylesheet, no touch controls", async
 
 test("turning a tablet from the phone layout to desktop width takes the phone chrome away, and back brings it", async ({
 	browser,
-}) => {
-	const {context, page} = await openPhone(browser, {name: "iPad portrait", width: 820, height: 1180});
+}) =>
+{
+	const {context, page} = await openPhone(
+		browser,
+		{
+			name: "iPad portrait",
+			width: 820,
+			height: 1180,
+		},
+	);
 	await page.locator("#titlePlay").tap();
-	const chrome = async (): Promise<{buttons: string[]; help: string}> =>
-		page.evaluate(() => ({
+	const chrome = async (): Promise<
+	{
+		buttons: string[];
+		help: string;
+	}> =>
+		page.evaluate(() => (
+		{
 			buttons: [...document.querySelectorAll("#menuBtn, #menuClose, #moreBtn, #fitBtn")].map((el) => el.id),
 			help: document.querySelector(".ed-help")!.textContent,
 		}));
-	const phone = {
+	const phone =
+	{
 		buttons: ["menuClose", "menuBtn", "fitBtn", "moreBtn"],
 		help: "One finger paints tiles. Two fingers pan, and pinch to zoom. Puddles, gates, switches, buttons, boxes and doors use the selected color. Placing a start moves it.",
 	};
 	expect(await chrome()).toStrictEqual(phone);
-	await page.setViewportSize({width: 1180, height: 820});
+	await page.setViewportSize(
+		{
+			width: 1180,
+			height: 820,
+		},
+	);
 	await sleep(150);
-	expect(await chrome()).toStrictEqual({
-		buttons: [],
-		help: "Click or drag to paint tiles. Puddles, gates, switches, buttons, boxes and doors use the selected color. Placing a start moves it.",
-	});
-	await page.setViewportSize({width: 820, height: 1180});
+	expect(await chrome()).toStrictEqual(
+		{
+			buttons: [],
+			help: "Click or drag to paint tiles. Puddles, gates, switches, buttons, boxes and doors use the selected color. Placing a start moves it.",
+		},
+	);
+	await page.setViewportSize(
+		{
+			width: 820,
+			height: 1180,
+		},
+	);
 	await sleep(150);
 	expect(await chrome()).toStrictEqual(phone);
 	await page.locator("#menuBtn").tap();

@@ -5,32 +5,84 @@ import {restsOn, solidColorOf, workColorOf} from "./prism.ts";
 import {openColors, tryMove} from "./rules.ts";
 import type {Box, Direction, Face, Level, MoveSuccess, Paint, PieceColor, State, SwitchCell} from "./types.ts";
 
-type Push = {d: Direction; box: number};
-type MilestoneBase = {i: number; d: Direction; x: number; y: number; path: string; prev: State; paints: Paint[]};
+type Push =
+{
+	d: Direction;
+	box: number;
+};
+type MilestoneBase =
+{
+	i: number;
+	d: Direction;
+	x: number;
+	y: number;
+	path: string;
+	prev: State;
+	paints: Paint[];
+};
 export type Milestone = MilestoneBase &
 	(
-		| {type: "goal"}
-		| {type: "gate"; c: Paint}
-		| {type: "wgate"; f: Face}
-		| {type: "wash"}
-		| {type: "switch"; c: PieceColor}
-		| {type: "solid"; c: Paint}
-		| {type: "button"; c: PieceColor; box: number; firstPush: Push; from: Box}
-		| {type: "door"; c: PieceColor}
-		| {type: "merge"}
+		|
+		  {
+				type: "goal";
+		  }
+		|
+		  {
+				type: "gate";
+				c: Paint;
+		  }
+		|
+		  {
+				type: "wgate";
+				f: Face;
+		  }
+		|
+		  {
+				type: "wash";
+		  }
+		|
+		  {
+				type: "switch";
+				c: PieceColor;
+		  }
+		|
+		  {
+				type: "solid";
+				c: Paint;
+		  }
+		|
+		  {
+				type: "button";
+				c: PieceColor;
+				box: number;
+				firstPush: Push;
+				from: Box;
+		  }
+		|
+		  {
+				type: "door";
+				c: PieceColor;
+		  }
+		|
+		  {
+				type: "merge";
+		  }
 	);
 
 /** The first thing worth pointing out along sol, which has to be a path that works from st0. */
-export function nextMilestone(L: Level, st0: State, sol: string): Milestone | null {
+export function nextMilestone(L: Level, st0: State, sol: string): Milestone | null
+{
 	let st = st0;
 	const paints: Paint[] = [],
 		pushes: Push[] = [];
-	for (let i = 0; i < sol.length; i++) {
+	for (let i = 0; i < sol.length; i++)
+	{
 		const d = sol[i] as Direction,
 			prev = st,
 			r = tryMove(L, st, d) as MoveSuccess;
 		st = r.st;
-		const base: MilestoneBase = {
+		const base: MilestoneBase =
+		{
 			i,
 			d,
 			x: r.nx,
@@ -40,18 +92,57 @@ export function nextMilestone(L: Level, st0: State, sol: string): Milestone | nu
 			paints: [...new Set(paints)],
 		};
 		if (r.painted) paints.push(r.painted);
-		if (r.pushed >= 0) pushes.push({d, box: r.pushed});
+		if (r.pushed >= 0)
+			pushes.push(
+				{
+					d,
+					box: r.pushed,
+				},
+			);
 		const now = solidColorOf(st),
 			before = solidColorOf(prev);
-		if (r.won) return {...base, type: "goal"};
-		if (r.merged) return {...base, type: "merge"};
-		if (r.cell.t === "gate" && !before) return {...base, type: "gate", c: r.cell.c};
-		if (r.cell.t === "wgate") return {...base, type: "wgate", f: r.cell.f};
-		if (r.washed) return {...base, type: "wash"};
+		if (r.won)
+			return {
+				...base,
+				type: "goal",
+			};
+		if (r.merged)
+			return {
+				...base,
+				type: "merge",
+			};
+		if (r.cell.t === "gate" && !before)
+			return {
+				...base,
+				type: "gate",
+				c: r.cell.c,
+			};
+		if (r.cell.t === "wgate")
+			return {
+				...base,
+				type: "wgate",
+				f: r.cell.f,
+			};
+		if (r.washed)
+			return {
+				...base,
+				type: "wash",
+			};
 		// Only a switch cell ever reports a flip.
-		if (r.flipped >= 0) return {...base, type: "switch", c: (r.cell as SwitchCell).c};
-		if (now && now !== before) return {...base, type: "solid", c: now};
-		if (r.pushed >= 0) {
+		if (r.flipped >= 0)
+			return {
+				...base,
+				type: "switch",
+				c: (r.cell as SwitchCell).c,
+			};
+		if (now && now !== before)
+			return {
+				...base,
+				type: "solid",
+				c: now,
+			};
+		if (r.pushed >= 0)
+		{
 			const b = st.boxes[r.pushed]!,
 				cell = cellAt(L, b.x, b.y);
 			if (cell?.t === "button" && cell.c === b.c)
@@ -66,16 +157,23 @@ export function nextMilestone(L: Level, st0: State, sol: string): Milestone | nu
 					from: st0.boxes[r.pushed]!,
 				};
 		}
-		if (r.cell.t === "door" && !(prev.x === r.nx && prev.y === r.ny)) {
+		if (r.cell.t === "door" && !(prev.x === r.nx && prev.y === r.ny))
+		{
 			const wasOpen = openColors(L, st0)[r.cell.c];
-			if (!wasOpen || i === 0) return {...base, type: "door", c: r.cell.c};
+			if (!wasOpen || i === 0)
+				return {
+					...base,
+					type: "door",
+					c: r.cell.c,
+				};
 		}
 	}
 	return null;
 }
 
 /** Whether the roll r, made while m was the hint, carried out m. */
-export function milestoneReached(m: Milestone, r: MoveSuccess): boolean {
+export function milestoneReached(m: Milestone, r: MoveSuccess): boolean
+{
 	const st = r.st;
 	if (m.type === "gate" || m.type === "door" || m.type === "wgate" || m.type === "wash") return restsOn(st, m.x, m.y);
 	if (m.type === "merge") return !!r.merged;
@@ -87,16 +185,35 @@ export function milestoneReached(m: Milestone, r: MoveSuccess): boolean {
 
 // Which face, before rolling d, ends up as face k after the roll
 export const preFace = (d: Direction, k: Face): Face =>
-	roll<Face>({t: "t", b: "b", n: "n", s: "s", e: "e", w: "w"}, d)[k];
-const OPP: Record<Direction, string> = {N: "south", S: "north", E: "west", W: "east"};
+	roll<Face>(
+		{
+			t: "t",
+			b: "b",
+			n: "n",
+			s: "s",
+			e: "e",
+			w: "w",
+		},
+		d,
+	)[k];
+const OPP: Record<Direction, string> =
+{
+	N: "south",
+	S: "north",
+	E: "west",
+	W: "east",
+};
 
 /** The hint for a milestone: first what to do next, then how to do it. */
-export function hintTexts(L: Level, st: State, m: Milestone): [string, string] {
+export function hintTexts(L: Level, st: State, m: Milestone): [string, string]
+{
 	const cn = ("c" in m ? CNAME[m.c] : "") || "";
 	const cubes = st.units?.map((u) => u.f) ?? [st.f];
 	const has = (c: Paint | PieceColor) => cubes.some((f) => FACES.some((k) => f[k] === c));
-	switch (m.type) {
-		case "goal": {
+	switch (m.type)
+	{
+		case "goal":
+		{
 			const need = needEntries(L);
 			const missing = [...new Set(need.map(([, v]) => v))].filter((c) => !has(c)).map((c) => CNAME[c]);
 			const prep = missing.length ? ` You'll need ${list(missing)} paint for that.` : "";
@@ -119,7 +236,8 @@ export function hintTexts(L: Level, st: State, m: Milestone): [string, string] {
 				"Next, roll onto the highlighted paint remover.",
 				`It wipes all six faces back to bare at once. Use up any paint you still need first, like a gate's color or a switch's solid coat.`,
 			];
-		case "wgate": {
+		case "wgate":
+		{
 			const pf = preFace(m.d, m.f),
 				bare = cubes.reduce((n, f) => n + FACES.filter((k) => !f[k]).length, 0);
 			return [
@@ -144,7 +262,8 @@ export function hintTexts(L: Level, st: State, m: Milestone): [string, string] {
 					? `You're ${howWork(m.c)} already. Roll onto it from any side.`
 					: `It only flips for a cube that is ${howWork(m.c)} when it lands.`,
 			];
-		case "button": {
+		case "button":
+		{
 			const fp = m.firstPush;
 			return [
 				`Next, get the ${cn} box onto the highlighted ${cn} button.`,

@@ -10,18 +10,28 @@ import {loadLevel, loadMergeLevel, mergeIndex} from "./play.ts";
 import {beaten, S, unlocked} from "./session.ts";
 import {COLORS} from "./text.ts";
 
-const NET_POS: Record<Face, [number, number]> = {n: [2, 1], w: [1, 2], t: [2, 2], e: [3, 2], s: [2, 3], b: [2, 4]};
+const NET_POS: Record<Face, [number, number]> =
+{
+	n: [2, 1],
+	w: [1, 2],
+	t: [2, 2],
+	e: [3, 2],
+	s: [2, 3],
+	b: [2, 4],
+};
 
 const MERGE_BUTTON =
 	"font-family:var(--font-mono);font-weight:700;font-size:13px;width:36px;height:32px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;";
 
-export function renderHud(popFace?: Face | null): void {
+export function renderHud(popFace?: Face | null): void
+{
 	const L = S.L,
 		need: Need = L.need || {},
 		f = S.st.f;
 	const net = $("net");
 	net.innerHTML = "";
-	for (const k of FACES) {
+	for (const k of FACES)
+	{
 		const d = document.createElement("div");
 		d.className = "nf";
 		d.style.gridColumn = domValue(NET_POS[k][0]);
@@ -31,7 +41,8 @@ export function renderHud(popFace?: Face | null): void {
 		d.textContent = k.toUpperCase();
 		d.title = FNAME[k] + (has ? ": " + CNAME[has] : ": bare");
 		const wants = need[k];
-		if (wants) {
+		if (wants)
+		{
 			d.classList.add("need");
 			d.style.setProperty("--nc", COLORS[wants]);
 			if (has === wants) d.classList.add("met");
@@ -40,12 +51,14 @@ export function renderHud(popFace?: Face | null): void {
 		net.appendChild(d);
 	}
 	const units = S.st.units;
-	if (units && units.length > 1) {
+	if (units && units.length > 1)
+	{
 		const solid = solidColorOf(S.st);
 		$("needBox").innerHTML =
 			`<div class="solidline"><b>Block of ${units.length} cubes</b>${solid ? `. Solid ${CNAME[solid]}` : ""}.</div>` +
 			units
-				.map((u, i) => {
+				.map((u, i) =>
+				{
 					const painted = FACES.filter((k) => u.f[k]).map((k) => `${CNAME[u.f[k] as Paint]} on ${FNAME[k]}`);
 					return `<div>Cube ${i + 1}: ${painted.join(", ") || "bare"}.</div>`;
 				})
@@ -60,7 +73,8 @@ export function renderHud(popFace?: Face | null): void {
 	}
 	const solid = solidColor(f);
 	const counts: Partial<Record<Paint, number>> = {};
-	FACES.forEach((k) => {
+	FACES.forEach((k) =>
+	{
 		const has = f[k];
 		if (has) counts[has] = (counts[has] || 0) + 1;
 	});
@@ -84,11 +98,13 @@ export function renderHud(popFace?: Face | null): void {
 	$("undoBtn").disabled = !S.hist.length;
 }
 
-export function renderLevels(): void {
+export function renderLevels(): void
+{
 	renderStock();
 	const nav = $("levels");
 	nav.innerHTML = "";
-	LEVELS.forEach((L, i) => {
+	LEVELS.forEach((L, i) =>
+	{
 		const b = document.createElement("button");
 		const open = unlocked(i);
 		b.className = "lvbtn" + (beaten(L) ? " done" : "") + (i === S.lvl ? " cur" : "") + (open ? "" : " locked");
@@ -96,12 +112,14 @@ export function renderLevels(): void {
 		b.title = open ? L.name + (beaten(L) ? ` (best ${beaten(L)})` : "") : `Locked. Beat level ${i} to unlock.`;
 		b.disabled = !open;
 		if (!open) b.setAttribute("aria-label", `Level ${i + 1}, locked`);
-		b.addEventListener("click", () => {
+		b.addEventListener("click", () =>
+		{
 			loadLevel(i);
 		});
 		nav.appendChild(b);
 	});
-	MERGE_LEVELS.forEach((L, j) => {
+	MERGE_LEVELS.forEach((L, j) =>
+	{
 		const b = document.createElement("button");
 		const current = mergeIndex(S.lvl) === j;
 		b.textContent = `M${j + 1}`;
@@ -109,14 +127,16 @@ export function renderLevels(): void {
 		// Inline, because the stylesheets stay byte for byte the original's
 		b.style.cssText =
 			MERGE_BUTTON + (current ? "background:var(--clay);color:#1b1e29;" : beaten(L) ? "color:var(--ink);" : "");
-		b.addEventListener("click", () => {
+		b.addEventListener("click", () =>
+		{
 			loadMergeLevel(j);
 		});
 		nav.appendChild(b);
 	});
 }
 
-export function setStatus(html: string, warn?: boolean): void {
+export function setStatus(html: string, warn?: boolean): void
+{
 	const s = $("status");
 	s.innerHTML = html;
 	s.classList.toggle("warn", !!warn);

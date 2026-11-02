@@ -12,26 +12,46 @@ import {cacheName} from "../../src/pwa/worker.ts";
 import {atLevel, BASE_URL, engine} from "./harness/pair.ts";
 import {openFromMenu, openPhone, SCREENS, unreachable} from "./harness/touch.ts";
 
-const KEYS: Record<Direction, string> = {N: "ArrowUp", S: "ArrowDown", E: "ArrowRight", W: "ArrowLeft"};
+const KEYS: Record<Direction, string> =
+{
+	N: "ArrowUp",
+	S: "ArrowDown",
+	E: "ArrowRight",
+	W: "ArrowLeft",
+};
 const FLIP =
 	"?CUBLITZ:eyJuYW1lIjoiRmxpcCBpdCBhbmQgcmV2ZXJzZSBpdCIsIm1hcCI6WyIuLnJveS4uLllPUlgiLCJTLnJveS4uLllPUlgiLCIuLnJveS4uLllPUlgiXSwiayI6e319";
 const version = (): string => /"([0-9a-f]{16})"/.exec(readFileSync("dist/sw.js", "utf8"))?.[1] ?? "";
 
-const openContext = async (browser: Browser, base = BASE_URL, storage = atLevel(0)): Promise<BrowserContext> => {
-	const context = await browser.newContext({
-		reducedMotion: "reduce",
-		serviceWorkers: "allow",
-		storageState: {
-			cookies: [],
-			origins: [{origin: base, localStorage: Object.entries(storage).map(([name, value]) => ({name, value}))}],
+const openContext = async (browser: Browser, base = BASE_URL, storage = atLevel(0)): Promise<BrowserContext> =>
+{
+	const context = await browser.newContext(
+		{
+			reducedMotion: "reduce",
+			serviceWorkers: "allow",
+			storageState:
+			{
+				cookies: [],
+				origins: [
+					{
+						origin: base,
+						localStorage: Object.entries(storage).map(([name, value]) => (
+						{
+							name,
+							value,
+						})),
+					},
+				],
+			},
 		},
-	});
+	);
 	await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, async (route) => route.abort());
 	return context;
 };
 
 /** Loads the page and waits until its worker has installed, activated and taken control of it. */
-const launch = async (context: BrowserContext, url: string): Promise<Page> => {
+const launch = async (context: BrowserContext, url: string): Promise<Page> =>
+{
 	const page = await context.newPage();
 	const errors: string[] = [];
 	page.on("pageerror", (error) => errors.push(error.message));
@@ -44,37 +64,60 @@ const launch = async (context: BrowserContext, url: string): Promise<Page> => {
 
 const cacheKeys = async (page: Page): Promise<string[]> => page.evaluate(async () => caches.keys());
 
-const roll = async (page: Page, path: string): Promise<void> => {
-	for (const direction of path) {
+const roll = async (page: Page, path: string): Promise<void> =>
+{
+	for (const direction of path)
+	{
 		await page.keyboard.press(KEYS[direction as Direction]);
 		await page.waitForFunction("!S.busy");
 	}
 };
 
-test("the page links a manifest that Chromium reads without errors and can install", async ({browser}) => {
+test("the page links a manifest that Chromium reads without errors and can install", async ({browser}) =>
+{
 	const context = await openContext(browser);
 	const page = await launch(context, `${BASE_URL}/`);
 	const cdp = await context.newCDPSession(page);
-	const manifest = (await cdp.send("Page.getAppManifest", {})) as {url: string; errors: unknown[]; data: string};
-	expect({url: manifest.url, errors: manifest.errors, data: JSON.parse(manifest.data)}).toStrictEqual({
-		url: `${BASE_URL}/manifest.webmanifest`,
-		errors: [],
-		data: MANIFEST,
-	});
-	expect(await cdp.send("Page.getInstallabilityErrors")).toStrictEqual({installabilityErrors: []});
-	const types = await page.evaluate(async (urls) => {
+	const manifest = (await cdp.send("Page.getAppManifest", {})) as
+	{
+		url: string;
+		errors: unknown[];
+		data: string;
+	};
+	expect(
+		{
+			url: manifest.url,
+			errors: manifest.errors,
+			data: JSON.parse(manifest.data),
+		},
+	).toStrictEqual(
+		{
+			url: `${BASE_URL}/manifest.webmanifest`,
+			errors: [],
+			data: MANIFEST,
+		},
+	);
+	expect(await cdp.send("Page.getInstallabilityErrors")).toStrictEqual(
+		{
+			installabilityErrors: [],
+		},
+	);
+	const types = await page.evaluate(async (urls) =>
+	{
 		const found: Record<string, string> = {};
 		for (const url of urls) found[url] = (await fetch(url)).headers.get("content-type") ?? "";
 		return found;
 	}, PRECACHE_URLS);
-	expect(types).toStrictEqual({
-		"/": "text/html; charset=utf-8",
-		"/manifest.webmanifest": "application/manifest+json",
-		"/icons/icon-192.png": "image/png",
-		"/icons/icon-512.png": "image/png",
-		"/icons/icon-maskable-512.png": "image/png",
-		"/icons/apple-touch-icon.png": "image/png",
-	});
+	expect(types).toStrictEqual(
+		{
+			"/": "text/html; charset=utf-8",
+			"/manifest.webmanifest": "application/manifest+json",
+			"/icons/icon-192.png": "image/png",
+			"/icons/icon-512.png": "image/png",
+			"/icons/icon-maskable-512.png": "image/png",
+			"/icons/apple-touch-icon.png": "image/png",
+		},
+	);
 	expect(
 		await page.evaluate(() =>
 			[
@@ -95,7 +138,8 @@ test("the page links a manifest that Chromium reads without errors and can insta
 	await context.close();
 });
 
-test("the worker registers, controls the page and keeps exactly this build's cache", async ({browser}) => {
+test("the worker registers, controls the page and keeps exactly this build's cache", async ({browser}) =>
+{
 	const context = await openContext(browser);
 	const page = await launch(context, `${BASE_URL}/`);
 	expect(await page.evaluate(() => navigator.serviceWorker.controller?.scriptURL)).toBe(`${BASE_URL}/sw.js`);
@@ -109,9 +153,8 @@ test("the worker registers, controls the page and keeps exactly this build's cac
 	await context.close();
 });
 
-test("offline, a reload still plays the campaign, the merge levels, the editor and a shared link", async ({
-	browser,
-}) => {
+test("offline, a reload still plays the campaign, the merge levels, the editor and a shared link", async ({browser}) =>
+{
 	const context = await openContext(browser);
 	const page = await launch(context, `${BASE_URL}/`);
 	await context.setOffline(true);
@@ -148,32 +191,59 @@ test("offline, a reload still plays the campaign, the merge levels, the editor a
 	await context.close();
 });
 
-test.describe("a new deploy", () => {
+test.describe("a new deploy", () =>
+{
 	const port = Number(new URL(BASE_URL).port) + 100;
 	const base = `http://127.0.0.1:${port}`;
 	let site: string;
 	let server: ChildProcess;
 
-	test.beforeEach(async () => {
+	test.beforeEach(async () =>
+	{
 		site = mkdtempSync(join(tmpdir(), "cublitz-deploy-"));
-		cpSync("dist", site, {recursive: true});
-		server = spawn("node", ["tests/browser/harness/serve.ts"], {
-			env: {...process.env, CUBLITZ_DIST_DIR: site, CUBLITZ_PORT: String(port)},
-			stdio: ["ignore", "pipe", "inherit"],
-		});
-		await new Promise<void>((resolve) => {
-			server.stdout?.once("data", () => {
+		cpSync(
+			"dist",
+			site,
+			{
+				recursive: true,
+			},
+		);
+		server = spawn(
+			"node",
+			["tests/browser/harness/serve.ts"],
+			{
+				env:
+				{
+					...process.env,
+					CUBLITZ_DIST_DIR: site,
+					CUBLITZ_PORT: String(port),
+				},
+				stdio: ["ignore", "pipe", "inherit"],
+			},
+		);
+		await new Promise<void>((resolve) =>
+		{
+			server.stdout?.once("data", () =>
+			{
 				resolve();
 			});
 		});
 	});
 
-	test.afterEach(() => {
+	test.afterEach(() =>
+	{
 		server.kill();
-		rmSync(site, {recursive: true, force: true});
+		rmSync(
+			site,
+			{
+				recursive: true,
+				force: true,
+			},
+		);
 	});
 
-	test("shows on the next launch, and its worker replaces the old cache", async ({browser}) => {
+	test("shows on the next launch, and its worker replaces the old cache", async ({browser}) =>
+	{
 		const context = await openContext(browser, base);
 		const page = await launch(context, `${base}/`);
 		await expect(page).toHaveTitle("Cublitz");
@@ -181,7 +251,8 @@ test.describe("a new deploy", () => {
 		const next = "0123456789abcdef";
 		expect(await cacheKeys(page)).toStrictEqual([cacheName(old)]);
 
-		const deploy = (file: string, from: string, to: string): void => {
+		const deploy = (file: string, from: string, to: string): void =>
+		{
 			const text = readFileSync(join(site, file), "utf8");
 			expect(text.split(from).length).toBe(2);
 			writeFileSync(join(site, file), text.replace(from, to));
@@ -203,34 +274,59 @@ test.describe("a new deploy", () => {
 
 // Standalone on a notched phone draws the page under the status bar and the home indicator, so the safe area is all
 // the game can use. Chromium's inset override stands in for the notch; it cannot show what iOS itself draws there.
-const INSETS = {
-	portrait: {top: 47, bottom: 34, left: 0, right: 0},
-	landscape: {top: 0, bottom: 21, left: 47, right: 47},
+const INSETS =
+{
+	portrait:
+	{
+		top: 47,
+		bottom: 34,
+		left: 0,
+		right: 0,
+	},
+	landscape:
+	{
+		top: 0,
+		bottom: 21,
+		left: 47,
+		right: 47,
+	},
 };
 const DOCK = ["#dpad button", "#undoBtn", "#resetBtn", "#hintBtn", "#moves", "#par", "#menuBtn"];
 
-for (const screen of SCREENS) {
-	test(`${screen.name}: standalone keeps the phone layout inside the safe area`, async ({browser}) => {
+for (const screen of SCREENS)
+{
+	test(`${screen.name}: standalone keeps the phone layout inside the safe area`, async ({browser}) =>
+	{
 		const {context, page, cdp} = await openPhone(browser, screen);
 		const insets = screen.width > screen.height ? INSETS.landscape : INSETS.portrait;
-		await cdp.send("Emulation.setSafeAreaInsetsOverride", {insets});
+		await cdp.send(
+			"Emulation.setSafeAreaInsetsOverride",
+			{
+				insets,
+			},
+		);
 		await page.evaluate(() => window.dispatchEvent(new Event("resize")));
 		await page.locator("#titlePlay").tap();
 		const report: Record<string, unknown> = {};
-		for (const label of ["1", "16", "30", "M1"]) {
+		for (const label of ["1", "16", "30", "M1"])
+		{
 			await openFromMenu(page, label);
-			report[label] = {
+			report[label] =
+			{
 				unreachable: await unreachable(page, DOCK),
 				unsafe: await page.evaluate(
-					({selectors, inset}) => {
-						const safe = {
+					({selectors, inset}) =>
+					{
+						const safe =
+						{
 							left: inset.left,
 							top: inset.top,
 							right: innerWidth - inset.right,
 							bottom: innerHeight - inset.bottom,
 						};
 						return [...document.querySelectorAll(selectors.join(", "))]
-							.filter((el) => {
+							.filter((el) =>
+							{
 								const r = el.getBoundingClientRect();
 								return (
 									r.left < safe.left - 0.5 ||
@@ -241,13 +337,31 @@ for (const screen of SCREENS) {
 							})
 							.map((el) => el.id || el.className || el.textContent);
 					},
-					{selectors: [...DOCK, "#board .tile"], inset: insets},
+					{
+						selectors: [...DOCK, "#board .tile"],
+						inset: insets,
+					},
 				),
 			};
 		}
-		await page.screenshot({path: test.info().outputPath("standalone.png")});
-		const clean = {unreachable: [], unsafe: []};
-		expect(report).toStrictEqual({"1": clean, "16": clean, "30": clean, M1: clean});
+		await page.screenshot(
+			{
+				path: test.info().outputPath("standalone.png"),
+			},
+		);
+		const clean =
+		{
+			unreachable: [],
+			unsafe: [],
+		};
+		expect(report).toStrictEqual(
+			{
+				"1": clean,
+				"16": clean,
+				"30": clean,
+				M1: clean,
+			},
+		);
 		await context.close();
 	});
 }

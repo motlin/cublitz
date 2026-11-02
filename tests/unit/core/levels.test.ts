@@ -12,8 +12,10 @@ const golden = readSolveGolden("solve-post-fix.json");
 const STINKLEY_TINKLES_CODE =
 	"CUBLITZ:eyJuYW1lIjoiU3RpbmtsZXkgdGlua2xlcyIsIm1hcCI6WyIxMTEyLi4uLi4uLi4iLCIxLi4xMTExMTExLi4iLCJTLnJaMzQuLi4uLjEiLCIxLi4xMTE1MS4xLjEiLCIxMS4xMTEuMS4uLjEiLCIxMTYxMTFYMTExMTEiXSwiayI6eyIxIjpbImJveCIsImMiXSwiMiI6WyJidXR0b24iLCJ3Il0sIjMiOlsiZG9vciIsInIiXSwiNCI6WyJib3giLCJ3Il0sIjUiOlsiZG9vciIsInciXSwiNiI6WyJzd2l0Y2giLCJyIl19fQ==";
 
-describe("LEVELS", () => {
-	const solved = LEVELS.map((level, index) => {
+describe("LEVELS", () =>
+{
+	const solved = LEVELS.map((level, index) =>
+	{
 		const path = solve(level, initState(level));
 		return {
 			index,
@@ -24,18 +26,21 @@ describe("LEVELS", () => {
 		};
 	});
 
-	it("is the original's data with the intentional divergences applied, parsed, with the same key order", () => {
+	it("is the original's data with the intentional divergences applied, parsed, with the same key order", () =>
+	{
 		expect(JSON.stringify(LEVELS)).toBe(JSON.stringify(loadExpectedEngine().LEVELS));
 	});
 
-	it("plays Crown fifth and Checkpoints sixth, the reverse of the original", () => {
+	it("plays Crown fifth and Checkpoints sixth, the reverse of the original", () =>
+	{
 		expect([4, 5].map((index) => [LEVELS[index]?.name, LEVELS[index]?.par])).toStrictEqual([
 			["Crown", 17],
 			["Checkpoints", 19],
 		]);
 	});
 
-	it("plays the user's Stinkley tinkles last, after Clean Sweep, with the solver's shortest move count as par", () => {
+	it("plays the user's Stinkley tinkles last, after Clean Sweep, with the solver's shortest move count as par", () =>
+	{
 		const last = LEVELS.slice(-2).map((level) => [level.name, level.par]);
 		expect(last).toStrictEqual([
 			["Clean Sweep", 40],
@@ -43,12 +48,22 @@ describe("LEVELS", () => {
 		]);
 	});
 
-	it("keeps the user's name, map and legend exactly, so the level encodes back to the user's share code", () => {
+	it("keeps the user's name, map and legend exactly, so the level encodes back to the user's share code", () =>
+	{
 		const {name, map, k} = LEVELS.find((level) => level.name === "Stinkley tinkles")!;
-		expect(encodeLevel({name: name!, map, k: k!})).toBe(STINKLEY_TINKLES_CODE);
+		expect(
+			encodeLevel(
+				{
+					name: name!,
+					map,
+					k: k!,
+				},
+			),
+		).toBe(STINKLEY_TINKLES_CODE);
 	});
 
-	it("has Two Sides say what is true of that level, which has no paint remover", () => {
+	it("has Two Sides say what is true of that level, which has no paint remover", () =>
+	{
 		const twoSides = LEVELS[22];
 		expect([twoSides?.name, twoSides?.tip]).toStrictEqual([
 			"Two Sides",
@@ -57,7 +72,8 @@ describe("LEVELS", () => {
 		expect(twoSides?.map.join("").includes("Z")).toBe(false);
 	});
 
-	it("has the reworded tips on Prism, Two Rooms, Ladder, Spectrum, Blank Slate and Eastern Window", () => {
+	it("has the reworded tips on Prism, Two Rooms, Ladder, Spectrum, Blank Slate and Eastern Window", () =>
+	{
 		expect([7, 14, 16, 17, 20, 21].map((index) => [LEVELS[index]?.name, LEVELS[index]?.tip])).toStrictEqual([
 			["Prism", "Clear a red gate and a blue wall, then finish with green on top and blue facing north."],
 			[
@@ -80,11 +96,13 @@ describe("LEVELS", () => {
 		]);
 	});
 
-	it("solves every level to the golden result", () => {
+	it("solves every level to the golden result", () =>
+	{
 		expect(solved).toStrictEqual(golden);
 	});
 
-	it("has a shortest solution of exactly par on every level", () => {
+	it("has a shortest solution of exactly par on every level", () =>
+	{
 		expect(solved.map((entry) => entry.path?.length)).toStrictEqual(LEVELS.map((level) => level.par));
 	});
 });

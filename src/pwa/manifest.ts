@@ -3,9 +3,16 @@
 // are the game's --ground, so the splash screen and status bar match the page.
 const GROUND = "#161923";
 
-type Icon = {src: string; sizes: string; type: "image/png"; purpose: "any" | "maskable"};
+type Icon =
+{
+	src: string;
+	sizes: string;
+	type: "image/png";
+	purpose: "any" | "maskable";
+};
 
-export const MANIFEST = {
+export const MANIFEST =
+{
 	id: "/",
 	name: "Cublitz",
 	short_name: "Cublitz",
@@ -17,9 +24,24 @@ export const MANIFEST = {
 	background_color: GROUND,
 	theme_color: GROUND,
 	icons: [
-		{src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any"},
-		{src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any"},
-		{src: "/icons/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable"},
+		{
+			src: "/icons/icon-192.png",
+			sizes: "192x192",
+			type: "image/png",
+			purpose: "any",
+		},
+		{
+			src: "/icons/icon-512.png",
+			sizes: "512x512",
+			type: "image/png",
+			purpose: "any",
+		},
+		{
+			src: "/icons/icon-maskable-512.png",
+			sizes: "512x512",
+			type: "image/png",
+			purpose: "maskable",
+		},
 	] satisfies Icon[],
 };
 

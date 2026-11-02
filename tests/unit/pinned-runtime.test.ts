@@ -6,7 +6,8 @@ import {pinnedNodeVersion} from "../support/pinned-node.ts";
 // holds on the pinned Node. Local runs skip that golden on another Node; CI must never skip it, so CI enforces the pin.
 it.runIf(process.env["CI"])(
 	"runs on the pinned Node in CI, so the original's generated-level golden is never skipped",
-	() => {
+	() =>
+	{
 		expect(process.version).toBe(pinnedNodeVersion);
 	},
 );

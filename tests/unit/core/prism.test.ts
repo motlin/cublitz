@@ -3,18 +3,43 @@ import {blank} from "../../../src/core/cube.ts";
 import {landingTiles} from "../../../src/core/prism.ts";
 import type {State, Unit} from "../../../src/core/types.ts";
 
-const block = (cubes: [number, number, number][]): State => {
-	const units: Unit[] = cubes.map(([x, y, z]) => ({x, y, z, f: blank()}));
-	return {x: units[0]!.x, y: units[0]!.y, f: blank(), boxes: [], sw: [], units, loose: []};
+const block = (cubes: [number, number, number][]): State =>
+{
+	const units: Unit[] = cubes.map(([x, y, z]) => (
+	{
+		x,
+		y,
+		z,
+		f: blank(),
+	}));
+	return {
+		x: units[0]!.x,
+		y: units[0]!.y,
+		f: blank(),
+		boxes: [],
+		sw: [],
+		units,
+		loose: [],
+	};
 };
 
-describe("landingTiles", () => {
-	it("marks the cell next to a single cube", () => {
-		const single: State = {x: 3, y: 3, f: blank(), boxes: [], sw: []};
+describe("landingTiles", () =>
+{
+	it("marks the cell next to a single cube", () =>
+	{
+		const single: State =
+		{
+			x: 3,
+			y: 3,
+			f: blank(),
+			boxes: [],
+			sw: [],
+		};
 		expect([landingTiles(single, "E"), landingTiles(single, "N")]).toStrictEqual([[[4, 3]], [[3, 2]]]);
 	});
 
-	it("lays a standing tower down along the swipe", () => {
+	it("lays a standing tower down along the swipe", () =>
+	{
 		expect([
 			landingTiles(
 				block([
@@ -55,7 +80,8 @@ describe("landingTiles", () => {
 		]);
 	});
 
-	it("stands a block lying along the swipe up on one cell, and slides one lying across it", () => {
+	it("stands a block lying along the swipe up on one cell, and slides one lying across it", () =>
+	{
 		expect([
 			landingTiles(
 				block([

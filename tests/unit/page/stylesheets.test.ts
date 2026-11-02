@@ -5,13 +5,15 @@ import {inlineStylesheets, plainRegionComments} from "../../../scripts/single-fi
 const read = (path: string): string => readFileSync(new URL(`../../../${path}`, import.meta.url), "utf8");
 const withoutScript = (html: string): string => html.replace(/<script\b[\s\S]*<\/script>/, "<script>");
 
-test("the stylesheets put the page back to the original, byte for byte outside the script", () => {
+test("the stylesheets put the page back to the original, byte for byte outside the script", () =>
+{
 	expect(withoutScript(inlineStylesheets(read("index.html"), read))).toBe(
 		withoutScript(read("legacy/original.html")),
 	);
 });
 
-test("the bundler's region comments become the plain path comments the page has always shipped", () => {
+test("the bundler's region comments become the plain path comments the page has always shipped", () =>
+{
 	const chunk = [
 		"var FIRST = 1;",
 		"//#region src/core/cube.ts",
@@ -34,11 +36,13 @@ test("the bundler's region comments become the plain path comments the page has 
 	);
 });
 
-test("the page source keeps its CSS only in the stylesheets", () => {
+test("the page source keeps its CSS only in the stylesheets", () =>
+{
 	expect(read("index.html").includes("<style")).toBe(false);
 });
 
-test("a page that lost a stylesheet tag is refused", () => {
+test("a page that lost a stylesheet tag is refused", () =>
+{
 	expect(() => inlineStylesheets("<html></html>", read)).toThrow(
 		'<link rel="stylesheet" href="/src/styles/reset.css"> must occur exactly once',
 	);

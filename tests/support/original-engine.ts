@@ -1,6 +1,7 @@
 import {readExpectedHtml, readOriginalHtml} from "./intentional-divergences.ts";
 
-export type LevelSource = {
+export type LevelSource =
+{
 	map: string[];
 	name?: string;
 	tip?: string;
@@ -8,9 +9,21 @@ export type LevelSource = {
 	k?: Record<string, [string, string]>;
 	need?: Record<string, string>;
 };
-export type Level = LevelSource & {cols: number; rows: number};
-export type State = {x: number; y: number; f: Record<string, string>; boxes: unknown[]; sw: number[]};
-export type MoveResult = {
+export type Level = LevelSource &
+{
+	cols: number;
+	rows: number;
+};
+export type State =
+{
+	x: number;
+	y: number;
+	f: Record<string, string>;
+	boxes: unknown[];
+	sw: number[];
+};
+export type MoveResult =
+{
 	ok: boolean;
 	why?: string;
 	st?: State;
@@ -18,15 +31,24 @@ export type MoveResult = {
 	won?: boolean;
 	[detail: string]: unknown;
 };
-export type GeneratedLevel = LevelSource & {name: string; inf: number; par: number};
+export type GeneratedLevel = LevelSource &
+{
+	name: string;
+	inf: number;
+	par: number;
+};
 export type Milestone = Record<string, unknown>;
-export type OriginalEngine = {
+export type OriginalEngine =
+{
 	LEVELS: Level[];
 	parseLevel: (source: LevelSource) => Level;
 	initState: (level: Level) => State;
 	tryMove: (level: Level, state: State, direction: string) => MoveResult;
 	stateKey: (state: State) => string;
-	solve: ((level: Level, state: State, limit?: number) => string | null) & {hitLimit: boolean};
+	solve: ((level: Level, state: State, limit?: number) => string | null) &
+	{
+		hitLimit: boolean;
+	};
 	generateInfinite: (seed: number, n: number) => GeneratedLevel;
 	roll: (faces: Record<string, string>, direction: string) => Record<string, string>;
 	solidColor: (faces: Record<string, string>) => string;
@@ -43,7 +65,8 @@ export type OriginalEngine = {
 	infRank: (run: {effs: number[]}) => string;
 };
 
-const between = (text: string, from: string, to: string): string => {
+const between = (text: string, from: string, to: string): string =>
+{
 	const start = text.indexOf(from);
 	const end = text.indexOf(to, start);
 	if (start < 0 || end < 0) throw new Error(`Could not find ${from} .. ${to} in legacy/original.html`);
@@ -57,11 +80,13 @@ export const loadOriginalEngine = (): OriginalEngine => engineFrom(readOriginalH
 export const loadExpectedEngine = (): OriginalEngine => engineFrom(readExpectedHtml());
 
 // genInf yields to the browser between batches of tries; here the next batch can simply run.
-const runNow = (step: () => void): void => {
+const runNow = (step: () => void): void =>
+{
 	step();
 };
 
-function engineFrom(html: string): OriginalEngine {
+function engineFrom(html: string): OriginalEngine
+{
 	const source = [
 		between(html, "const LEVELS = [", "const COLORS = {"),
 		between(html, "const CNAME = {", "const ROT = {"),

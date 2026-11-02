@@ -11,16 +11,23 @@ import {solState} from "./solution.ts";
 // Hint and solution markers drawn on a flat layer above the 3D board
 // Markers used to live on the tiles themselves, so the cube, boxes and doors could hide them.
 // Now each tile center is projected to the screen and markers are drawn over everything.
-type Point = {x: number; y: number};
+type Point =
+{
+	x: number;
+	y: number;
+};
 
 let probes: HTMLElement[][] = [];
 let ovRaf = 0;
 
-export function buildProbes(L: Level, c: number): void {
+export function buildProbes(L: Level, c: number): void
+{
 	probes = [];
-	for (let y = 0; y < L.rows; y++) {
+	for (let y = 0; y < L.rows; y++)
+	{
 		probes[y] = [];
-		for (let x = 0; x < L.cols; x++) {
+		for (let x = 0; x < L.cols; x++)
+		{
 			const p = document.createElement("i");
 			p.className = "probe";
 			p.style.left = x * c + c / 2 + "px";
@@ -30,30 +37,41 @@ export function buildProbes(L: Level, c: number): void {
 		}
 	}
 }
-function projector() {
+function projector()
+{
 	const vr = $("viewport").getBoundingClientRect();
 	const cache = new Map<string, Point>();
-	const at = (x: number, y: number): Point | null => {
+	const at = (x: number, y: number): Point | null =>
+	{
 		const k = x + "," + y;
 		if (cache.has(k)) return cache.get(k)!;
 		const p = probes[y]?.[x];
 		if (!p) return null;
 		const r = p.getBoundingClientRect();
-		const v = {x: r.left - vr.left, y: r.top - vr.top};
+		const v =
+		{
+			x: r.left - vr.left,
+			y: r.top - vr.top,
+		};
 		cache.set(k, v);
 		return v;
 	};
 	// on-screen size of one tile near (x, y)
-	const size = (x: number, y: number): number => {
+	const size = (x: number, y: number): number =>
+	{
 		const a = at(x, y)!,
 			b = at(x + 1, y) || at(x - 1, y),
 			d = at(x, y + 1) || at(x, y - 1);
 		const s = [b, d].filter((q) => q !== null).map((q) => Math.hypot(q.x - a.x, q.y - a.y));
 		return s.length ? Math.max(...s) : C();
 	};
-	return {at, size};
+	return {
+		at,
+		size,
+	};
 }
-function ovEl(cls: string, p: Point, s: number, html?: string): HTMLElement {
+function ovEl(cls: string, p: Point, s: number, html?: string): HTMLElement
+{
 	const el = document.createElement("div");
 	el.className = "ov " + cls;
 	el.style.left = p.x + "px";
@@ -63,7 +81,8 @@ function ovEl(cls: string, p: Point, s: number, html?: string): HTMLElement {
 	$("ovl").appendChild(el);
 	return el;
 }
-function drawOverlays(): void {
+function drawOverlays(): void
+{
 	const layer = $("ovl");
 	if (!layer) return;
 	layer.innerHTML = "";
@@ -71,37 +90,61 @@ function drawOverlays(): void {
 	const P = projector(),
 		L = S.L;
 	// Hint: highlight rings, plus the numbered route on tier 3
-	if (hintState) {
+	if (hintState)
+	{
 		const {m, tier} = hintState,
 			rings: [number, number][] = [];
-		if (m.type === "solid") {
+		if (m.type === "solid")
+		{
 			for (let y = 0; y < L.rows; y++)
-				for (let x = 0; x < L.cols; x++) {
+				for (let x = 0; x < L.cols; x++)
+				{
 					const c = L.cells[y]![x];
 					if (c?.t === "paint" && c.c === m.c) rings.push([x, y]);
 				}
-		} else rings.push([m.x, m.y]);
-		if (m.type === "button") {
+		}
+		else rings.push([m.x, m.y]);
+		if (m.type === "button")
+		{
 			const b = S.st.boxes[m.box]!;
 			rings.push([b.x, b.y]);
 		}
-		rings.forEach(([x, y]) => {
+		rings.forEach(([x, y]) =>
+		{
 			const p = P.at(x, y);
 			if (p) ovEl("ov-ring", p, P.size(x, y));
 		});
-		if (tier >= 3 && hintState.at === S.st) {
+		if (tier >= 3 && hintState.at === S.st)
+		{
 			const landings = S.st.units ? blockLandings(S.L, S.st, m.path) : null;
 			let x = S.st.x,
 				y = S.st.y;
-			const steps = new Map<string, {x: number; y: number; n: number[]}>();
-			Array.from(m.path).forEach((d, i) => {
+			const steps = new Map<
+				string,
+				{
+					x: number;
+					y: number;
+					n: number[];
+				}
+			>();
+			Array.from(m.path).forEach((d, i) =>
+			{
 				x = landings ? landings[i]![0] : x + DIRS[d as Direction][0];
 				y = landings ? landings[i]![1] : y + DIRS[d as Direction][1];
 				const k = x + "," + y;
-				if (!steps.has(k)) steps.set(k, {x, y, n: []});
+				if (!steps.has(k))
+					steps.set(
+						k,
+						{
+							x,
+							y,
+							n: [],
+						},
+					);
 				steps.get(k)!.n.push(i + 1);
 			});
-			steps.forEach(({x: stepX, y: stepY, n}) => {
+			steps.forEach(({x: stepX, y: stepY, n}) =>
+			{
 				const p = P.at(stepX, stepY);
 				if (p)
 					ovEl(
@@ -114,13 +157,26 @@ function drawOverlays(): void {
 		}
 	}
 	// Solution: arrows on the tile each roll lands on, pointing the way you roll
-	if (solState?.path) {
+	if (solState?.path)
+	{
 		const {path, revealed} = solState,
-			cells = new Map<string, {x: number; y: number; steps: {n: number; ang: number}[]}>(),
+			cells = new Map<
+				string,
+				{
+					x: number;
+					y: number;
+					steps:
+					{
+						n: number;
+						ang: number;
+					}[];
+				}
+			>(),
 			landings = S.st.units ? blockLandings(S.L, S.st, path.slice(0, revealed)) : null;
 		let x = S.st.x,
 			y = S.st.y;
-		for (let i = 0; i < revealed; i++) {
+		for (let i = 0; i < revealed; i++)
+		{
 			const d = path[i] as Direction,
 				px = x,
 				py = y;
@@ -132,10 +188,24 @@ function drawOverlays(): void {
 			const c = landings ? b : P.at(x, y);
 			const ang = a && c ? (Math.atan2(c.y - a.y, c.x - a.x) * 180) / Math.PI : 0;
 			const k = x + "," + y;
-			if (!cells.has(k)) cells.set(k, {x, y, steps: []});
-			cells.get(k)!.steps.push({n: i + 1, ang});
+			if (!cells.has(k))
+				cells.set(
+					k,
+					{
+						x,
+						y,
+						steps: [],
+					},
+				);
+			cells.get(k)!.steps.push(
+				{
+					n: i + 1,
+					ang,
+				},
+			);
 		}
-		cells.forEach(({x: landingX, y: landingY, steps}) => {
+		cells.forEach(({x: landingX, y: landingY, steps}) =>
+		{
 			const p = P.at(landingX, landingY);
 			if (!p) return;
 			ovEl(
@@ -153,23 +223,30 @@ function drawOverlays(): void {
 	}
 }
 /** Where each press of a path puts a block: a roll can carry it more than one cell, and a merge not at all. */
-function blockLandings(L: Level, st0: State, path: string): [number, number][] {
+function blockLandings(L: Level, st0: State, path: string): [number, number][]
+{
 	let st = st0;
-	return Array.from(path).map((d) => {
+	return Array.from(path).map((d) =>
+	{
 		const r = tryMove(L, st, d as Direction);
 		if (!r.ok) return [st.x, st.y];
 		st = r.st;
 		return [r.nx, r.ny];
 	});
 }
-export function scheduleOverlays(): void {
+export function scheduleOverlays(): void
+{
 	cancelAnimationFrame(ovRaf);
 	ovRaf = requestAnimationFrame(drawOverlays);
 }
-export function initOverlays(): void {
-	try {
+export function initOverlays(): void
+{
+	try
+	{
 		new ResizeObserver(scheduleOverlays).observe($("viewport"));
-	} catch {
+	}
+	catch
+	{
 		// Without ResizeObserver the markers just wait for the next redraw.
 	}
 }

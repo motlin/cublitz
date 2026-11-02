@@ -23,9 +23,9 @@ lint: install
 # Run formatter
 format: install
     pre-commit run just-fmt --all-files
-    vp fmt {{ if ci != "" { "--check" } else { "" } }}
+    oxfmt-next-line {{ if ci != "" { "--check" } else { "" } }}
 
-# Run checks (format + lint + typecheck) and confirm the legacy artifact is untouched
+# Run checks (lint + typecheck; formatting is `just format`) and confirm the legacy artifact is untouched
 check *args: install
     vp run --cache check {{ if ci != "" { "" } else { "--fix" } }} {{ args }}
     node scripts/verify-legacy.ts

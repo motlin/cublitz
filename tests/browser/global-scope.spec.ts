@@ -29,9 +29,13 @@ const DESCRIBE = `(() => {
 	return read;
 })()`;
 
-const lexicalNames = async (page: Page): Promise<string[]> => {
+const lexicalNames = async (page: Page): Promise<string[]> =>
+{
 	const session = await page.context().newCDPSession(page);
-	const {names} = (await session.send("Runtime.globalLexicalScopeNames" as never)) as unknown as {names: string[]};
+	const {names} = (await session.send("Runtime.globalLexicalScopeNames" as never)) as unknown as
+	{
+		names: string[];
+	};
 	return names.toSorted();
 };
 
@@ -41,7 +45,8 @@ const WINDOW_SURFACE = `Object.getOwnPropertyNames(window).map((name) => {
 	return [name, writable, enumerable, configurable, typeof value];
 })`;
 
-const expectSameScope = async (pair: Pair, name: string): Promise<void> => {
+const expectSameScope = async (pair: Pair, name: string): Promise<void> =>
+{
 	const [legacyWindow, distWindow] = await Promise.all(pair.pages.map(async (page) => page.evaluate(WINDOW_SURFACE)));
 	expect(distWindow, `${name}: window`).toStrictEqual(legacyWindow);
 	const [legacyLexical, distLexical] = await Promise.all(pair.pages.map(lexicalNames));
@@ -52,19 +57,29 @@ const expectSameScope = async (pair: Pair, name: string): Promise<void> => {
 
 test("the page's global scope is the original's, on window and as lexical names, through a session", async ({
 	browser,
-}) => {
-	await withPair(browser, {storage: atLevel(1)}, async (pair) => {
-		await expectSameScope(pair, "at load");
-		await pair.click("#titlePlay");
-		await pair.press("ArrowRight");
-		await expectSameScope(pair, "in play");
-		await pair.click("#modeEdit");
-		await expectSameScope(pair, "in the editor");
-	});
+}) =>
+{
+	await withPair(
+		browser,
+		{
+			storage: atLevel(1),
+		},
+		async (pair) =>
+		{
+			await expectSameScope(pair, "at load");
+			await pair.click("#titlePlay");
+			await pair.press("ArrowRight");
+			await expectSameScope(pair, "in play");
+			await pair.click("#modeEdit");
+			await expectSameScope(pair, "in the editor");
+		},
+	);
 });
 
-test("the scope's probes see what the reports saw: LEVELS and S are lexical and mine is on window", async ({page}) => {
-	for (const path of [LEGACY_PATH, DIST_PATH]) {
+test("the scope's probes see what the reports saw: LEVELS and S are lexical and mine is on window", async ({page}) =>
+{
+	for (const path of [LEGACY_PATH, DIST_PATH])
+	{
 		await page.goto(BASE_URL + path);
 		const seen = await page.evaluate(
 			`[typeof window.LEVELS, typeof window.S, typeof window.mine, typeof window.saveDraft, typeof window.write, typeof LEVELS, typeof S]`,
@@ -73,53 +88,95 @@ test("the scope's probes see what the reports saw: LEVELS and S are lexical and 
 	}
 });
 
-test("uncaught errors read the same when a saved run is malformed", async ({browser}) => {
-	const storage = {...atLevel(1), "cublitz-infinite-run-v1": '{"seed":1,"n":2.5,"effs":"abc","score":0}'};
-	await withPair(browser, {storage}, async (pair) => {
-		await pair.click("#titleInf");
-		const skipped = await pair.step("skip throws", async (page) =>
-			page.evaluate(() => document.getElementById("infSkip")?.click()),
-		);
-		expect(skipped.errors).toStrictEqual([
-			"error: Uncaught TypeError: last.reduce is not a function",
-			"error: Uncaught TypeError: run.effs.push is not a function",
-		]);
-	});
+test("uncaught errors read the same when a saved run is malformed", async ({browser}) =>
+{
+	const storage =
+	{
+		...atLevel(1),
+		"cublitz-infinite-run-v1": '{"seed":1,"n":2.5,"effs":"abc","score":0}',
+	};
+	await withPair(
+		browser,
+		{
+			storage,
+		},
+		async (pair) =>
+		{
+			await pair.click("#titleInf");
+			const skipped = await pair.step("skip throws", async (page) =>
+				page.evaluate(() => document.getElementById("infSkip")?.click()),
+			);
+			expect(skipped.errors).toStrictEqual([
+				"error: Uncaught TypeError: last.reduce is not a function",
+				"error: Uncaught TypeError: run.effs.push is not a function",
+			]);
+		},
+	);
 });
 
 const HOT_SHAPES: [string, () => void, string[]][] = [
 	[
 		"ready is not a function",
-		() => {
-			window.claude = {hot: {ready: 1}} as never;
+		() =>
+		{
+			window.claude =
+			{
+				hot:
+				{
+					ready: 1,
+				},
+			} as never;
 		},
 		["error: Uncaught TypeError: window.claude.hot.ready is not a function"],
 	],
 	[
 		"snapshot is not a function",
-		() => {
-			window.claude = {hot: {snapshot: 1}} as never;
+		() =>
+		{
+			window.claude =
+			{
+				hot:
+				{
+					snapshot: 1,
+				},
+			} as never;
 		},
 		["error: Uncaught TypeError: window.claude?.hot?.snapshot is not a function"],
 	],
 	[
 		"reading window.claude throws",
-		() => {
-			Object.defineProperty(window, "claude", {
-				get() {
-					throw new RangeError("no hooks here");
+		() =>
+		{
+			Object.defineProperty(
+				window,
+				"claude",
+				{
+					get()
+					{
+						throw new RangeError("no hooks here");
+					},
 				},
-			});
+			);
 		},
 		["error: Uncaught RangeError: no hooks here"],
 	],
 	[
 		"the hooks vanish after two reads",
-		() => {
+		() =>
+		{
 			let reads = 0;
-			window.claude = {
-				get hot() {
-					return ++reads <= 2 ? {ready: () => {}} : null;
+			window.claude =
+			{
+				get hot()
+				{
+					return ++reads <= 2
+						?
+							{
+								ready: () =>
+								{
+								},
+							}
+						: null;
 				},
 			} as never;
 		},
@@ -127,30 +184,69 @@ const HOT_SHAPES: [string, () => void, string[]][] = [
 	],
 ];
 
-for (const [name, setup, errors] of HOT_SHAPES) {
-	test(`window.claude.hot misbehaving: ${name}`, async ({browser}) => {
-		await withPair(browser, {storage: atLevel(2), setup}, async (pair) => {
-			expect(pair.last.errors).toStrictEqual(errors);
-			await expectSameScope(pair, "after the boot error");
-		});
+for (const [name, setup, errors] of HOT_SHAPES)
+{
+	test(`window.claude.hot misbehaving: ${name}`, async ({browser}) =>
+	{
+		await withPair(
+			browser,
+			{
+				storage: atLevel(2),
+				setup,
+			},
+			async (pair) =>
+			{
+				expect(pair.last.errors).toStrictEqual(errors);
+				await expectSameScope(pair, "after the boot error");
+			},
+		);
 	});
 }
 
-test("window.claude.hot is read as many times as the original reads it", async ({browser}) => {
-	const setup = (): void => {
-		const counts = {hot: 0};
-		(window as unknown as {__counts: unknown}).__counts = counts;
-		window.claude = {
-			get hot() {
+test("window.claude.hot is read as many times as the original reads it", async ({browser}) =>
+{
+	const setup = (): void =>
+	{
+		const counts =
+		{
+			hot: 0,
+		};
+		(
+			window as unknown as
+			{
+				__counts: unknown;
+			}
+		).__counts = counts;
+		window.claude =
+		{
+			get hot()
+			{
 				counts.hot++;
 				return {};
 			},
 		};
 	};
-	await withPair(browser, {setup}, async (pair) => {
-		const [legacy, dist] = await Promise.all(
-			pair.pages.map(async (page) => page.evaluate(() => (window as unknown as {__counts: unknown}).__counts)),
-		);
-		expect(dist).toStrictEqual(legacy);
-	});
+	await withPair(
+		browser,
+		{
+			setup,
+		},
+		async (pair) =>
+		{
+			const [legacy, dist] = await Promise.all(
+				pair.pages.map(async (page) =>
+					page.evaluate(
+						() =>
+							(
+								window as unknown as
+								{
+									__counts: unknown;
+								}
+							).__counts,
+					),
+				),
+			);
+			expect(dist).toStrictEqual(legacy);
+		},
+	);
 });

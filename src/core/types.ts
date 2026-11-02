@@ -11,15 +11,49 @@ export type PieceColor = Paint | "w";
 export type FaceColor = Paint | "";
 export type Faces = Record<Face, FaceColor>;
 
-export type FloorCell = {t: "floor"};
-export type GoalCell = {t: "goal"};
-export type WashCell = {t: "wash"};
-export type WhiteGateCell = {t: "wgate"; f: Face};
-export type PaintCell = {t: "paint"; c: Paint};
-export type GateCell = {t: "gate"; c: Paint};
-export type SwitchCell = {t: "switch"; c: PieceColor; i: number};
-export type ButtonCell = {t: "button"; c: PieceColor};
-export type DoorCell = {t: "door"; c: PieceColor};
+export type FloorCell =
+{
+	t: "floor";
+};
+export type GoalCell =
+{
+	t: "goal";
+};
+export type WashCell =
+{
+	t: "wash";
+};
+export type WhiteGateCell =
+{
+	t: "wgate";
+	f: Face;
+};
+export type PaintCell =
+{
+	t: "paint";
+	c: Paint;
+};
+export type GateCell =
+{
+	t: "gate";
+	c: Paint;
+};
+export type SwitchCell =
+{
+	t: "switch";
+	c: PieceColor;
+	i: number;
+};
+export type ButtonCell =
+{
+	t: "button";
+	c: PieceColor;
+};
+export type DoorCell =
+{
+	t: "door";
+	c: PieceColor;
+};
 export type Cell =
 	| FloorCell
 	| GoalCell
@@ -36,7 +70,8 @@ export type LegendEntry = ["wgate", Face] | ["box" | "switch" | "button" | "door
 export type Legend = Record<string, LegendEntry>;
 export type Need = Partial<Record<Face, Paint>>;
 
-export type LevelSource = {
+export type LevelSource =
+{
 	map: string[];
 	name?: string;
 	tip?: string;
@@ -46,15 +81,30 @@ export type LevelSource = {
 	inf?: number;
 };
 
-export type Box = {x: number; y: number; c: PieceColor};
-export type BoardSwitch = {x: number; y: number; c: PieceColor};
+export type Box =
+{
+	x: number;
+	y: number;
+	c: PieceColor;
+};
+export type BoardSwitch =
+{
+	x: number;
+	y: number;
+	c: PieceColor;
+};
 
 /** A level after parseLevel. sx and sy stay unset at runtime on a share code whose map has no 'S'. */
-export type Level = LevelSource & {
+export type Level = LevelSource &
+{
 	cells: (Cell | null)[][];
 	boxes0: Box[];
 	/** Loose cubes the player can merge with. Only a level whose legend has a cube gets this. */
-	cubes0?: {x: number; y: number}[];
+	cubes0?:
+	{
+		x: number;
+		y: number;
+	}[];
 	switches: BoardSwitch[];
 	cols: number;
 	rows: number;
@@ -63,12 +113,24 @@ export type Level = LevelSource & {
 };
 
 /** One cube of a merged block, with z counted up from the floor. */
-export type Unit = {x: number; y: number; z: number; f: Faces};
-export type LooseCube = {x: number; y: number; f: Faces};
+export type Unit =
+{
+	x: number;
+	y: number;
+	z: number;
+	f: Faces;
+};
+export type LooseCube =
+{
+	x: number;
+	y: number;
+	f: Faces;
+};
 /**
  * units and loose appear only on a level with loose cubes, and then x, y and f mirror the first unit.
  */
-export type State = {
+export type State =
+{
 	x: number;
 	y: number;
 	f: Faces;
@@ -79,17 +141,54 @@ export type State = {
 };
 export type OpenColors = Partial<Record<PieceColor, true>>;
 
-type Blocked = {ok: false; nx: number; ny: number};
+type Blocked =
+{
+	ok: false;
+	nx: number;
+	ny: number;
+};
 export type MoveFailure =
-	| (Blocked & {why: "edge"})
-	| (Blocked & {why: "gate"; c: Paint; down: FaceColor})
-	| (Blocked & {why: "wgate"; f: Face; has: FaceColor})
-	| (Blocked & {why: "box"; c: PieceColor})
-	| (Blocked & {why: "stuck"; c: PieceColor})
-	| (Blocked & {why: "door"; c: PieceColor})
-	| (Blocked & {why: "misaligned"})
-	| (Blocked & {why: "heavy"});
-export type MoveSuccess = {
+	| (Blocked &
+	  {
+			why: "edge";
+	  })
+	| (Blocked &
+	  {
+			why: "gate";
+			c: Paint;
+			down: FaceColor;
+	  })
+	| (Blocked &
+	  {
+			why: "wgate";
+			f: Face;
+			has: FaceColor;
+	  })
+	| (Blocked &
+	  {
+			why: "box";
+			c: PieceColor;
+	  })
+	| (Blocked &
+	  {
+			why: "stuck";
+			c: PieceColor;
+	  })
+	| (Blocked &
+	  {
+			why: "door";
+			c: PieceColor;
+	  })
+	| (Blocked &
+	  {
+			why: "misaligned";
+	  })
+	| (Blocked &
+	  {
+			why: "heavy";
+	  });
+export type MoveSuccess =
+{
 	ok: true;
 	nx: number;
 	ny: number;

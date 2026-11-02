@@ -30,7 +30,13 @@ type Tool =
 	| "box"
 	| "door"
 	| "cube";
-type Check = {ok: boolean; html: string; par?: number; level?: Level};
+type Check =
+{
+	ok: boolean;
+	html: string;
+	par?: number;
+	level?: Level;
+};
 
 const TOOLS: [Tool, string][] = [
 	["floor", "Floor"],
@@ -59,19 +65,23 @@ let armedDelete: string | null = null;
 let codeTyped = false;
 
 export const editorId = (): string | null => ED!.id;
-function saveDraft(): void {
+function saveDraft(): void
+{
 	writeDraft(ED!);
 }
-export const loadEditorDraft = (): void => {
+export const loadEditorDraft = (): void =>
+{
 	ED = loadDraft() || newEditor();
 };
-export function loadIntoEditor(L: LevelSource, name: string, id: string | null): void {
+export function loadIntoEditor(L: LevelSource, name: string, id: string | null): void
+{
 	ED = draftFromLevel(L, name, id);
 	lastCheck = null;
 	saveDraft();
 }
 
-export function renderEditor(): void {
+export function renderEditor(): void
+{
 	if (!ED) return;
 	const wrap = $("edGridWrap");
 	const size = isCompact()
@@ -94,18 +104,21 @@ export function renderEditor(): void {
 	$("edCols").textContent = domValue(ED.cols);
 	$("edRows").textContent = domValue(ED.rows);
 	for (const f of FACES) needSelect(f).value = ED.need[f] || "";
-	document.querySelectorAll<HTMLElement>("#edTools button").forEach((b) => {
+	document.querySelectorAll<HTMLElement>("#edTools button").forEach((b) =>
+	{
 		b.setAttribute("aria-pressed", domValue(b.dataset["tool"] === tool));
 	});
 	if (ecolor === "w" && (tool === "paint" || tool === "gate")) ecolor = "r";
-	document.querySelectorAll<HTMLButtonElement>("#edColors button").forEach((b) => {
+	document.querySelectorAll<HTMLButtonElement>("#edColors button").forEach((b) =>
+	{
 		b.setAttribute("aria-pressed", domValue(b.dataset["color"] === ecolor));
 		b.disabled = b.dataset["color"] === "w" && (tool === "paint" || tool === "gate");
 	});
 	$("edColors").classList.toggle("dim", !COLORED.includes(tool));
 	$("edColors").hidden = tool === "wgate";
 	$("edFaces").hidden = tool !== "wgate";
-	document.querySelectorAll<HTMLElement>("#edFaces button").forEach((b) => {
+	document.querySelectorAll<HTMLElement>("#edFaces button").forEach((b) =>
+	{
 		b.setAttribute("aria-pressed", domValue(b.dataset["face"] === wface));
 	});
 	const r = edToLevel(ED);
@@ -115,9 +128,11 @@ export function renderEditor(): void {
 	renderCheck();
 	renderMine();
 }
-function renderCheck(): void {
+function renderCheck(): void
+{
 	const el = $("edResult");
-	if (!lastCheck) {
+	if (!lastCheck)
+	{
 		el.className = "ed-result";
 		el.innerHTML = "Not checked yet.";
 		return;
@@ -125,37 +140,65 @@ function renderCheck(): void {
 	el.className = "ed-result " + (lastCheck.ok ? "good" : "bad");
 	el.innerHTML = lastCheck.html;
 }
-function changed(): void {
+function changed(): void
+{
 	lastCheck = null;
 	saveDraft();
 	renderEditor();
 }
 
-function applyTool(x: number, y: number): void {
+function applyTool(x: number, y: number): void
+{
 	const draft = ED!;
 	const cur = draft.grid[y]![x];
 	let next: EditorCell | null;
 	if (tool === "erase") next = null;
-	else if (tool === "floor") next = {t: "floor"};
-	else if (tool === "start" || tool === "goal" || tool === "wash" || tool === "cube") next = {t: tool};
-	else if (tool === "wgate") next = {t: "wgate", f: wface};
-	else next = {t: tool, c: ecolor};
+	else if (tool === "floor")
+		next =
+		{
+			t: "floor",
+		};
+	else if (tool === "start" || tool === "goal" || tool === "wash" || tool === "cube")
+		next =
+		{
+			t: tool,
+		};
+	else if (tool === "wgate")
+		next =
+		{
+			t: "wgate",
+			f: wface,
+		};
+	else
+		next =
+		{
+			t: tool,
+			c: ecolor,
+		};
 	if (JSON.stringify(cur) === JSON.stringify(next)) return;
 	if (tool === "start")
-		draft.grid.forEach((row) => {
-			row.forEach((c, i) => {
-				if (c?.t === "start") row[i] = {t: "floor"};
+		draft.grid.forEach((row) =>
+		{
+			row.forEach((c, i) =>
+			{
+				if (c?.t === "start")
+					row[i] =
+					{
+						t: "floor",
+					};
 			});
 		});
 	draft.grid[y]![x] = next;
 	changed();
 }
-function cellFromEvent(e: FingerEvent): [number, number] | null {
+function cellFromEvent(e: FingerEvent): [number, number] | null
+{
 	const el = document.elementFromPoint(e.clientX, e.clientY);
 	const c = el?.closest<HTMLElement>("#edGrid .ec");
 	return c ? [Number(c.dataset["x"]), Number(c.dataset["y"])] : null;
 }
-function resize(dc: number, dr: number): void {
+function resize(dc: number, dr: number): void
+{
 	const draft = ED!;
 	gridZoom = 1;
 	const cols = Math.max(3, Math.min(18, draft.cols + dc)),
@@ -163,13 +206,25 @@ function resize(dc: number, dr: number): void {
 	const g = blankGrid(cols, rows);
 	for (let y = 0; y < rows; y++)
 		for (let x = 0; x < cols; x++) if (y < draft.rows && x < draft.cols) g[y]![x] = draft.grid[y]![x]!;
-	Object.assign(draft, {cols, rows, grid: g});
+	Object.assign(
+		draft,
+		{
+			cols,
+			rows,
+			grid: g,
+		},
+	);
 	changed();
 }
 
-function checkLevel(): Check {
+function checkLevel(): Check
+{
 	const r = edToLevel(ED!);
-	if (r.error) return {ok: false, html: `<b>Can't check yet.</b> ${r.error}`};
+	if (r.error)
+		return {
+			ok: false,
+			html: `<b>Can't check yet.</b> ${r.error}`,
+		};
 	const L = parseLevel(r.level!);
 	const sol = solve(L, initState(L), 1200000);
 	if (sol)
@@ -187,7 +242,8 @@ function checkLevel(): Check {
 			: "<b>No solution.</b> No sequence of rolls reaches a target that satisfies its needs.",
 	};
 }
-export function renderStock(): void {
+export function renderStock(): void
+{
 	$("edStock").innerHTML =
 		'<option value="">Open a built-in level…</option>' +
 		LEVELS.map((L, i) =>
@@ -196,10 +252,12 @@ export function renderStock(): void {
 				: `<option value="${i}" disabled>${i + 1}. Locked</option>`,
 		).join("");
 }
-function renderMine(): void {
+function renderMine(): void
+{
 	const list = mine(),
 		el = $("edList");
-	if (!list.length) {
+	if (!list.length)
+	{
 		el.innerHTML =
 			'<p class="muted">Levels you save appear here. They live in this browser only, so use share codes to move them around.</p>';
 		return;
@@ -220,18 +278,25 @@ const TOUCH_MAX_CELL = 56;
 /** A second finger this soon after the first means it was the start of a pinch, not a stroke. */
 const PINCH_GRACE = 400;
 let gridZoom = 1;
-let stroke: {at: number; grid: string} | null = null;
+let stroke:
+{
+	at: number;
+	grid: string;
+} | null = null;
 
-function touchFitCell(): number {
+function touchFitCell(): number
+{
 	const draft = ED!;
 	const room = innerHeight - document.querySelector(".ed-toolbar")!.getBoundingClientRect().height - 24;
 	const wide = $("edGridWrap").clientWidth - 8;
 	return Math.max(TOUCH_MIN_CELL, Math.floor(Math.min(wide / draft.cols, room / draft.rows)) - 2);
 }
-function touchCellSize(): number {
+function touchCellSize(): number
+{
 	return Math.min(Math.max(TOUCH_MAX_CELL, touchFitCell()), Math.round(touchFitCell() * gridZoom));
 }
-function zoomGrid({ratio, dx, dy, x, y}: CameraMove): void {
+function zoomGrid({ratio, dx, dy, x, y}: CameraMove): void
+{
 	const wrap = $("edGridWrap"),
 		g = $("edGrid");
 	const before = touchCellSize();
@@ -251,37 +316,46 @@ function zoomGrid({ratio, dx, dy, x, y}: CameraMove): void {
 	// A grid with no room to pan that way hands the drag to the page, which is what scrolls it there.
 	if (wrap.scrollTop === top && scale === 1) scrollBy(0, -dy);
 }
-function touchPaint(e: FingerEvent): void {
+function touchPaint(e: FingerEvent): void
+{
 	const p = cellFromEvent(e);
 	if (p) applyTool(...p);
 }
 
 let needSel: ElementById<"edNeed">;
 /** The share code of the level being edited, or "" when it is not a valid level yet. */
-function currentCode(): string {
+function currentCode(): string
+{
 	const r = edToLevel(ED!);
 	return r.level ? encodeLevel(r.level) : "";
 }
 /** Copies text to the clipboard; when the browser refuses, puts it in the share box selected, with a note saying how to copy it. */
-function copyOrSelect(text: string, selectedNote: string): void {
-	const select = (): void => {
+function copyOrSelect(text: string, selectedNote: string): void
+{
+	const select = (): void =>
+	{
 		const box = $("edCode");
 		box.value = text;
 		box.focus();
 		box.setSelectionRange(0, text.length);
 		$("edCodeNote").textContent = selectedNote;
 	};
-	try {
-		navigator.clipboard.writeText(text).then(() => {
+	try
+	{
+		navigator.clipboard.writeText(text).then(() =>
+		{
 			$("edCodeNote").textContent = "Copied.";
 			return undefined;
 		}, select);
-	} catch {
+	}
+	catch
+	{
 		select();
 	}
 }
 /** One box shows the level's share code and takes a pasted code or link to load, beside Copy code, Copy link and Load. */
-function initShareBox(): void {
+function initShareBox(): void
+{
 	const box = $("edCode");
 	box.readOnly = false;
 	box.placeholder = "Paste a CUBLITZ: code or link, then press Load";
@@ -292,53 +366,72 @@ function initShareBox(): void {
 	$("edImportNote").closest(".row")!.remove();
 	// A tap or click that focuses the box selects all of it, ready to copy or to paste over.
 	let clickSelects = false;
-	const selectAll = (): void => {
+	const selectAll = (): void =>
+	{
 		box.setSelectionRange(0, box.value.length);
 	};
-	box.addEventListener("pointerdown", () => {
+	box.addEventListener("pointerdown", () =>
+	{
 		clickSelects = document.activeElement !== box;
 	});
-	box.addEventListener("focus", () => {
+	box.addEventListener("focus", () =>
+	{
 		codeTyped = false;
 		selectAll();
 	});
-	box.addEventListener("click", () => {
+	box.addEventListener("click", () =>
+	{
 		if (clickSelects) selectAll();
 		clickSelects = false;
 	});
-	box.addEventListener("input", () => {
+	box.addEventListener("input", () =>
+	{
 		codeTyped = true;
 	});
-	box.addEventListener("blur", () => {
+	box.addEventListener("blur", () =>
+	{
 		codeTyped = false;
 	});
-	copyLink.addEventListener("click", () => {
+	copyLink.addEventListener("click", () =>
+	{
 		const code = currentCode();
 		if (!code) return;
 		copyOrSelect(`${location.origin}${location.pathname}?${code}`, "Selected. Copy the link from the box.");
 	});
-	$("edImport").addEventListener("click", () => {
-		try {
+	$("edImport").addEventListener("click", () =>
+	{
+		try
+		{
 			const L = levelFromCode(box.value);
 			loadIntoEditor(L, L.name || "Imported", null);
 			codeTyped = false;
 			renderEditor();
 			$("edCodeNote").textContent = `Loaded “${ED!.name}”.`;
-		} catch {
+		}
+		catch
+		{
 			$("edCodeNote").textContent = "That code didn’t work. Paste the whole thing, starting with CUBLITZ:";
 		}
 	});
 }
-export function initEditor(): void {
+export function initEditor(): void
+{
 	const fingers = fingerGestures(
 		{
-			press: (e) => {
-				stroke = {at: performance.now(), grid: JSON.stringify(ED!.grid)};
+			press: (e) =>
+			{
+				stroke =
+				{
+					at: performance.now(),
+					grid: JSON.stringify(ED!.grid),
+				};
 				touchPaint(e);
 			},
 			drag: touchPaint,
-			cameraStart: () => {
-				if (stroke && performance.now() - stroke.at < PINCH_GRACE && stroke.grid !== JSON.stringify(ED!.grid)) {
+			cameraStart: () =>
+			{
+				if (stroke && performance.now() - stroke.at < PINCH_GRACE && stroke.grid !== JSON.stringify(ED!.grid))
+				{
 					ED!.grid = JSON.parse(stroke.grid) as EditorDraft["grid"];
 					changed();
 				}
@@ -346,11 +439,16 @@ export function initEditor(): void {
 			},
 			camera: zoomGrid,
 		},
-		{eagerCamera: true, together: PINCH_GRACE},
+		{
+			eagerCamera: true,
+			together: PINCH_GRACE,
+		},
 	);
 	addFingerSurface(fingers, $("edGrid"));
-	$("edGrid").addEventListener("pointerdown", (e) => {
-		if (takesTouch(e)) {
+	$("edGrid").addEventListener("pointerdown", (e) =>
+	{
+		if (takesTouch(e))
+		{
 			e.preventDefault();
 			return;
 		}
@@ -358,35 +456,44 @@ export function initEditor(): void {
 		if (!p) return;
 		e.preventDefault();
 		painting = true;
-		try {
+		try
+		{
 			$("edGrid").setPointerCapture(e.pointerId);
-		} catch {
+		}
+		catch
+		{
 			// Painting still works without the capture while the pointer stays over the grid.
 		}
 		applyTool(...p);
 	});
-	$("edGrid").addEventListener("pointermove", (e) => {
+	$("edGrid").addEventListener("pointermove", (e) =>
+	{
 		if (!painting) return;
 		const p = cellFromEvent(e);
 		if (p) applyTool(...p);
 	});
-	addEventListener("pointerup", () => {
+	addEventListener("pointerup", () =>
+	{
 		painting = false;
 	});
-	addEventListener("pointercancel", () => {
+	addEventListener("pointercancel", () =>
+	{
 		painting = false;
 	});
 
 	// The cube's button is apart from TOOLS, which stays the original's list on the page's global scope.
-	$("edTools").innerHTML = `${TOOLS.map(([k, label]) => {
+	$("edTools").innerHTML = `${TOOLS.map(([k, label]) =>
+	{
 		const sample = k === "erase" ? "void" : k;
 		return `<button type="button" data-tool="${k}" aria-pressed="false"><span class="ec ${sample}" style="--ec:20px;--pc:var(--blue)">${k === "wash" ? "<b>✦</b>" : ""}</span>${label}</button>`;
 	}).join(
 		"",
 	)}<button type="button" data-tool="cube" aria-pressed="false"><span class="ec loose" style="--ec:20px;--pc:var(--blue);${LOOSE_CUBE_STYLE}"></span>Loose cube</button>`;
-	$("edTools").addEventListener("click", (e) => {
+	$("edTools").addEventListener("click", (e) =>
+	{
 		const b = targetElement(e).closest("button");
-		if (b) {
+		if (b)
+		{
 			tool = b.dataset["tool"] as Tool;
 			renderEditor();
 		}
@@ -405,31 +512,38 @@ export function initEditor(): void {
 					`<button type="button" data-face="${f}" aria-pressed="false"><span class="ec wgate wg-${f}" style="--ec:20px">${WGLYPH[f] ? `<b>${WGLYPH[f]}</b>` : ""}</span>${cap(FNAME[f])}</button>`,
 			)
 			.join("");
-	$("edFaces").addEventListener("click", (e) => {
+	$("edFaces").addEventListener("click", (e) =>
+	{
 		const b = targetElement(e).closest("button");
-		if (b) {
+		if (b)
+		{
 			wface = b.dataset["face"] as Face;
 			renderEditor();
 		}
 	});
-	$("edColors").addEventListener("click", (e) => {
+	$("edColors").addEventListener("click", (e) =>
+	{
 		const b = targetElement(e).closest("button");
-		if (b) {
+		if (b)
+		{
 			ecolor = b.dataset["color"] as PieceColor;
 			if (!COLORED.includes(tool)) tool = "paint";
 			renderEditor();
 		}
 	});
 
-	$("edName").addEventListener("input", (e) => {
+	$("edName").addEventListener("input", (e) =>
+	{
 		const draft = ED!;
 		draft.name = targetInput(e).value;
 		saveDraft();
 		const r = edToLevel(draft);
 		if (r.level) $("edCode").value = encodeLevel(r.level);
 	});
-	document.querySelectorAll<HTMLElement>("[data-resize]").forEach((b) => {
-		b.addEventListener("click", () => {
+	document.querySelectorAll<HTMLElement>("[data-resize]").forEach((b) =>
+	{
+		b.addEventListener("click", () =>
+		{
 			const [dc, dr] = b.dataset["resize"]!.split(",").map(Number) as [number, number];
 			resize(dc, dr);
 		});
@@ -439,8 +553,10 @@ export function initEditor(): void {
 		(f) =>
 			`<label for="need-${f}">${cap(FNAME[f])}<select id="need-${f}"><option value="">Any</option>${(Array.from(PAINT_COLORS) as Paint[]).map((c) => `<option value="${c}">${cap(CNAME[c])}</option>`).join("")}</select></label>`,
 	).join("");
-	FACES.forEach((f) => {
-		needSelect(f).addEventListener("change", (e) => {
+	FACES.forEach((f) =>
+	{
+		needSelect(f).addEventListener("change", (e) =>
+		{
 			const v = targetSelect(e).value as Paint | "";
 			if (v) ED!.need[f] = v;
 			else Reflect.deleteProperty(ED!.need, f);
@@ -448,22 +564,31 @@ export function initEditor(): void {
 		});
 	});
 
-	$("edCheck").addEventListener("click", () => {
+	$("edCheck").addEventListener("click", () =>
+	{
 		$("edResult").innerHTML = "Checking…";
-		setTimeout(() => {
+		setTimeout(() =>
+		{
 			lastCheck = checkLevel();
 			renderCheck();
 		}, 20);
 	});
-	$("edTest").addEventListener("click", () => {
+	$("edTest").addEventListener("click", () =>
+	{
 		const r = edToLevel(ED!);
-		if (r.error) {
-			lastCheck = {ok: false, html: `<b>Can't test yet.</b> ${r.error}`};
+		if (r.error)
+		{
+			lastCheck =
+			{
+				ok: false,
+				html: `<b>Can't test yet.</b> ${r.error}`,
+			};
 			renderCheck();
 			return;
 		}
 		$("edResult").innerHTML = "Checking…";
-		setTimeout(() => {
+		setTimeout(() =>
+		{
 			lastCheck = checkLevel();
 			renderCheck();
 			const L = lastCheck.level!;
@@ -472,25 +597,37 @@ export function initEditor(): void {
 			setMode("play");
 		}, 20);
 	});
-	$("edSave").addEventListener("click", () => {
+	$("edSave").addEventListener("click", () =>
+	{
 		const draft = ED!;
 		const r = edToLevel(draft);
-		if (r.error) {
-			lastCheck = {ok: false, html: `<b>Can't save yet.</b> ${r.error}`};
+		if (r.error)
+		{
+			lastCheck =
+			{
+				ok: false,
+				html: `<b>Can't save yet.</b> ${r.error}`,
+			};
 			renderCheck();
 			return;
 		}
 		const level = r.level!;
 		const list = mine();
 		const id = draft.id || "L" + Date.now().toString(36);
-		const entry = {id, level, saved: Date.now()};
+		const entry =
+		{
+			id,
+			level,
+			saved: Date.now(),
+		};
 		const i = list.findIndex((x) => x.id === id);
 		if (i >= 0) list[i] = entry;
 		else list.unshift(entry);
 		const ok = setMine(list);
 		if (ok) draft.id = id;
 		saveDraft();
-		lastCheck = {
+		lastCheck =
+		{
 			ok,
 			html: ok
 				? `<b>Saved.</b> “${level.name}” is in your levels on this browser.`
@@ -498,22 +635,26 @@ export function initEditor(): void {
 		};
 		renderEditor();
 	});
-	$("edNew").addEventListener("click", () => {
+	$("edNew").addEventListener("click", () =>
+	{
 		ED = newEditor();
 		changed();
 	});
-	$("edClear").addEventListener("click", () => {
+	$("edClear").addEventListener("click", () =>
+	{
 		ED!.grid = ED!.grid.map((r) => r.map(() => null));
 		changed();
 	});
-	$("edCopy").addEventListener("click", () => {
+	$("edCopy").addEventListener("click", () =>
+	{
 		const code = currentCode();
 		if (!code) return;
 		copyOrSelect(code, "Selected. Press Ctrl+C or Cmd+C to copy.");
 	});
 	initShareBox();
 	renderStock();
-	$("edStock").addEventListener("change", (e) => {
+	$("edStock").addEventListener("change", (e) =>
+	{
 		const select = targetSelect(e);
 		if (select.value === "") return;
 		const L = LEVELS[+select.value]!;
@@ -522,18 +663,21 @@ export function initEditor(): void {
 		renderEditor();
 	});
 
-	$("edList").addEventListener("click", (e) => {
+	$("edList").addEventListener("click", (e) =>
+	{
 		const b = targetElement(e).closest("button");
 		if (!b) return;
 		const list = mine(),
 			x = list.find((i) => i.id === b.dataset["id"]);
 		if (!x) return;
-		if (b.dataset["act"] === "edit") {
+		if (b.dataset["act"] === "edit")
+		{
 			armedDelete = null;
 			loadIntoEditor(x.level, x.level.name!, x.id);
 			renderEditor();
 		}
-		if (b.dataset["act"] === "play") {
+		if (b.dataset["act"] === "play")
+		{
 			armedDelete = null;
 			loadIntoEditor(x.level, x.level.name!, x.id);
 			const L = parseLevel(JSON.parse(JSON.stringify(x.level)) as LevelSource);
@@ -542,8 +686,10 @@ export function initEditor(): void {
 			startLevel(L, -1);
 			setMode("play");
 		}
-		if (b.dataset["act"] === "del") {
-			if (armedDelete !== x.id) {
+		if (b.dataset["act"] === "del")
+		{
+			if (armedDelete !== x.id)
+			{
 				armedDelete = x.id;
 				renderMine();
 				return;

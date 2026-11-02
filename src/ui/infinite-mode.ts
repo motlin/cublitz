@@ -18,23 +18,37 @@ export let best: BestRun;
 let newArmed: ReturnType<typeof setTimeout> | null = null;
 
 /** startLevel's note that a campaign level is on the board, which ends any infinite run on screen. */
-export const enterCampaignLevel = (i: number): void => {
+export const enterCampaignLevel = (i: number): void =>
+{
 	campaignLvl = i;
 	infinite = false;
 };
-function newRun(): void {
-	run = {seed: Math.floor(Math.random() * 1e9), n: 0, score: 0, effs: [], cleared: 0, streak: 0, bestStreak: 0};
+function newRun(): void
+{
+	run =
+	{
+		seed: Math.floor(Math.random() * 1e9),
+		n: 0,
+		score: 0,
+		effs: [],
+		cleared: 0,
+		streak: 0,
+		bestStreak: 0,
+	};
 	writeRun(run);
 	infNext = null;
 }
 // Generate level n of the current run without freezing the page: a few tries per tick
-function genInf(n: number, cb: (level: GeneratedLevel) => void, background?: boolean): void {
+function genInf(n: number, cb: (level: GeneratedLevel) => void, background?: boolean): void
+{
 	const token = background ? 0 : ++infGenToken,
 		nextBatch = infSearch(run!.seed, n);
-	const step = (): void => {
+	const step = (): void =>
+	{
 		if (!background && token !== infGenToken) return;
 		const lv = nextBatch();
-		if (lv) {
+		if (lv)
+		{
 			cb(lv);
 			return;
 		}
@@ -42,33 +56,39 @@ function genInf(n: number, cb: (level: GeneratedLevel) => void, background?: boo
 	};
 	step();
 }
-function pregenerate(): void {
+function pregenerate(): void
+{
 	const n = run!.n + 1;
 	if (infNext?.inf === n) return;
 	genInf(
 		n,
-		(lv) => {
+		(lv) =>
+		{
 			if (run!.n + 1 === n) infNext = lv;
 		},
 		true,
 	);
 }
-function startInfinite(): void {
+function startInfinite(): void
+{
 	if (!run) newRun();
 	infinite = true;
 	setMode("play");
 	loadInfLevel();
 }
-export function loadInfLevel(): void {
+export function loadInfLevel(): void
+{
 	const n = run!.n;
-	const go = (lv: GeneratedLevel): void => {
+	const go = (lv: GeneratedLevel): void =>
+	{
 		if (!infinite || run!.n !== n) return;
 		(lv as LevelSource).tip =
 			`Every canvas is new. Par is ${lv.par}. You can undo, but every roll counts toward your score.`;
 		startLevel(lv, -2);
 		pregenerate();
 	};
-	if (infNext?.inf === n) {
+	if (infNext?.inf === n)
+	{
 		const lv = infNext;
 		infNext = null;
 		go(lv);
@@ -77,11 +97,13 @@ export function loadInfLevel(): void {
 	setStatus("Mixing a new canvas…");
 	genInf(n, go);
 }
-export function leaveInfinite(): void {
+export function leaveInfinite(): void
+{
 	infinite = false;
 	renderInfCard();
 }
-export function renderInfCard(): void {
+export function renderInfCard(): void
+{
 	const on = infinite && S?.lvl === -2;
 	$("infCard").hidden = !on;
 	$("hintBtn").hidden = $("solBtn").hidden = on;
@@ -97,7 +119,8 @@ export function renderInfCard(): void {
 		? `Best run: ${best.cleared} cleared, ${best.score} points${best.rating ? `, peak rating ${best.rating}` : ""}.`
 		: "Your best run will show here.";
 }
-export function infWin(): void {
+export function infWin(): void
+{
 	const L = S.L,
 		m = Math.max(1, S.rolls || 0),
 		par = L.par!;
@@ -111,8 +134,10 @@ export function infWin(): void {
 	run!.n++;
 	writeRun(run);
 	const rating = infRating(run!);
-	if (run!.cleared > best.cleared || run!.score > best.score || (run!.effs.length >= 3 && rating > best.rating)) {
-		best = {
+	if (run!.cleared > best.cleared || run!.score > best.score || (run!.effs.length >= 3 && rating > best.rating))
+	{
+		best =
+		{
 			cleared: Math.max(best.cleared, run!.cleared),
 			score: Math.max(best.score, run!.score),
 			rating: run!.effs.length >= 3 ? Math.max(best.rating, rating) : best.rating,
@@ -131,28 +156,34 @@ export function infWin(): void {
 	renderInfCard();
 }
 
-export function initInfinite(): void {
+export function initInfinite(): void
+{
 	run = readRun();
 	best = readBest();
-	$("infSkip").addEventListener("click", () => {
+	$("infSkip").addEventListener("click", () =>
+	{
 		if (S.busy) return;
 		run!.effs.push(0);
 		run!.streak = 0;
 		run!.n++;
 		writeRun(run);
 		$("infNote").textContent = "Skipped. That canvas counts as 0 toward your rating.";
-		setTimeout(() => {
+		setTimeout(() =>
+		{
 			$("infNote").textContent = "";
 		}, 3500);
 		loadInfLevel();
 	});
-	$("infNew").addEventListener("click", () => {
+	$("infNew").addEventListener("click", () =>
+	{
 		const b = $("infNew");
-		if (!b.classList.contains("armed")) {
+		if (!b.classList.contains("armed"))
+		{
 			b.classList.add("armed");
 			b.textContent = "Click again to start over";
 			clearTimeout(newArmed!);
-			newArmed = setTimeout(() => {
+			newArmed = setTimeout(() =>
+			{
 				b.classList.remove("armed");
 				b.textContent = "New run";
 			}, 4000);
@@ -164,7 +195,8 @@ export function initInfinite(): void {
 		newRun();
 		loadInfLevel();
 	});
-	$("titleInf").addEventListener("click", () => {
+	$("titleInf").addEventListener("click", () =>
+	{
 		SFX.play("start");
 		startInfinite();
 	});

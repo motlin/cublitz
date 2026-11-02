@@ -7,30 +7,55 @@ import {atLevel, BASE_URL, engine} from "./harness/pair.ts";
 
 const FLIP =
 	"?CUBLITZ:eyJuYW1lIjoiRmxpcCBpdCBhbmQgcmV2ZXJzZSBpdCIsIm1hcCI6WyIuLnJveS4uLllPUlgiLCJTLnJveS4uLllPUlgiLCIuLnJveS4uLllPUlgiXSwiayI6e319";
-const KEYS: Record<Direction, string> = {N: "ArrowUp", S: "ArrowDown", E: "ArrowRight", W: "ArrowLeft"};
+const KEYS: Record<Direction, string> =
+{
+	N: "ArrowUp",
+	S: "ArrowDown",
+	E: "ArrowRight",
+	W: "ArrowLeft",
+};
 const BAD_LINK = "This level link didn’t work. It may be incomplete, so ask for a new one.";
 
-const open = async (browser: Browser, search: string): Promise<{page: Page; errors: string[]}> => {
-	const context = await browser.newContext({
-		reducedMotion: "reduce",
-		storageState: {
-			cookies: [],
-			origins: [
-				{
-					origin: BASE_URL,
-					localStorage: Object.entries(atLevel(1)).map(([name, value]) => ({name, value})),
-				},
-			],
+const open = async (
+	browser: Browser,
+	search: string,
+): Promise<
+{
+	page: Page;
+	errors: string[];
+}> =>
+{
+	const context = await browser.newContext(
+		{
+			reducedMotion: "reduce",
+			storageState:
+			{
+				cookies: [],
+				origins: [
+					{
+						origin: BASE_URL,
+						localStorage: Object.entries(atLevel(1)).map(([name, value]) => (
+						{
+							name,
+							value,
+						})),
+					},
+				],
+			},
 		},
-	});
+	);
 	const page = await context.newPage();
 	const errors: string[] = [];
 	page.on("pageerror", (error) => errors.push(error.message));
 	await page.goto(`${BASE_URL}/${search}`);
-	return {page, errors};
+	return {
+		page,
+		errors,
+	};
 };
 
-test("a share code in the query opens the level, with a par the game worked out", async ({browser}) => {
+test("a share code in the query opens the level, with a par the game worked out", async ({browser}) =>
+{
 	const {page, errors} = await open(browser, FLIP);
 	await expect(page.locator("#playView")).toBeVisible();
 	await expect(page.locator("#titleView")).toBeHidden();
@@ -38,22 +63,41 @@ test("a share code in the query opens the level, with a par the game worked out"
 	await expect(page.locator("#lvNum")).toHaveText("Shared level");
 	await expect(page.locator("#lvTip")).toHaveText("Someone shared this level with you.");
 	await expect(page.locator("#backEdit")).toBeHidden();
-	const level = parseLevel({name: "Flip", map: ["..roy...YORX", "S.roy...YORX", "..roy...YORX"], k: {}});
+	const level = parseLevel(
+		{
+			name: "Flip",
+			map: ["..roy...YORX", "S.roy...YORX", "..roy...YORX"],
+			k: {},
+		},
+	);
 	const solution = solve(level, initState(level), 600000)!;
 	await expect(page.locator("#par")).toHaveText(String(solution.length));
 	expect(errors).toStrictEqual([]);
 	await page.close();
 });
 
-test("a shared level paints with par unknown before the game works out its par", async ({browser}) => {
-	const context = await browser.newContext({reducedMotion: "reduce"});
-	await context.addInitScript(() => {
+test("a shared level paints with par unknown before the game works out its par", async ({browser}) =>
+{
+	const context = await browser.newContext(
+		{
+			reducedMotion: "reduce",
+		},
+	);
+	await context.addInitScript(() =>
+	{
 		const seen: string[] = [];
-		(window as unknown as {parSeen: string[]}).parSeen = seen;
-		const watch = () => {
+		(
+			window as unknown as
+			{
+				parSeen: string[];
+			}
+		).parSeen = seen;
+		const watch = () =>
+		{
 			const par = document.getElementById("par");
 			const name = document.getElementById("lvName");
-			if (par && name?.textContent) {
+			if (par && name?.textContent)
+			{
 				const at = `${name.textContent}|${par.textContent}`;
 				if (seen.at(-1) !== at) seen.push(at);
 			}
@@ -63,20 +107,42 @@ test("a shared level paints with par unknown before the game works out its par",
 	});
 	const page = await context.newPage();
 	await page.goto(`${BASE_URL}/${FLIP}`);
-	const level = parseLevel({map: ["..roy...YORX", "S.roy...YORX", "..roy...YORX"], k: {}});
+	const level = parseLevel(
+		{
+			map: ["..roy...YORX", "S.roy...YORX", "..roy...YORX"],
+			k: {},
+		},
+	);
 	const par = String(solve(level, initState(level), 600000)!.length);
 	await expect(page.locator("#par")).toHaveText(par);
 	await expect
-		.poll(async () => page.evaluate(() => (window as unknown as {parSeen: string[]}).parSeen))
+		.poll(async () =>
+			page.evaluate(
+				() =>
+					(
+						window as unknown as
+						{
+							parSeen: string[];
+						}
+					).parSeen,
+			),
+		)
 		.toStrictEqual(["Flip it and reverse it|?", `Flip it and reverse it|${par}`]);
 	await context.close();
 });
 
-test("winning a shared level saves no progress and leads into the campaign", async ({browser}) => {
+test("winning a shared level saves no progress and leads into the campaign", async ({browser}) =>
+{
 	const {page} = await open(browser, FLIP);
 	const before = await page.evaluate(() => localStorage.getItem("cubist-progress-v2"));
-	const level = parseLevel({map: ["..roy...YORX", "S.roy...YORX", "..roy...YORX"], k: {}});
-	for (const direction of solve(level, initState(level), 600000)!) {
+	const level = parseLevel(
+		{
+			map: ["..roy...YORX", "S.roy...YORX", "..roy...YORX"],
+			k: {},
+		},
+	);
+	for (const direction of solve(level, initState(level), 600000)!)
+	{
 		await page.keyboard.press(KEYS[direction as Direction]);
 		await page.waitForTimeout(20);
 	}
@@ -89,8 +155,10 @@ test("winning a shared level saves no progress and leads into the campaign", asy
 	await page.close();
 });
 
-test("a link with extra parameters from a social site still opens the level", async ({browser}) => {
-	for (const search of [`${FLIP}&fbclid=IwAR0abc`, `?utm_source=chat&${FLIP.slice(1)}`]) {
+test("a link with extra parameters from a social site still opens the level", async ({browser}) =>
+{
+	for (const search of [`${FLIP}&fbclid=IwAR0abc`, `?utm_source=chat&${FLIP.slice(1)}`])
+	{
 		const {page, errors} = await open(browser, search);
 		await expect(page.locator("#lvName")).toHaveText("Flip it and reverse it");
 		await expect(page.locator("#shareError")).toHaveCount(0);
@@ -99,7 +167,8 @@ test("a link with extra parameters from a social site still opens the level", as
 	}
 });
 
-test("the editor's Copy link button copies a full URL that opens the level", async ({browser}) => {
+test("the editor's Copy link button copies a full URL that opens the level", async ({browser}) =>
+{
 	const {page} = await open(browser, "");
 	await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
 	await page.locator("#titleEdit").click();
@@ -118,9 +187,11 @@ test("the editor's Copy link button copies a full URL that opens the level", asy
 
 test("when the clipboard fails, Copy link selects the link in the share box, and editing puts the code back", async ({
 	browser,
-}) => {
+}) =>
+{
 	const {page} = await open(browser, "");
-	await page.evaluate(() => {
+	await page.evaluate(() =>
+	{
 		navigator.clipboard.writeText = async () => Promise.reject(new Error("denied"));
 	});
 	await page.locator("#titleEdit").click();
@@ -140,9 +211,11 @@ test("when the clipboard fails, Copy link selects the link in the share box, and
 	await page.close();
 });
 
-test("pressing Copy link again after the clipboard fails still gives one valid link", async ({browser}) => {
+test("pressing Copy link again after the clipboard fails still gives one valid link", async ({browser}) =>
+{
 	const {page} = await open(browser, "");
-	await page.evaluate(() => {
+	await page.evaluate(() =>
+	{
 		navigator.clipboard.writeText = async () => Promise.reject(new Error("denied"));
 	});
 	await page.locator("#titleEdit").click();
@@ -155,7 +228,8 @@ test("pressing Copy link again after the clipboard fails still gives one valid l
 	await page.close();
 });
 
-test("Copy link and Copy code copy the current level, not whatever is typed in the share box", async ({browser}) => {
+test("Copy link and Copy code copy the current level, not whatever is typed in the share box", async ({browser}) =>
+{
 	const {page} = await open(browser, "");
 	await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
 	await page.locator("#titleEdit").click();
@@ -170,7 +244,8 @@ test("Copy link and Copy code copy the current level, not whatever is typed in t
 	await page.close();
 });
 
-test("a link pasted into the editor's share box loads that level", async ({browser}) => {
+test("a link pasted into the editor's share box loads that level", async ({browser}) =>
+{
 	const {page} = await open(browser, "");
 	await page.locator("#titleEdit").click();
 	await page.locator("#edCode").fill(`${BASE_URL}/${FLIP}&fbclid=IwAR0abc`);
@@ -181,15 +256,23 @@ test("a link pasted into the editor's share box loads that level", async ({brows
 	await page.close();
 });
 
-test("a shared level with a + in its code survives the address bar", async ({browser}) => {
-	const code = encodeLevel({name: "a>>>?", map: ["S.X"], k: {}});
+test("a shared level with a + in its code survives the address bar", async ({browser}) =>
+{
+	const code = encodeLevel(
+		{
+			name: "a>>>?",
+			map: ["S.X"],
+			k: {},
+		},
+	);
 	expect(code).toContain("+");
 	const {page} = await open(browser, `?${code}`);
 	await expect(page.locator("#lvName")).toHaveText("a>>>?");
 	await page.close();
 });
 
-test("remixing a shared level leaves the player's saved level alone", async ({browser}) => {
+test("remixing a shared level leaves the player's saved level alone", async ({browser}) =>
+{
 	const {page} = await open(browser, FLIP);
 	await page.locator("#editCopy").click();
 	await expect(page.locator("#editView")).toBeVisible();
@@ -203,11 +286,35 @@ for (const [name, search] of [
 	["a code cut short", FLIP.slice(0, 30)],
 	[
 		"markup in a legend color",
-		`?CUBLITZ:${btoa(JSON.stringify({name: "x", map: ["S1X"], k: {1: ["door", "<img src=x onerror=window.pwned=1>"]}}))}`,
+		`?CUBLITZ:${btoa(
+			JSON.stringify(
+				{
+					name: "x",
+					map: ["S1X"],
+					k:
+					{
+						1: ["door", "<img src=x onerror=window.pwned=1>"],
+					},
+				},
+			),
+		)}`,
 	],
-	["a level with no start", `?CUBLITZ:${btoa(JSON.stringify({name: "x", map: ["..X"], k: {}}))}`],
-] as const) {
-	test(`a link with ${name} explains itself on the title screen`, async ({browser}) => {
+	[
+		"a level with no start",
+		`?CUBLITZ:${btoa(
+			JSON.stringify(
+				{
+					name: "x",
+					map: ["..X"],
+					k: {},
+				},
+			),
+		)}`,
+	],
+] as const)
+{
+	test(`a link with ${name} explains itself on the title screen`, async ({browser}) =>
+	{
 		const {page, errors} = await open(browser, search);
 		await expect(page.locator("#titleView")).toBeVisible();
 		await expect(page.locator("#shareError")).toHaveText(BAD_LINK);
@@ -219,7 +326,8 @@ for (const [name, search] of [
 	});
 }
 
-test("an unrelated query leaves the title screen as it always was", async ({browser}) => {
+test("an unrelated query leaves the title screen as it always was", async ({browser}) =>
+{
 	const {page} = await open(browser, "?utm_source=mail");
 	await expect(page.locator("#titleView")).toBeVisible();
 	await expect(page.locator("#shareError")).toHaveCount(0);

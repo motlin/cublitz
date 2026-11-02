@@ -8,15 +8,31 @@ import {grepMatchedPassingTest, type PlaywrightReport, verdict} from "./harness-
 // dist/ itself is never touched and every copy is deleted afterwards.
 // A mutation either replaces text that occurs exactly once, or computes the mutant itself, returning null when the
 // copy no longer holds what it looks for. Either way a miss is reported as INVALID, so the other mutations still run.
-type Mutation = {name: string; grep: string} & ({from: string; to: string} | {mutate: (html: string) => string | null});
+type Mutation =
+{
+	name: string;
+	grep: string;
+} & (
+	|
+	  {
+			from: string;
+			to: string;
+	  }
+	|
+	  {
+			mutate: (html: string) => string | null;
+	  }
+);
 
 const replaceOnce = (html: string, from: string, to: string): string | null =>
 	html.split(from).length === 2 ? html.replace(from, () => to) : null;
 
 // Swaps two adjacent campaign levels, each cut from the start of its object to the start of the next level's
 // object, so the bundler's formatting of the level data does not matter.
-const swapLevels = (html: string, first: string, second: string, following: string): string | null => {
-	const starts = [first, second, following].map((name) => {
+const swapLevels = (html: string, first: string, second: string, following: string): string | null =>
+{
+	const starts = [first, second, following].map((name) =>
+	{
 		const anchor = new RegExp(String.raw`\{\s*"?name"?\s*:\s*"${name}"`, "g");
 		const found = [...html.matchAll(anchor)];
 		const [only] = found;
@@ -29,7 +45,8 @@ const swapLevels = (html: string, first: string, second: string, following: stri
 
 // Removes the last level of the campaign or the merge levels, cut from the comma before its object to the end of the
 // level array, so the bundler's formatting of the level data does not matter.
-const removeLastLevel = (html: string, name: string): string | null => {
+const removeLastLevel = (html: string, name: string): string | null =>
+{
 	const anchor = new RegExp(String.raw`\{\s*"?name"?\s*:\s*"${name}"`, "g");
 	const found = [...html.matchAll(anchor)];
 	const [only] = found;
@@ -418,14 +435,37 @@ const only = process.argv[2] ?? "";
 const selected = MUTATIONS.filter((m) => m.name.includes(only));
 if (selected.length === 0) throw new Error(`No mutation's name contains "${only}"`);
 
-const runHarness = (distDir: string, grep: string): {status: number | null; report: PlaywrightReport | null} => {
+const runHarness = (
+	distDir: string,
+	grep: string,
+):
+{
+	status: number | null;
+	report: PlaywrightReport | null;
+} =>
+{
 	const reportFile = join(scratch, "report.json");
-	rmSync(reportFile, {force: true});
-	const {status} = spawnSync("pnpm", ["exec", "playwright", "test", "-g", grep, "--workers=1", "--reporter=json"], {
-		encoding: "utf8",
-		maxBuffer: 1 << 28,
-		env: {...process.env, CUBLITZ_DIST_DIR: distDir, CUBLITZ_PORT: "4818", PLAYWRIGHT_JSON_OUTPUT_NAME: reportFile},
-	});
+	rmSync(
+		reportFile,
+		{
+			force: true,
+		},
+	);
+	const {status} = spawnSync(
+		"pnpm",
+		["exec", "playwright", "test", "-g", grep, "--workers=1", "--reporter=json"],
+		{
+			encoding: "utf8",
+			maxBuffer: 1 << 28,
+			env:
+			{
+				...process.env,
+				CUBLITZ_DIST_DIR: distDir,
+				CUBLITZ_PORT: "4818",
+				PLAYWRIGHT_JSON_OUTPUT_NAME: reportFile,
+			},
+		},
+	);
 	return {
 		status,
 		report: existsSync(reportFile) ? (JSON.parse(readFileSync(reportFile, "utf8")) as PlaywrightReport) : null,
@@ -434,9 +474,16 @@ const runHarness = (distDir: string, grep: string): {status: number | null; repo
 
 let survived = 0;
 let invalid = 0;
-try {
+try
+{
 	const control = join(scratch, "control");
-	cpSync("dist", control, {recursive: true});
+	cpSync(
+		"dist",
+		control,
+		{
+			recursive: true,
+		},
+	);
 	const baseline = runHarness(control, selected.map((m) => m.grep).join("|"));
 	const {report: baselineReport} = baseline;
 	const baselineVerdict = verdict(baseline.status, baselineReport);
@@ -447,33 +494,62 @@ try {
 		throw new Error(`These greps select no passing test: ${unmatched.map((m) => m.grep).join(", ")}`);
 	console.log("control: the unmutated copy passes, and each grep below selects a test that passed");
 
-	for (const [i, mutation] of selected.entries()) {
+	for (const [i, mutation] of selected.entries())
+	{
 		const copy = join(scratch, `mutant-${i}`);
-		cpSync("dist", copy, {recursive: true});
+		cpSync(
+			"dist",
+			copy,
+			{
+				recursive: true,
+			},
+		);
 		const file = join(copy, "index.html");
 		const html = readFileSync(file, "utf8");
 		const mutant = "mutate" in mutation ? mutation.mutate(html) : replaceOnce(html, mutation.from, mutation.to);
-		if (mutant === null) {
+		if (mutant === null)
+		{
 			invalid++;
 			console.log(`INVALID  ${mutation.name} -> the mutation's text is not in dist/index.html exactly once`);
-			rmSync(copy, {recursive: true});
+			rmSync(
+				copy,
+				{
+					recursive: true,
+				},
+			);
 			continue;
 		}
 		writeFileSync(file, mutant);
 		const {status, report} = runHarness(copy, mutation.grep);
 		const result = verdict(status, report);
 		if (result.kind === "caught") console.log(`caught   ${mutation.name} -> ${result.detail}`);
-		else if (result.kind === "passed") {
+		else if (result.kind === "passed")
+		{
 			survived++;
 			console.log(`SURVIVED ${mutation.name}`);
-		} else {
+		}
+		else
+		{
 			invalid++;
 			console.log(`INVALID  ${mutation.name} -> ${result.detail}`);
 		}
-		rmSync(copy, {recursive: true});
+		rmSync(
+			copy,
+			{
+				recursive: true,
+			},
+		);
 	}
-} finally {
-	rmSync(scratch, {recursive: true, force: true});
+}
+finally
+{
+	rmSync(
+		scratch,
+		{
+			recursive: true,
+			force: true,
+		},
+	);
 }
 const clean = survived === 0 && invalid === 0;
 console.log(

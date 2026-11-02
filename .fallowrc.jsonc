@@ -5,7 +5,8 @@
 	// src/pwa/sw.ts is the service worker, which scripts/service-worker-build.ts builds by path.
 	"entry": ["src/index.{ts,tsx,js,jsx}", "src/main.{ts,tsx,js,jsx}", "src/**/*.mdx", "src/pwa/sw.ts", "scripts/*.ts"],
 	"ignorePatterns": [".storybook/**"],
-	"rules": {
+	"rules":
+	{
 		"unused-dependencies": "error",
 		// src/ui/ is cyclic by design; README.md says why that is safe.
 		"circular-dependencies": "off",

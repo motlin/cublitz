@@ -39,9 +39,22 @@ initTouch();
 
 loadEditorDraft();
 window.claude?.hot?.snapshot?.(() =>
-	S && S.lvl >= 0 ? {lvl: S.lvl, name: S.L.name, st: S.st, hist: S.hist, mode} : {mode},
+	S && S.lvl >= 0
+		?
+			{
+				lvl: S.lvl,
+				name: S.L.name,
+				st: S.st,
+				hist: S.hist,
+				mode,
+			}
+		:
+			{
+				mode,
+			},
 );
-function start(data?: HotData): void {
+function start(data?: HotData): void
+{
 	const restoring =
 		data &&
 		typeof data.lvl === "number" &&
@@ -50,7 +63,8 @@ function start(data?: HotData): void {
 		unlocked(data.lvl) &&
 		data.st?.boxes;
 	if (restoring) loadLevel(data.lvl!, data);
-	else {
+	else
+	{
 		const firstOpen = LEVELS.findIndex((L) => !beaten(L));
 		loadLevel(firstOpen < 0 ? 0 : firstOpen);
 	}
