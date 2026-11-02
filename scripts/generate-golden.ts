@@ -8,5 +8,6 @@ const write = (name: string, value: unknown): void => {
 };
 
 write("solve.json", generateSolveGolden(engine));
+write("solve-post-fix.json", generateSolveGolden(loadExpectedEngine()));
 write("infinite.json", generateInfiniteGolden(engine));
 write("infinite-post-fix.json", generateInfiniteGolden(loadExpectedEngine()));

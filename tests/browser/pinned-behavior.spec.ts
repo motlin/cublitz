@@ -5,7 +5,9 @@ import {atLevel, engine, type Pair, withPair} from "./harness/pair.ts";
 
 // Behavior a session never reaches on its own, so each one is driven here on purpose.
 
-const golden = JSON.parse(readFileSync(new URL("../golden/solve.json", import.meta.url), "utf8")) as SolveGolden[];
+const golden = JSON.parse(
+	readFileSync(new URL("../golden/solve-post-fix.json", import.meta.url), "utf8"),
+) as SolveGolden[];
 
 const ROLL_KEYS = ["w", "a", "s", "d", "ArrowUp", "ArrowLeft", "ArrowDown", "ArrowRight"];
 

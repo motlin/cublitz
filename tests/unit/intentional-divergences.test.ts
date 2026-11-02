@@ -41,6 +41,7 @@ describe("the intentional divergences", () => {
 			"The infinite mode tip is shorter",
 			"The paint remover hint is shorter",
 			"The white gate hint no longer says to spend bare faces carefully",
+			"Crown is level 5 and Checkpoints is level 6, the reverse of the original",
 		]);
 	});
 

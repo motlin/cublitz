@@ -123,6 +123,17 @@ test("the post-fix goldens match the expected page and dist in the browser", asy
 	expect(generated).toStrictEqual([levels, levels]);
 });
 
+test("the post-fix solve golden matches the expected page and dist in the browser", async ({page}) => {
+	const expected = (readGolden("solve-post-fix.json") as SolveGolden[]).map((g) => [g.name, g.path, g.hitLimit]);
+	for (const path of [EXPECTED_PATH, DIST_PATH]) {
+		await page.goto(BASE_URL + path);
+		const solved = await page.evaluate(
+			"LEVELS.map(level => [level.name, solve(level, initState(level)), solve.hitLimit])",
+		);
+		expect(solved).toStrictEqual(expected);
+	}
+});
+
 test("the screenshot comparison on its own notices a one-element paint change", async ({browser}) => {
 	await withPair(browser, {}, async (pair) => {
 		await pair.expectSameScreenshot("before");

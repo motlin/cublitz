@@ -5,7 +5,9 @@ import {keyFor} from "../support/paths.ts";
 import {atLevel, DESKTOP, MOBILE, withPair} from "./harness/pair.ts";
 import {holdBeforeLift} from "./harness/touch.ts";
 
-const golden = JSON.parse(readFileSync(new URL("../golden/solve.json", import.meta.url), "utf8")) as SolveGolden[];
+const golden = JSON.parse(
+	readFileSync(new URL("../golden/solve-post-fix.json", import.meta.url), "utf8"),
+) as SolveGolden[];
 const pathOf = (index: number): string => golden[index]!.path!;
 
 test("palette: swatches, picker, sliders, numbers, hex, resets and persistence", async ({browser}) => {

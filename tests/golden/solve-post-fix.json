@@ -1,0 +1,212 @@
+[
+	{
+		"index": 0,
+		"name": "First Roll",
+		"par": 6,
+		"path": "EEESSS",
+		"hitLimit": false
+	},
+	{
+		"index": 1,
+		"name": "First Coat",
+		"par": 6,
+		"path": "EEEEEE",
+		"hitLimit": false
+	},
+	{
+		"index": 2,
+		"name": "Blue Fence",
+		"par": 12,
+		"path": "NNEESESEEEEE",
+		"hitLimit": false
+	},
+	{
+		"index": 3,
+		"name": "Keep the Red",
+		"par": 19,
+		"path": "NEESESENEEENEESEEEE",
+		"hitLimit": false
+	},
+	{
+		"index": 4,
+		"name": "Crown",
+		"par": 17,
+		"path": "NENESWEEEEEESSENE",
+		"hitLimit": false
+	},
+	{
+		"index": 5,
+		"name": "Checkpoints",
+		"par": 19,
+		"path": "SENNESENSSENEEEEEEE",
+		"hitLimit": false
+	},
+	{
+		"index": 6,
+		"name": "Stripes",
+		"par": 26,
+		"path": "NENESESSENNWWNWSESEEEEEEEE",
+		"hitLimit": false
+	},
+	{
+		"index": 7,
+		"name": "Prism",
+		"par": 22,
+		"path": "SEENNESEEEENEESSWNESSS",
+		"hitLimit": false
+	},
+	{
+		"index": 8,
+		"name": "Full Dip",
+		"par": 19,
+		"path": "ENEESWNWWSEEEEESEEE",
+		"hitLimit": false
+	},
+	{
+		"index": 9,
+		"name": "Box Step",
+		"par": 24,
+		"path": "NESSENNWWSENEEEEESSESEEE",
+		"hitLimit": false
+	},
+	{
+		"index": 10,
+		"name": "Two Tone",
+		"par": 42,
+		"path": "ESSENNWWSENEEEESEEEESESENWSENWNNEESSESWEEE",
+		"hitLimit": false
+	},
+	{
+		"index": 11,
+		"name": "Compass",
+		"par": 16,
+		"path": "NEESSEWWSNESESEE",
+		"hitLimit": false
+	},
+	{
+		"index": 12,
+		"name": "Lockstep",
+		"par": 37,
+		"path": "ENEESWNWWSEEEEESSWWWWNNEEEEEEEEEENWSE",
+		"hitLimit": false
+	},
+	{
+		"index": 13,
+		"name": "Relay",
+		"par": 40,
+		"path": "EESSENNWWSENEEEEEESESENWWSENWWWWSSSESEEE",
+		"hitLimit": false
+	},
+	{
+		"index": 14,
+		"name": "Two Rooms",
+		"par": 41,
+		"path": "SENEESWNWWSEEEEEENESEEENWSESSWNENEEEESESE",
+		"hitLimit": false
+	},
+	{
+		"index": 15,
+		"name": "Masterpiece",
+		"par": 49,
+		"path": "NESWSEEEEEEENEEENEESWNWWSEESENESNWWWWWNEEEEEESESE",
+		"hitLimit": false
+	},
+	{
+		"index": 16,
+		"name": "Ladder",
+		"par": 19,
+		"path": "NESSENWNEEESEEEEEEE",
+		"hitLimit": false
+	},
+	{
+		"index": 17,
+		"name": "Spectrum",
+		"par": 18,
+		"path": "SEESWSNNNNEESESESS",
+		"hitLimit": false
+	},
+	{
+		"index": 18,
+		"name": "Violet Vault",
+		"par": 49,
+		"path": "EESESENNEEEESSENNWWSENEEEEESESWNWSESWEEEWNNWSESEE",
+		"hitLimit": false
+	},
+	{
+		"index": 19,
+		"name": "Kaleidoscope",
+		"par": 46,
+		"path": "SEENEESWNWWSEEEEEEENWSESSWNENENEESSESNNWSEEEEE",
+		"hitLimit": false
+	},
+	{
+		"index": 20,
+		"name": "Blank Slate",
+		"par": 10,
+		"path": "NEEEESEEEE",
+		"hitLimit": false
+	},
+	{
+		"index": 21,
+		"name": "Eastern Window",
+		"par": 10,
+		"path": "ESSSENESEE",
+		"hitLimit": false
+	},
+	{
+		"index": 22,
+		"name": "Two Sides",
+		"par": 11,
+		"path": "SSEEENEENEE",
+		"hitLimit": false
+	},
+	{
+		"index": 23,
+		"name": "Long Hall",
+		"par": 14,
+		"path": "SEEEENESEEEENE",
+		"hitLimit": false
+	},
+	{
+		"index": 24,
+		"name": "Last White",
+		"par": 19,
+		"path": "SEENEESENEEESEENEEE",
+		"hitLimit": false
+	},
+	{
+		"index": 25,
+		"name": "Fresh Start",
+		"par": 23,
+		"path": "ENEESWNWWSEEEEESEEEEEEE",
+		"hitLimit": false
+	},
+	{
+		"index": 26,
+		"name": "Second Coat",
+		"par": 21,
+		"path": "EEEESSSEENESEEEEESENE",
+		"hitLimit": false
+	},
+	{
+		"index": 27,
+		"name": "Bare Hands",
+		"par": 10,
+		"path": "EEEEEEEEEE",
+		"hitLimit": false
+	},
+	{
+		"index": 28,
+		"name": "Clean Push",
+		"par": 19,
+		"path": "NESESENEEENEESSESEE",
+		"hitLimit": false
+	},
+	{
+		"index": 29,
+		"name": "Clean Sweep",
+		"par": 40,
+		"path": "ENEESWNWWSEEEEEEEEEESEEENWWNWSWSEEESEEEE",
+		"hitLimit": false
+	}
+]

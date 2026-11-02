@@ -6,7 +6,9 @@ import {solve} from "../../../src/core/solver.ts";
 import type {SolveGolden} from "../../support/golden.ts";
 import {loadExpectedEngine} from "../../support/original-engine.ts";
 
-const golden = JSON.parse(readFileSync(new URL("../../golden/solve.json", import.meta.url), "utf8")) as SolveGolden[];
+const golden = JSON.parse(
+	readFileSync(new URL("../../golden/solve-post-fix.json", import.meta.url), "utf8"),
+) as SolveGolden[];
 
 describe("LEVELS", () => {
 	const solved = LEVELS.map((level, index) => {
@@ -22,6 +24,13 @@ describe("LEVELS", () => {
 
 	it("is the original's data, parsed, in the same order and with the same key order", () => {
 		expect(JSON.stringify(LEVELS)).toBe(JSON.stringify(loadExpectedEngine().LEVELS));
+	});
+
+	it("plays Crown fifth and Checkpoints sixth, the reverse of the original", () => {
+		expect([4, 5].map((index) => [LEVELS[index]?.name, LEVELS[index]?.par])).toStrictEqual([
+			["Crown", 17],
+			["Checkpoints", 19],
+		]);
 	});
 
 	it("has Two Sides say what is true of that level, which has no paint remover", () => {

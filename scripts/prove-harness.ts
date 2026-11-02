@@ -8,6 +8,33 @@ import {grepMatchedPassingTest, type PlaywrightReport, verdict} from "./harness-
 // dist/ itself is never touched and every copy is deleted afterwards.
 type Mutation = {name: string; from: string; to: string; grep: string};
 
+// The bundled text of the two campaign levels whose order is an intentional divergence.
+const CROWN_BLOCK = `	{
+		"name": "Crown",
+		"tip": "The gates want yellow on the bottom. The target wants yellow on top.",
+		"need": { "t": "y" },
+		"par": 17,
+		"map": [
+			".....  ...",
+			".y...YY...",
+			"S....YY..X",
+			".....  ..."
+		]
+	},
+`;
+const CHECKPOINTS_BLOCK = `	{
+		"name": "Checkpoints",
+		"tip": "Green first, then red. Which face carries which?",
+		"par": 19,
+		"map": [
+			"...g.  .R...",
+			"S....G..R..X",
+			".r...  .R...",
+			"....   .R..."
+		]
+	},
+`;
+
 const MUTATIONS: Mutation[] = [
 	{
 		name: "rule: gates judge the top face instead of the bottom",
@@ -314,6 +341,12 @@ const MUTATIONS: Mutation[] = [
 		from: "} left.`",
 		to: "} left, so spend them carefully.`",
 		grep: "hints at every tier while solving level 2[1-5]",
+	},
+	{
+		name: "intentional divergence: Checkpoints goes back before Crown",
+		from: CROWN_BLOCK + CHECKPOINTS_BLOCK,
+		to: CHECKPOINTS_BLOCK + CROWN_BLOCK,
+		grep: "level 5 Crown",
 	},
 	{
 		name: "intentional divergence: the palette goes back to the random comparator sort",

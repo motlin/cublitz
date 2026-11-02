@@ -4,7 +4,9 @@ import type {SolveGolden} from "../support/golden.ts";
 import {findBlockedMove, findDeadEnd, findMissedGoal, keyFor} from "../support/paths.ts";
 import {atLevel, engine, type Pair, withPair} from "./harness/pair.ts";
 
-const golden = JSON.parse(readFileSync(new URL("../golden/solve.json", import.meta.url), "utf8")) as SolveGolden[];
+const golden = JSON.parse(
+	readFileSync(new URL("../golden/solve-post-fix.json", import.meta.url), "utf8"),
+) as SolveGolden[];
 const pathOf = (index: number): string => golden[index]!.path!;
 const level = (index: number) => engine.LEVELS[index]!;
 const openLevel = async (pair: Pair): Promise<void> => {
@@ -114,8 +116,8 @@ for (const {title, index, why, accept, text} of BLOCKED) {
 }
 
 test("landing on a picky target without its colors", async ({browser}) => {
-	const path = findMissedGoal(engine, level(5))!;
-	await withPair(browser, {storage: atLevel(5)}, async (pair) => {
+	const path = findMissedGoal(engine, level(4))!;
+	await withPair(browser, {storage: atLevel(4)}, async (pair) => {
 		await openLevel(pair);
 		const missed = await pair.roll(path);
 		expect(missed.status).toStrictEqual({
@@ -180,7 +182,7 @@ test("win below par, over par, replay and best score", async ({browser}) => {
 
 const HINT_LEVELS: [number, string[]][] = [
 	[1, ["gate", "goal"]],
-	[5, ["gate", "goal"]],
+	[4, ["gate", "goal"]],
 	[8, ["door", "goal", "solid", "switch"]],
 	[9, ["button", "door", "goal", "solid"]],
 	[21, ["goal", "wgate"]],

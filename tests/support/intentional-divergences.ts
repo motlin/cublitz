@@ -4,6 +4,20 @@ import {readFileSync} from "node:fs";
 // Each is an exact edit to the original's text, so everything else about the expected page stays the original.
 export type IntentionalDivergence = {name: string; from: string; to: string};
 
+// The original's text for the two campaign levels whose order is swapped.
+const CHECKPOINTS = ` {"name":"Checkpoints","tip":"Green first, then red. Which face carries which?","par":19,"map":[
+  "...g.  .R...",
+  "S....G..R..X",
+  ".r...  .R...",
+  "....   .R..."]},
+`;
+const CROWN = ` {"name":"Crown","tip":"The gates want yellow on the bottom. The target wants yellow on top.","need":{"t":"y"},"par":17,"map":[
+  ".....  ...",
+  ".y...YY...",
+  "S....YY..X",
+  ".....  ..."]},
+`;
+
 export const INTENTIONAL_DIVERGENCES: IntentionalDivergence[] = [
 	{
 		name: "Skip canvas is disabled on the infinite win card",
@@ -163,6 +177,11 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
 		name: "The white gate hint no longer says to spend bare faces carefully",
 		from: " left, so spend them carefully.`",
 		to: " left.`",
+	},
+	{
+		name: "Crown is level 5 and Checkpoints is level 6, the reverse of the original",
+		from: CHECKPOINTS + CROWN,
+		to: CROWN + CHECKPOINTS,
 	},
 ];
 

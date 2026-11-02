@@ -22,16 +22,16 @@ const SOURCES: LevelSource[] = [
   "S....R..b..R.X",
   ".....R..B..R..",
   ".....R.....R.."]},
- {"name":"Checkpoints","tip":"Green first, then red. Which face carries which?","par":19,"map":[
-  "...g.  .R...",
-  "S....G..R..X",
-  ".r...  .R...",
-  "....   .R..."]},
  {"name":"Crown","tip":"The gates want yellow on the bottom. The target wants yellow on top.","need":{"t":"y"},"par":17,"map":[
   ".....  ...",
   ".y...YY...",
   "S....YY..X",
   ".....  ..."]},
+ {"name":"Checkpoints","tip":"Green first, then red. Which face carries which?","par":19,"map":[
+  "...g.  .R...",
+  "S....G..R..X",
+  ".r...  .R...",
+  "....   .R..."]},
  {"name":"Stripes","tip":"Each step on the stripes turns a new face down. You need red, blue, red, blue in a ring.","par":26,"map":[
   ".....      ",
   ".r.b.      ",

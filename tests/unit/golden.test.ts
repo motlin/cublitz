@@ -17,6 +17,10 @@ describe("golden files generated from the original script", () => {
 		expect(generateInfiniteGolden(engine)).toStrictEqual(read("infinite.json"));
 	});
 
+	it("solve() results with the intentional divergences applied, in a separate file", () => {
+		expect(generateSolveGolden(loadExpectedEngine())).toStrictEqual(read("solve-post-fix.json"));
+	});
+
 	it("infinite levels with the intentional divergences applied, in a separate file", () => {
 		expect(generateInfiniteGolden(loadExpectedEngine())).toStrictEqual(read("infinite-post-fix.json"));
 	});
