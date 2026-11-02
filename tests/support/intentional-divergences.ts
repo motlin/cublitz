@@ -185,9 +185,9 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
 		to: CROWN + CHECKPOINTS,
 	},
 	{
-		name: "Next level goes to the first later level not yet beaten, so a save that beat Checkpoints before Crown skips it",
+		name: "Next level goes to the first level in the campaign not yet beaten, so a save that beat Checkpoints before Crown goes back to Crown",
 		from: "S.lvl < 0 ? setMode('edit') : loadLevel(Math.min(S.lvl + 1, LEVELS.length - 1));",
-		to: "S.lvl < 0 ? setMode('edit') : loadLevel((next => next < 0 ? Math.min(S.lvl + 1, LEVELS.length - 1) : next)(LEVELS.findIndex((L, i) => i > S.lvl && !progress[L.name])));",
+		to: "S.lvl < 0 ? setMode('edit') : loadLevel((next => next < 0 ? Math.min(S.lvl + 1, LEVELS.length - 1) : next)(LEVELS.findIndex(L => !progress[L.name])));",
 	},
 	{
 		name: "A hot-reload snapshot holds its level's name",

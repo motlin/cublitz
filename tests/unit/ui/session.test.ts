@@ -71,7 +71,19 @@ test("Next level after Crown goes to Checkpoints when it is not beaten yet", () 
 	expect(LEVELS[nextLevel(CROWN)]?.name).toBe("Checkpoints");
 });
 
-test("Next level goes to the following level when every later level is beaten, and stays on the last level", () => {
+const CHECKPOINTS = LEVELS.findIndex((level) => level.name === "Checkpoints");
+
+test("Next level after Checkpoints goes back to Crown when an old save beat Checkpoints but not Crown", () => {
+	withSave({"First Roll": 6, "First Coat": 6, "Blue Fence": 12, "Keep the Red": 19, Checkpoints: 21});
+	expect(LEVELS[nextLevel(CHECKPOINTS)]?.name).toBe("Crown");
+});
+
+test("Next level after replaying level 3 with levels 1 to 7 beaten goes to level 8", () => {
+	withSave(Object.fromEntries(LEVELS.slice(0, 7).map((level) => [level.name!, 99])));
+	expect(nextLevel(2)).toBe(7);
+});
+
+test("Next level goes to the following level when every level is beaten, and stays on the last level", () => {
 	withSave(Object.fromEntries(LEVELS.map((level) => [level.name!, 99])));
 	expect([nextLevel(0), nextLevel(CROWN), nextLevel(LEVELS.length - 1)]).toStrictEqual([
 		1,

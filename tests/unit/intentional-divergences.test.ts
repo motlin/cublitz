@@ -42,7 +42,7 @@ describe("the intentional divergences", () => {
 			"The paint remover hint is shorter",
 			"The white gate hint no longer says to spend bare faces carefully",
 			"Crown is level 5 and Checkpoints is level 6, the reverse of the original",
-			"Next level goes to the first later level not yet beaten, so a save that beat Checkpoints before Crown skips it",
+			"Next level goes to the first level in the campaign not yet beaten, so a save that beat Checkpoints before Crown goes back to Crown",
 			"A hot-reload snapshot holds its level's name",
 			"A hot-reload snapshot is restored only onto the level with its name",
 		]);

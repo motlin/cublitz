@@ -341,9 +341,15 @@ const MUTATIONS: Mutation[] = [
 	},
 	{
 		name: "intentional divergence: Next level goes back to the following level even when it is beaten",
-		from: "const next = LEVELS.findIndex((L, j) => j > i && !beaten(L));",
+		from: "const next = LEVELS.findIndex((L) => !beaten(L));",
 		to: "const next = -1;",
-		grep: "Next level after Crown skips Checkpoints",
+		grep: "Next level after",
+	},
+	{
+		name: "intentional divergence: Next level searches only the levels after the current one",
+		from: "const next = LEVELS.findIndex((L) => !beaten(L));",
+		to: "const next = LEVELS.findIndex((L, j) => j > i && !beaten(L));",
+		grep: "Next level after Checkpoints goes back to Crown",
 	},
 	{
 		name: "intentional divergence: a hot-reload snapshot is restored without checking its level's name",

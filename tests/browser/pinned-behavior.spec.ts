@@ -137,6 +137,19 @@ test("Next level after Crown skips Checkpoints when an old save already beat it"
 	});
 });
 
+test("Next level after Checkpoints goes back to Crown when an old save beat Checkpoints but not Crown", async ({
+	browser,
+}) => {
+	await withPair(browser, {storage: OLD_ORDER_SAVE}, async (pair) => {
+		await pair.click("#titlePlay");
+		await pair.click('#levels button[title^="Checkpoints"]');
+		const won = await pair.roll(golden[5]!.path!);
+		expect(won.win.hidden).toBe(false);
+		const next = await pair.click("#winNext");
+		expect(next.hud).toStrictEqual({name: "Crown", num: "Level 5 of 30", moves: "0", par: "17"});
+	});
+});
+
 test("the white gates tip and level 23's tip no longer say that paint never comes off", async ({browser}) => {
 	const seenExceptWhiteGates = {roll: true, paint: true, gate: true, need: true, switch: true, button: true};
 	const storage = {...atLevel(22), "cubist-tips-seen-v1": JSON.stringify(seenExceptWhiteGates)};
