@@ -2,7 +2,7 @@ import {renderBoard} from "./board.ts";
 import {$, domValue} from "./dom.ts";
 import {editorId, loadIntoEditor, renderEditor} from "./editor.ts";
 import {campaignLvl, infinite, leaveInfinite} from "./infinite-mode.ts";
-import {loadLevel} from "./play.ts";
+import {loadLevel, mergeIndex} from "./play.ts";
 import {S} from "./session.ts";
 import {queueTips} from "./tips.ts";
 import {renderTitle} from "./title.ts";
@@ -40,7 +40,7 @@ export function setMode(m: Mode): void {
 
 export function initModes(): void {
 	$("modePlay").addEventListener("click", () => {
-		if (infinite || !S || S.lvl < 0) {
+		if (infinite || !S || (S.lvl < 0 && mergeIndex(S.lvl) < 0)) {
 			leaveInfinite();
 			loadLevel(campaignLvl);
 		}

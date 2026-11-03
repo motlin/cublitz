@@ -322,3 +322,17 @@ test("a hint on a merge level names the merge", async ({browser}) => {
 	await expect(page.locator("#hintBox")).toContainText("merge with the highlighted cube");
 	await page.close();
 });
+
+test("Edit then Play resumes a merge level with its moves intact", async ({browser}) => {
+	const page = await open(browser, "reduce");
+	await page.locator('#levels button[title="Side by Side"]').click();
+	await roll(page, "EE");
+	const before = await unitPlaces(page);
+	await page.locator("#modeEdit").click();
+	await page.locator("#modePlay").click();
+	await expect(page.locator("#lvName")).toHaveText("Side by Side");
+	await expect(page.locator("#lvNum")).toHaveText("Merge level 3 of 4");
+	await expect(page.locator("#moves")).toHaveText("2");
+	expect(await unitPlaces(page)).toStrictEqual(before);
+	await page.close();
+});
