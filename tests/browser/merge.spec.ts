@@ -34,26 +34,26 @@ const roll = async (page: Page, path: string): Promise<void> => {
 	}
 };
 
-test("the three merge levels play through to the end, and record their best", async ({browser}) => {
+test("the four merge levels play through to the end, and record their best", async ({browser}) => {
 	const page = await open(browser, "reduce");
 	const errors: string[] = [];
 	page.on("pageerror", (error) => errors.push(error.message));
 	await page.locator('#levels button[title="Stick Together"]').click();
 	for (const [index, level] of MERGE_LEVELS.entries()) {
 		await expect(page.locator("#lvName")).toHaveText(level.name!);
-		await expect(page.locator("#lvNum")).toHaveText(`Merge level ${index + 1} of 3`);
+		await expect(page.locator("#lvNum")).toHaveText(`Merge level ${index + 1} of 4`);
 		await expect(page.locator(".cube")).toHaveCount(1 + level.cubes0!.length);
 		await roll(page, solve(level, initState(level))!);
 		await expect(page.locator("#win")).toBeVisible();
 		await expect(page.locator("#winScore")).toHaveText(`${level.par} moves · par ${level.par}`);
-		if (index < 2) await page.locator("#winNext").click();
+		if (index < 3) await page.locator("#winNext").click();
 	}
 	await expect(page.locator("#winNext")).toBeHidden();
 	await expect(page.locator("#winNote")).toHaveText(
 		"That was the last merge level. Replay any of them to chase par.",
 	);
 	const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("cubist-progress-v2")!) as object);
-	expect(saved).toStrictEqual({"Stick Together": 4, "Mind the Gap": 5, "Side by Side": 9});
+	expect(saved).toStrictEqual({"Stick Together": 4, "Mind the Gap": 5, "Side by Side": 9, Pride: 17});
 	expect(errors).toStrictEqual([]);
 	await page.close();
 });

@@ -25,6 +25,26 @@ const SOURCES: LevelSource[] = [
 		k: {"+": ["cube", "w"]},
 		map: ["S+...", "   rr", "   ..", "   ..", "   ..", "   RR", "   X."],
 	},
+	// From a player, kept exactly as shared, empty leading rows and all.
+	{
+		name: "Pride",
+		par: 17,
+		k: {"1": ["cube", "w"]},
+		map: [
+			"",
+			"",
+			" S111111r",
+			"        .",
+			"        .",
+			"Xcgyoroy.",
+			"cgyoroyg.",
+			"gyoroygc.",
+			"yoroygcp.",
+			"oroygcpr.",
+			"roygcpro1",
+			".........",
+		],
+	},
 ];
 
 export const MERGE_LEVELS: Level[] = SOURCES.map((L) => parseLevel(L));

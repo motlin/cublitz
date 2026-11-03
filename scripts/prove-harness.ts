@@ -27,8 +27,8 @@ const swapLevels = (html: string, first: string, second: string, following: stri
 	return html.slice(0, a) + html.slice(b, c) + html.slice(a, b) + html.slice(c);
 };
 
-// Removes the campaign's last level, cut from the comma before its object to the end of the level array, so the
-// bundler's formatting of the level data does not matter.
+// Removes the last level of the campaign or the merge levels, cut from the comma before its object to the end of the
+// level array, so the bundler's formatting of the level data does not matter.
 const removeLastLevel = (html: string, name: string): string | null => {
 	const anchor = new RegExp(String.raw`\{\s*"?name"?\s*:\s*"${name}"`, "g");
 	const found = [...html.matchAll(anchor)];
@@ -368,6 +368,11 @@ const MUTATIONS: Mutation[] = [
 		name: "intentional divergence: Stinkley tinkles is removed from the campaign",
 		mutate: (html) => removeLastLevel(html, "Stinkley tinkles"),
 		grep: "level 31 Stinkley tinkles",
+	},
+	{
+		name: "intentional divergence: Pride is removed from the merge levels",
+		mutate: (html) => removeLastLevel(html, "Pride"),
+		grep: "the four merge levels play through",
 	},
 	{
 		name: "intentional divergence: Next level goes back to the following level even when it is beaten",

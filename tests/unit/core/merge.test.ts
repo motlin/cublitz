@@ -310,7 +310,16 @@ describe("MERGE_LEVELS", () => {
 			}
 			return count;
 		});
-		expect(merges).toStrictEqual([1, 2, 1]);
+		expect(merges).toStrictEqual([1, 2, 1, 7]);
+	});
+
+	it("runs from the easiest to the hardest, ending with the player's level Pride", () => {
+		expect(MERGE_LEVELS.map((level) => [level.name, level.par])).toStrictEqual([
+			["Stick Together", 4],
+			["Mind the Gap", 5],
+			["Side by Side", 9],
+			["Pride", 17],
+		]);
 	});
 
 	it("includes a level that a 1x3 crosses by hanging over a gap", () => {

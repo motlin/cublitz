@@ -517,7 +517,7 @@ for (const screen of SCREENS) {
 			await context.close();
 		});
 
-		for (const level of ["M1", "M2", "M3"]) {
+		for (const level of ["M1", "M2", "M3", "M4"]) {
 			test(`${level}'s longer level number stays clear of the stats`, async ({browser}) => {
 				const {context, page} = await openPhone(browser, screen);
 				await page.locator("#titlePlay").tap();
@@ -527,7 +527,7 @@ for (const screen of SCREENS) {
 				await page.getByRole("button", {name: level, exact: true}).tap();
 				await sleep(150);
 				while (await page.locator("#tip").isVisible()) await page.locator("#tipOk").tap();
-				await expect(page.locator("#lvNum")).toHaveText(`Merge level ${level.slice(1)} of 3`);
+				await expect(page.locator("#lvNum")).toHaveText(`Merge level ${level.slice(1)} of 4`);
 				const hits = await headerOverlaps(page);
 				await page.screenshot({path: test.info().outputPath(`${level}.png`)});
 				expect(hits).toStrictEqual([]);
