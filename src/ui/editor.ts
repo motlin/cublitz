@@ -257,10 +257,28 @@ function touchPaint(e: FingerEvent): void {
 }
 
 let needSel: ElementById<"edNeed">;
-function selectCodeForCopying(): void {
-	$("edCode").focus();
-	$("edCode").select();
-	$("edCodeNote").textContent = "Selected. Press Ctrl+C or Cmd+C to copy.";
+/** The share code of the level being edited, or "" when it is not a valid level yet. */
+function currentCode(): string {
+	const r = edToLevel(ED!);
+	return r.level ? encodeLevel(r.level) : "";
+}
+/** Copies text to the clipboard; when the browser refuses, puts it in the share box selected, with a note saying how to copy it. */
+function copyOrSelect(text: string, selectedNote: string): void {
+	const select = (): void => {
+		const box = $("edCode");
+		box.value = text;
+		box.focus();
+		box.setSelectionRange(0, text.length);
+		$("edCodeNote").textContent = selectedNote;
+	};
+	try {
+		navigator.clipboard.writeText(text).then(() => {
+			$("edCodeNote").textContent = "Copied.";
+			return undefined;
+		}, select);
+	} catch {
+		select();
+	}
 }
 /** One box shows the level's share code and takes a pasted code or link to load, beside Copy code, Copy link and Load. */
 function initShareBox(): void {
@@ -295,23 +313,9 @@ function initShareBox(): void {
 		codeTyped = false;
 	});
 	copyLink.addEventListener("click", () => {
-		const code = box.value;
+		const code = currentCode();
 		if (!code) return;
-		const link = `${location.origin}${location.pathname}?${code}`;
-		const selectLink = (): void => {
-			box.value = link;
-			box.focus();
-			box.setSelectionRange(0, link.length);
-			$("edCodeNote").textContent = "Selected. Copy the link from the box.";
-		};
-		try {
-			navigator.clipboard.writeText(link).then(() => {
-				$("edCodeNote").textContent = "Copied.";
-				return undefined;
-			}, selectLink);
-		} catch {
-			selectLink();
-		}
+		copyOrSelect(`${location.origin}${location.pathname}?${code}`, "Selected. Copy the link from the box.");
 	});
 	$("edImport").addEventListener("click", () => {
 		try {
@@ -503,16 +507,9 @@ export function initEditor(): void {
 		changed();
 	});
 	$("edCopy").addEventListener("click", () => {
-		const v = $("edCode").value;
-		if (!v) return;
-		try {
-			navigator.clipboard.writeText(v).then(() => {
-				$("edCodeNote").textContent = "Copied.";
-				return undefined;
-			}, selectCodeForCopying);
-		} catch {
-			selectCodeForCopying();
-		}
+		const code = currentCode();
+		if (!code) return;
+		copyOrSelect(code, "Selected. Press Ctrl+C or Cmd+C to copy.");
 	});
 	initShareBox();
 	renderStock();

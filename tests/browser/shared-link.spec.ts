@@ -113,6 +113,36 @@ test("when the clipboard fails, Copy link selects the link in the share box, and
 	await page.close();
 });
 
+test("pressing Copy link again after the clipboard fails still gives one valid link", async ({browser}) => {
+	const {page} = await open(browser, "");
+	await page.evaluate(() => {
+		navigator.clipboard.writeText = async () => Promise.reject(new Error("denied"));
+	});
+	await page.locator("#titleEdit").click();
+	const code = await page.locator("#edCode").inputValue();
+	await page.locator("#edCopyLink").click();
+	await expect(page.locator("#edCodeNote")).toHaveText("Selected. Copy the link from the box.");
+	await page.locator("#edCopyLink").click();
+	await expect(page.locator("#edCodeNote")).toHaveText("Selected. Copy the link from the box.");
+	expect(await page.locator("#edCode").inputValue()).toBe(`${BASE_URL}/?${code}`);
+	await page.close();
+});
+
+test("Copy link and Copy code copy the current level, not whatever is typed in the share box", async ({browser}) => {
+	const {page} = await open(browser, "");
+	await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+	await page.locator("#titleEdit").click();
+	const code = await page.locator("#edCode").inputValue();
+	await page.locator("#edCode").fill(`${BASE_URL}/${FLIP}`);
+	await page.locator("#edCopyLink").click();
+	await expect(page.locator("#edCodeNote")).toHaveText("Copied.");
+	expect(await page.evaluate(async () => navigator.clipboard.readText())).toBe(`${BASE_URL}/?${code}`);
+	await page.locator("#edCopy").click();
+	await expect(page.locator("#edCodeNote")).toHaveText("Copied.");
+	expect(await page.evaluate(async () => navigator.clipboard.readText())).toBe(code);
+	await page.close();
+});
+
 test("a link pasted into the editor's share box loads that level", async ({browser}) => {
 	const {page} = await open(browser, "");
 	await page.locator("#titleEdit").click();
