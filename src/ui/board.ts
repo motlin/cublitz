@@ -23,8 +23,12 @@ type CubeView = {
 	roller: HTMLElement;
 	faces: Partial<Record<Face, HTMLElement>>;
 	shadow: HTMLElement;
+	/** The cell of the cube it showed last. */
+	at?: {x: number; y: number};
 };
 let views: CubeView[] = [];
+/** How many of the views showed the block's units last. */
+let unitViews = 0;
 export let boxEls: HTMLElement[] = [];
 let doorEls: DoorPiece[] = [];
 
@@ -199,6 +203,7 @@ export function renderBoard(): void {
 	({cube: cubeEl, roller: rollerEl, faces: faceEls} = makeCube());
 	board.appendChild(cubeEl);
 	views = [];
+	unitViews = S.st.units?.length ?? 0;
 	if (S.st.units) {
 		views = [{cube: cubeEl, roller: rollerEl, faces: faceEls, shadow: shadowEl}];
 		for (let i = S.st.units.length + S.st.loose!.length - 1; i > 0; i--) {
@@ -239,16 +244,45 @@ function makeCube(): Omit<CubeView, "shadow"> {
 /** A share code's legend can hand any cell a color the type does not list, so this reads it from any cell. */
 const colorOf = (cell: Cell): PieceColor | undefined => (cell as {c?: PieceColor}).c;
 
+/**
+ * Hands each cube the view that showed it last: units keep theirs by place in the block, and a cube that joins or
+ * leaves the block takes the view that last stood on its cell.
+ */
+function bindViews(cubes: {x: number; y: number}[], units: number): void {
+	const keep = Math.min(unitViews, units);
+	const pool = views.slice(keep);
+	const bound = cubes.slice(keep).map((u) => {
+		const i = pool.findIndex((v) => v.at?.x === u.x && v.at.y === u.y);
+		return i < 0 ? undefined : pool.splice(i, 1)[0];
+	});
+	views = [...views.slice(0, keep), ...bound.map((v) => v ?? pool.shift()!)];
+	unitViews = units;
+}
+
+const placeShadow = (view: CubeView, u: {x: number; y: number; z?: number}): void => {
+	const c = C();
+	view.shadow.style.transform = `translate3d(${u.x * c + 4}px, ${u.y * c + 6}px, 0.5px)`;
+	view.shadow.hidden = (u.z ?? 0) > 0;
+};
+
+/** Sends each unit's shadow to where that unit lands, as a roll to these units starts. */
+export function aimShadows(units: Unit[]): void {
+	units.forEach((u, i) => {
+		placeShadow(views[i]!, u);
+	});
+}
+
 function placeViews(): void {
 	const c = C(),
 		st = S.st;
 	const solid = solidColorOf(st);
 	const cubes: (Omit<Unit, "z"> & {z?: number})[] = [...st.units!, ...st.loose!];
+	bindViews(cubes, st.units!.length);
 	cubes.forEach((u, i) => {
 		const view = views[i]!;
+		view.at = {x: u.x, y: u.y};
 		view.cube.style.transform = `translate3d(${u.x * c}px, ${u.y * c}px, ${(u.z ?? 0) * c + 1}px)`;
-		view.shadow.style.transform = `translate3d(${u.x * c + 4}px, ${u.y * c + 6}px, 0.5px)`;
-		view.shadow.hidden = (u.z ?? 0) > 0;
+		placeShadow(view, u);
 		for (const k of FACES) {
 			const col = u.f[k];
 			view.faces[k]!.style.setProperty("--fc", col ? COLORS[col] : "var(--clay)");

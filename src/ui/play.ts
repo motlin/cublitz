@@ -6,6 +6,7 @@ import {solidColorOf} from "../core/prism.ts";
 import {judgedGoalFaces, openColors, tryMove} from "../core/rules.ts";
 import type {Direction, Face, Level, LevelSource, Paint, State, SwitchCell} from "../core/types.ts";
 import {
+	aimShadows,
 	boxEls,
 	C,
 	placeCube,
@@ -280,7 +281,8 @@ export function move(d: Direction): void {
 		return;
 	}
 	const c = C();
-	shadowEl.style.transform = `translate3d(${r.nx * c + 4}px, ${r.ny * c + 6}px, 0.5px)`;
+	if (r.st.units) aimShadows(r.st.units);
+	else shadowEl.style.transform = `translate3d(${r.nx * c + 4}px, ${r.ny * c + 6}px, 0.5px)`;
 	if (r.pushed >= 0) {
 		const b = r.st.boxes[r.pushed]!,
 			off = Math.round(c * 0.1);

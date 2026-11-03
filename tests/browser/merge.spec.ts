@@ -348,3 +348,56 @@ test("Edit then Play resumes a merge level with its moves intact", async ({brows
 	expect(await unitPlaces(page)).toStrictEqual(before);
 	await page.close();
 });
+
+const shadowPlaces = async (page: Page) =>
+	page
+		.locator(".shadow")
+		.evaluateAll((els) => els.map((el) => [(el as HTMLElement).style.transform, (el as HTMLElement).hidden]));
+const shadowAt = (c: number, x: number, y: number) => `translate3d(${x * c + 4}px, ${y * c + 6}px, 0.5px)`;
+
+test("each cube's shadow heads for that cube's own landing while the block rolls", async ({browser}) => {
+	const page = await open(browser, "no-preference");
+	await page.locator('#levels button[title="Stick Together"]').click();
+	await page.evaluate(`startLevel(parseLevel({name: "T", map: ["+S", ".."], k: {"+": ["cube", "w"]}}), -3)`);
+	await roll(page, "W");
+	const c = Number(await page.evaluate("C()"));
+	const during = await page.evaluate(() => {
+		document.dispatchEvent(new KeyboardEvent("keydown", {key: "ArrowDown", bubbles: true}));
+		return Array.from(document.querySelectorAll<HTMLElement>(".shadow")).map((el) => [
+			el.style.transform,
+			el.hidden,
+		]);
+	});
+	expect(during).toStrictEqual([
+		[shadowAt(c, 1, 1), false],
+		[shadowAt(c, 0, 1), false],
+	]);
+	await settled(page);
+	expect(await shadowPlaces(page)).toStrictEqual(during);
+	await page.close();
+});
+
+test("merging a cube that is not first among the loose ones keeps every cube's look in place", async ({browser}) => {
+	const page = await open(browser, "no-preference");
+	await page.locator('#levels button[title="Stick Together"]').click();
+	await page.evaluate(`startLevel(parseLevel({name: "T", map: ["S.+", "+.."], k: {"+": ["cube", "w"]}}), -3)`);
+	const cubePlaces = async () =>
+		page.locator(".cube").evaluateAll((els) => els.map((el) => (el as HTMLElement).style.transform));
+	const cubesBefore = await cubePlaces();
+	const shadowsBefore = await shadowPlaces(page);
+	await roll(page, "S");
+	expect(await unitPlaces(page)).toStrictEqual([
+		[0, 0, 0],
+		[0, 1, 0],
+	]);
+	expect({cubes: await cubePlaces(), shadows: await shadowPlaces(page)}).toStrictEqual({
+		cubes: cubesBefore,
+		shadows: shadowsBefore,
+	});
+	await page.locator("#undoBtn").click();
+	expect({cubes: await cubePlaces(), shadows: await shadowPlaces(page)}).toStrictEqual({
+		cubes: cubesBefore,
+		shadows: shadowsBefore,
+	});
+	await page.close();
+});
