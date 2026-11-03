@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vite-plus/test";
 import {LEVELS} from "../../../src/core/levels.ts";
-import {encodeLevel, levelFromSearch} from "../../../src/core/share.ts";
+import {encodeLevel, levelFromCode, levelFromSearch} from "../../../src/core/share.ts";
 
 const search = (level: unknown): string => `?CUBLITZ:${btoa(JSON.stringify(level))}`;
 const VALID = {name: "Shared", map: ["S.X"], k: {}};
@@ -132,5 +132,37 @@ describe("levelFromSearch", () => {
 		const legend = `{"name":"n","map":["S.X"],"k":{"__proto__":["box","r"]}}`;
 		expect(() => levelFromSearch(`?CUBLITZ:${btoa(top)}`)).toThrow(new Error("bad"));
 		expect(() => levelFromSearch(`?CUBLITZ:${btoa(legend)}`)).toThrow(new Error("bad"));
+	});
+});
+
+describe("levelFromCode", () => {
+	const level = {name: "a>>>?", map: ["S.X"], k: {}, need: {t: "r" as const}};
+	const code = encodeLevel(level);
+
+	it.each<[string, string]>([
+		["a share code", code],
+		["a share code with space around it", `\n  ${code}  \n`],
+		["a share code with an older prefix", code.replace("CUBLITZ:", "CUBIST:")],
+		["raw JSON", JSON.stringify(level)],
+		["a full link", `https://cublitz.example/?${code}`],
+		["a link with other parameters", `https://cublitz.example/?utm_source=chat&${code}&fbclid=IwAR0abc`],
+		["a link with no scheme", `cublitz.example/?${code}`],
+		["a link whose padding was percent-encoded", `https://cublitz.example/?${code.replaceAll("=", "%3D")}`],
+	])("reads %s", (_name, text) => {
+		expect(levelFromCode(text)).toStrictEqual(level);
+	});
+
+	it.each<[string, string, string]>([
+		["an empty box", "", "JSON"],
+		["text that is not a code", "not a code", "JSON"],
+		["a link with no code", "https://cublitz.example/?utm_source=chat", "bad"],
+		["a code cut short", code.slice(0, 20), "JSON"],
+		["a level with no start", encodeLevel({name: "n", map: ["..X"], k: {}}), "bad"],
+		["a level with no name", encodeLevel({map: ["S.X"], k: {}}), "bad"],
+		["a level with a par", encodeLevel({name: "n", map: ["S.X"], k: {}, par: 1}), "bad"],
+		["raw JSON of a bad level", JSON.stringify({name: "n", map: ["S.X"], k: {1: ["lava", "r"]}}), "bad"],
+		["a link to a bad level", `https://cublitz.example/?${encodeLevel({name: "n", map: ["S.."], k: {}})}`, "bad"],
+	])("refuses %s", (_name, text, message) => {
+		expect(() => levelFromCode(text)).toThrow(message);
 	});
 });

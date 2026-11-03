@@ -2,7 +2,7 @@ import {FACES} from "../core/cube.ts";
 import {initState, parseLevel} from "../core/level.ts";
 import {LEVELS} from "../core/levels.ts";
 import {CNAME, FNAME} from "../core/names.ts";
-import {decodeLevel, encodeLevel} from "../core/share.ts";
+import {encodeLevel, levelFromCode} from "../core/share.ts";
 import {solve} from "../core/solver.ts";
 import type {Face, Level, LevelSource, Paint, PieceColor} from "../core/types.ts";
 import {$, domValue, type ElementById, needSelect, targetElement, targetInput, targetSelect} from "./dom.ts";
@@ -55,6 +55,8 @@ let wface: Face = "b";
 let painting = false;
 let lastCheck: Check | null = null;
 let armedDelete: string | null = null;
+/** The player has typed or pasted into the share box since it last had focus, so editing the level leaves it alone. */
+let codeTyped = false;
 
 export const editorId = (): string | null => ED!.id;
 function saveDraft(): void {
@@ -107,7 +109,7 @@ export function renderEditor(): void {
 		b.setAttribute("aria-pressed", domValue(b.dataset["face"] === wface));
 	});
 	const r = edToLevel(ED);
-	$("edCode").value = r.level ? encodeLevel(r.level) : "";
+	if (!codeTyped) $("edCode").value = r.level ? encodeLevel(r.level) : "";
 	$("edCodeNote").textContent = r.level ? "Anyone with this code can import your level." : r.error;
 	$("edSave").textContent = ED.id ? "Save changes" : "Save to my levels";
 	renderCheck();
@@ -259,6 +261,69 @@ function selectCodeForCopying(): void {
 	$("edCode").focus();
 	$("edCode").select();
 	$("edCodeNote").textContent = "Selected. Press Ctrl+C or Cmd+C to copy.";
+}
+/** One box shows the level's share code and takes a pasted code or link to load, beside Copy code, Copy link and Load. */
+function initShareBox(): void {
+	const box = $("edCode");
+	box.readOnly = false;
+	box.placeholder = "Paste a CUBLITZ: code or link, then press Load";
+	$("edImportText").closest("label")!.remove();
+	$("edCopy").insertAdjacentHTML("afterend", '<button class="act" id="edCopyLink" type="button">Copy link</button>');
+	const copyLink = document.getElementById("edCopyLink")!;
+	copyLink.after($("edImport"));
+	$("edImportNote").closest(".row")!.remove();
+	// A tap or click that focuses the box selects all of it, ready to copy or to paste over.
+	let clickSelects = false;
+	const selectAll = (): void => {
+		box.setSelectionRange(0, box.value.length);
+	};
+	box.addEventListener("pointerdown", () => {
+		clickSelects = document.activeElement !== box;
+	});
+	box.addEventListener("focus", () => {
+		codeTyped = false;
+		selectAll();
+	});
+	box.addEventListener("click", () => {
+		if (clickSelects) selectAll();
+		clickSelects = false;
+	});
+	box.addEventListener("input", () => {
+		codeTyped = true;
+	});
+	box.addEventListener("blur", () => {
+		codeTyped = false;
+	});
+	copyLink.addEventListener("click", () => {
+		const code = box.value;
+		if (!code) return;
+		const link = `${location.origin}${location.pathname}?${code}`;
+		const selectLink = (): void => {
+			box.value = link;
+			box.focus();
+			box.setSelectionRange(0, link.length);
+			$("edCodeNote").textContent = "Selected. Copy the link from the box.";
+		};
+		try {
+			navigator.clipboard.writeText(link).then(() => {
+				$("edCodeNote").textContent = "Copied.";
+				return undefined;
+			}, selectLink);
+		} catch {
+			selectLink();
+		}
+	});
+	$("edImport").addEventListener("click", () => {
+		try {
+			const L = levelFromCode(box.value);
+			loadIntoEditor(L, L.name || "Imported", null);
+			codeTyped = false;
+			renderEditor();
+			$("edCodeNote").textContent = `Loaded “${ED!.name}”.`;
+		} catch {
+			$("edCodeNote").textContent = "That code didn’t work. Paste the whole thing, starting with CUBLITZ:";
+		}
+	});
 }
 export function initEditor(): void {
 	const fingers = fingerGestures(
@@ -449,47 +514,7 @@ export function initEditor(): void {
 			selectCodeForCopying();
 		}
 	});
-	$("edCopy").insertAdjacentHTML("afterend", '<button class="act" id="edCopyLink" type="button">Copy link</button>');
-	$("edCodeNote").insertAdjacentHTML(
-		"afterend",
-		'<input id="edLinkText" type="text" readonly hidden aria-label="Share link" style="flex:1 1 100%;min-width:0">',
-	);
-	const linkBox = document.getElementById("edLinkText") as HTMLInputElement;
-	linkBox.addEventListener("blur", () => {
-		linkBox.hidden = true;
-	});
-	document.getElementById("edCopyLink")!.addEventListener("click", () => {
-		const code = $("edCode").value;
-		if (!code) return;
-		const link = `${location.origin}${location.pathname}?${code}`;
-		const selectLink = (): void => {
-			linkBox.value = link;
-			linkBox.hidden = false;
-			linkBox.focus();
-			linkBox.setSelectionRange(0, link.length);
-			$("edCodeNote").textContent = "Selected. Copy the link from the box.";
-		};
-		try {
-			navigator.clipboard.writeText(link).then(() => {
-				linkBox.hidden = true;
-				$("edCodeNote").textContent = "Copied.";
-				return undefined;
-			}, selectLink);
-		} catch {
-			selectLink();
-		}
-	});
-	$("edImport").addEventListener("click", () => {
-		try {
-			const L = decodeLevel($("edImportText").value);
-			loadIntoEditor(L, L.name || "Imported", null);
-			$("edImportText").value = "";
-			$("edImportNote").textContent = `Loaded “${ED!.name}”.`;
-			renderEditor();
-		} catch {
-			$("edImportNote").textContent = "That code didn’t work. Paste the whole thing, starting with CUBLITZ:";
-		}
-	});
+	initShareBox();
 	renderStock();
 	$("edStock").addEventListener("change", (e) => {
 		const select = targetSelect(e);

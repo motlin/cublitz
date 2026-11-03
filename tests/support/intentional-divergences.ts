@@ -73,18 +73,78 @@ export const INTENTIONAL_DIVERGENCES: IntentionalDivergence[] = [
 		to: "$('viewport').addEventListener('pointerdown', e => { if (e.pointerType === 'touch' && matchMedia('(pointer: coarse) and (max-width: 932px), (pointer: coarse) and (max-height: 500px)').matches) return; touch0 = [e.clientX, e.clientY]; });",
 	},
 	{
-		name: "The editor has a Copy link button beside Copy code",
-		from: "$('edImport').onclick = () => {",
-		to: `$('edCopy').insertAdjacentHTML('afterend', '<button class="act" id="edCopyLink" type="button">Copy link</button>');
-$('edCodeNote').insertAdjacentHTML('afterend', '<input id="edLinkText" type="text" readonly hidden aria-label="Share link" style="flex:1 1 100%;min-width:0">');
-$('edLinkText').addEventListener('blur', e => { e.target.hidden = true; });
-$('edCopyLink').addEventListener('click', () => {
-  const code = $('edCode').value; if (!code) return;
-  const link = location.origin + location.pathname + '?' + code;
-  const sel = () => { const box = $('edLinkText'); box.value = link; box.hidden = false; box.focus(); box.setSelectionRange(0, link.length); $('edCodeNote').textContent = 'Selected. Copy the link from the box.'; };
-  try { navigator.clipboard.writeText(link).then(() => { $('edLinkText').hidden = true; $('edCodeNote').textContent = 'Copied.'; }, sel); } catch (e) { sel(); }
-});
-$('edImport').onclick = () => {`,
+		name: "The editor has one share box that shows the code, copies it or a link, and loads a pasted code or link, checked as strictly as a link",
+		from: `$('edImport').onclick = () => {
+  try {
+    const L = decodeLevel($('edImportText').value);
+    loadIntoEditor(L, L.name || 'Imported', null);
+    $('edImportText').value = '';
+    $('edImportNote').textContent = \`Loaded “\${ED.name}”.\`;
+    renderEditor();
+  } catch (e) { $('edImportNote').textContent = 'That code didn’t work. Paste the whole thing, starting with CUBLITZ:'; }
+};`,
+		to: `{
+  const box = $('edCode');
+  box.readOnly = false;
+  box.placeholder = 'Paste a CUBLITZ: code or link, then press Load';
+  $('edImportText').closest('label').remove();
+  $('edCopy').insertAdjacentHTML('afterend', '<button class="act" id="edCopyLink" type="button">Copy link</button>');
+  $('edCopyLink').after($('edImport'));
+  $('edImportNote').closest('.row').remove();
+  let clickSelects = false;
+  const selectAll = () => box.setSelectionRange(0, box.value.length);
+  box.addEventListener('pointerdown', () => { clickSelects = document.activeElement !== box; });
+  box.addEventListener('focus', () => { box.typed = false; selectAll(); });
+  box.addEventListener('click', () => { if (clickSelects) selectAll(); clickSelects = false; });
+  box.addEventListener('input', () => { box.typed = true; });
+  box.addEventListener('blur', () => { box.typed = false; });
+  $('edCopyLink').addEventListener('click', () => {
+    const code = box.value; if (!code) return;
+    const link = location.origin + location.pathname + '?' + code;
+    const sel = () => { box.value = link; box.focus(); box.setSelectionRange(0, link.length); $('edCodeNote').textContent = 'Selected. Copy the link from the box.'; };
+    try { navigator.clipboard.writeText(link).then(() => { $('edCodeNote').textContent = 'Copied.'; }, sel); } catch (e) { sel(); }
+  });
+  const one = (v, letters) => typeof v === 'string' && v.length === 1 && letters.includes(v);
+  const isRecord = v => typeof v === 'object' && v !== null && !Array.isArray(v);
+  const entryOk = e => Array.isArray(e) && e.length === 2 && (e[0] === 'wgate' ? one(e[1], 'tbnsew') : e[0] === 'cube' ? e[1] === 'w' : ['box', 'switch', 'button', 'door'].includes(e[0]) && one(e[1], 'roygcbpw'));
+  const strict = L => {
+    const { name, map, k = {}, need = {} } = L;
+    if (!Object.keys(L).every(key => ['name', 'map', 'k', 'need'].includes(key))) return false;
+    if (typeof name !== 'string' || !name.trim() || name.length > 100) return false;
+    if (!isRecord(k) || !isRecord(need)) return false;
+    if (!Object.entries(k).every(([ch, e]) => [...ch].length === 1 && !' SX'.includes(ch) && entryOk(e))) return false;
+    if (!Object.entries(need).every(([f, c]) => one(f, 'tbnsew') && one(c, 'roygcbp'))) return false;
+    if (map.length > 12 || map.some(row => [...row].length > 18)) return false;
+    const cells = map.flatMap(row => [...row]);
+    if (!cells.every(ch => ' .SXWZroygcbpROYGCBP'.includes(ch) || Object.hasOwn(k, ch))) return false;
+    return cells.filter(ch => ch === 'S').length === 1 && cells.includes('X');
+  };
+  const fromCode = text => {
+    const s = text.trim(), q = s.indexOf('?');
+    let L;
+    if (q >= 0 && !s.startsWith('{')) {
+      const code = s.slice(q + 1).split('&').find(p => p.startsWith('CUBLITZ:'));
+      if (code === undefined) throw new Error('bad');
+      L = decodeLevel('CUBLITZ:' + decodeURIComponent(code.slice(8)));
+    } else L = decodeLevel(s);
+    if (!strict(L)) throw new Error('bad');
+    return L;
+  };
+  $('edImport').onclick = () => {
+    try {
+      const L = fromCode(box.value);
+      loadIntoEditor(L, L.name || 'Imported', null);
+      box.typed = false;
+      renderEditor();
+      $('edCodeNote').textContent = \`Loaded “\${ED.name}”.\`;
+    } catch (e) { $('edCodeNote').textContent = 'That code didn’t work. Paste the whole thing, starting with CUBLITZ:'; }
+  };
+}`,
+	},
+	{
+		name: "Editing the level leaves the share box alone while the player types in it",
+		from: "  $('edCode').value = r.level ? encodeLevel(r.level) : '';\n",
+		to: "  if (!$('edCode').typed) $('edCode').value = r.level ? encodeLevel(r.level) : '';\n",
 	},
 	{
 		name: "The page can be installed as an app that plays offline",

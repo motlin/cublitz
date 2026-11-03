@@ -10,7 +10,7 @@ const UNTITLED = {name: "Untitled", map: ["........", "........", "S......X", ".
 
 const openEditor = async (pair: Pair) => pair.click("#titleEdit");
 const importCode = async (pair: Pair, code: string, name: string) => {
-	await pair.step(`type ${name}`, async (page) => page.locator("#edImportText").fill(code));
+	await pair.step(`type ${name}`, async (page) => page.locator("#edCode").fill(code));
 	return pair.click("#edImport", `import ${name}`);
 };
 
@@ -130,7 +130,7 @@ test("share code round trip, older prefixes, raw JSON and bad codes", async ({br
 			`CUBLITZ:${Buffer.from(JSON.stringify(level)).toString("base64")}`,
 		);
 		await importCode(pair, roundTrip, "a new code");
-		expect(await pair.legacy.locator("#edImportNote").textContent()).toBe("Loaded “Rôund trip”.");
+		expect(await pair.legacy.locator("#edCodeNote").textContent()).toBe("Loaded “Rôund trip”.");
 		expect(await value(pair.legacy, "#edCode")).toBe(roundTrip);
 		for (const prefix of ["CUBITZ:", "CUBIST:"]) {
 			await importCode(pair, roundTrip.replace("CUBLITZ:", prefix), prefix);
@@ -141,10 +141,60 @@ test("share code round trip, older prefixes, raw JSON and bad codes", async ({br
 		expect(await value(pair.legacy, "#edCode")).toBe(roundTrip);
 		for (const bad of ["CUBLITZ:!!!", "not a code", '{"map":[1]}', "null"]) {
 			await importCode(pair, bad, `bad code ${bad}`);
-			expect(await pair.legacy.locator("#edImportNote").textContent()).toBe(
+			expect(await pair.legacy.locator("#edCodeNote").textContent()).toBe(
 				"That code didn’t work. Paste the whole thing, starting with CUBLITZ:",
 			);
 		}
+	});
+});
+
+test("one share box shows the code and loads a pasted code or link, checked as strictly as a link", async ({
+	browser,
+}) => {
+	await withPair(browser, {storage: atLevel(1)}, async (pair) => {
+		await openEditor(pair);
+		for (const page of pair.pages) {
+			await expect(page.locator("#editView textarea, #editView input[type=text]")).toHaveCount(2);
+			await expect(page.locator("#edCode")).toBeEditable();
+			await expect(page.locator("#edImportText, #edLinkText, #edImportNote")).toHaveCount(0);
+		}
+		const selection = async () =>
+			pair.legacy
+				.locator("#edCode")
+				.evaluate((el: HTMLTextAreaElement) => [el.selectionStart, el.selectionEnd, el.value.length]);
+		await pair.click("#edCode", "click the box");
+		const [start, end, length] = await selection();
+		expect([start, end]).toStrictEqual([0, length]);
+		await pair.press("Tab", "tab out of the box");
+		await pair.press("Shift+Tab", "tab back into the box");
+		expect(await selection()).toStrictEqual([0, length, length]);
+		const level = {name: "Linked", map: ["S.r.X"], k: {}};
+		await importCode(pair, `https://cublitz.example/?utm_source=chat&${encode(level)}&fbclid=IwAR0abc`, "a link");
+		expect(await pair.legacy.locator("#edCodeNote").textContent()).toBe("Loaded “Linked”.");
+		expect(await value(pair.legacy, "#edCode")).toBe(encode(level));
+
+		const draft = pair.last.storage["cubist-editor-draft-v1"];
+		for (const [name, bad] of [
+			["a code with no start", {name: "No start", map: ["..X"], k: {}}],
+			["a code with its own par", {name: "Has par", map: ["S.X"], k: {}, par: 1}],
+			["a code with no name", {map: ["S.X"], k: {}}],
+		] as const) {
+			await importCode(pair, encode(bad), name);
+			expect(await pair.legacy.locator("#edCodeNote").textContent()).toBe(
+				"That code didn’t work. Paste the whole thing, starting with CUBLITZ:",
+			);
+			expect(pair.last.storage["cubist-editor-draft-v1"]).toBe(draft);
+			expect(await value(pair.legacy, "#edCode")).toBe(encode(bad));
+		}
+
+		await pair.click(tool("floor"));
+		await pair.step("type into the box", async (page) => page.locator("#edCode").fill("CUBLITZ:half a co"));
+		await pair.click(cell(2, 0), "paint while the box holds typing");
+		expect(await value(pair.legacy, "#edCode")).toBe("CUBLITZ:half a co");
+		await pair.click("#edName", "leave the box");
+		await pair.click(tool("erase"));
+		await pair.click(cell(3, 0), "erase after leaving the box");
+		expect(await value(pair.legacy, "#edCode")).toBe(encode({name: "Linked", map: ["S.. X"], k: {}}));
 	});
 });
 

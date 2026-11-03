@@ -210,8 +210,20 @@ const MUTATIONS: Mutation[] = [
 		grep: "navigation: brand",
 	},
 	{
-		name: "clipboard fallback: says selected but selects nothing",
-		from: '$("edCode").select();',
+		name: "share box: a pasted code skips the strict check a link gets",
+		from: 'if (!level || !validSharedLevel(level)) throw new Error("bad");',
+		to: 'if (!level) throw new Error("bad");',
+		grep: "one share box",
+	},
+	{
+		name: "share box: editing the level overwrites what the player is typing",
+		from: "codeTyped = true;",
+		to: "",
+		grep: "one share box",
+	},
+	{
+		name: "clipboard fallback: says selected but never focuses the share box, so nothing is selected",
+		from: '$("edCode").focus();',
 		to: "",
 		grep: "copying a share code",
 	},

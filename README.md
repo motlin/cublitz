@@ -35,7 +35,8 @@ The shipped game differs from `legacy/original.html` in exactly these ways, whic
 - The level bar links to the merge levels after the campaign
 - The editor's tool bar has a Loose cube tool
 - On a phone-sized touch screen, play is one fixed screen that fits the level, and touch gestures go by finger count
-- The editor has a Copy link button beside Copy code
+- The editor has one share box that shows the code, copies it or a link, and loads a pasted code or link, checked as strictly as a link
+- Editing the level leaves the share box alone while the player types in it
 - The page can be installed as an app that plays offline
 - The rolling tip is two short sentences
 - The wet paint tip is shorter

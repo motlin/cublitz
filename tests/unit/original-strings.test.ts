@@ -27,8 +27,8 @@ const sourceFiles = (dir: string): string[] =>
 		.map((file) => join(dir, file));
 
 // Never shown to a player: letters the original iterates over, and a typeof check, that the source spells as
-// typed lists instead.
-const RESTRUCTURED = ["NSEW", "function", "btnsew", "bt"];
+// typed lists instead. The share box's strict check spells its letter sets out where the source builds them.
+const RESTRUCTURED = ["NSEW", "function", "btnsew", "bt", "tbnsew", "roygcbpw", " .SXWZroygcbpROYGCBP"];
 
 test("the source holds every string in the original script", () => {
 	const script = /(?<=<script>\n)[\s\S]*(?=<\/script>)/.exec(readExpectedHtml())?.[0] ?? "";

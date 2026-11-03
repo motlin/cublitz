@@ -75,3 +75,16 @@ export function levelFromSearch(search: string): LevelSource | null {
 	if (!validSharedLevel(level)) throw new Error("bad");
 	return level;
 }
+
+/**
+ * The level in what a player pasted into the editor's code box: a share code, raw JSON or a whole link. A pasted
+ * code comes from anyone, so it is checked as strictly as a link.
+ */
+export function levelFromCode(text: string): LevelSource {
+	const s = text.trim();
+	const query = s.indexOf("?");
+	// A code's base64 never holds a ?, so one outside raw JSON starts a link's query.
+	const level = query >= 0 && !s.startsWith("{") ? levelFromSearch(s.slice(query)) : decodeLevel(s);
+	if (!level || !validSharedLevel(level)) throw new Error("bad");
+	return level;
+}

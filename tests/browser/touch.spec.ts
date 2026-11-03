@@ -402,6 +402,34 @@ for (const screen of SCREENS) {
 			await context.close();
 		});
 
+		test("the editor's share box selects all on a tap and loads a pasted code from a tapped Load", async ({
+			browser,
+		}) => {
+			const {context, page} = await openPhone(browser, screen);
+			await page.locator("#titleEdit").tap();
+			await sleep(60);
+			const box = page.locator("#edCode");
+			await box.scrollIntoViewIfNeeded();
+			for (const selector of ["#edCode", "#edCopy", "#edCopyLink", "#edImport"]) {
+				const size = (await page.locator(selector).boundingBox())!;
+				expect([selector, size.height >= 44 && size.width >= 44]).toStrictEqual([selector, true]);
+			}
+			await box.tap();
+			await sleep(60);
+			expect(
+				await box.evaluate(
+					(el: HTMLTextAreaElement) => el.selectionStart === 0 && el.selectionEnd === el.value.length,
+				),
+			).toBe(true);
+			const code =
+				"CUBLITZ:" + Buffer.from(JSON.stringify({name: "Tapped", map: ["S.X"], k: {}})).toString("base64");
+			await box.fill(code);
+			await page.locator("#edImport").tap();
+			await expect(page.locator("#edName")).toHaveValue("Tapped");
+			await expect(box).toHaveValue(code);
+			await context.close();
+		});
+
 		test("the editor page scrolls, and its tools stay in reach", async ({browser}) => {
 			const {context, page, cdp} = await openPhone(browser, screen);
 			await page.locator("#titleEdit").tap();

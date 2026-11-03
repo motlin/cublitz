@@ -82,14 +82,14 @@ test("the editor's Copy link button copies a full URL that opens the level", asy
 	const code = await page.locator("#edCode").inputValue();
 	const link = await page.evaluate(async () => navigator.clipboard.readText());
 	expect(link).toBe(`${BASE_URL}/?${code}`);
-	await expect(page.locator("#edLinkText")).toBeHidden();
+	await expect(page.locator("#edCode")).toHaveValue(code);
 	const opened = await page.context().newPage();
 	await opened.goto(link);
 	await expect(opened.locator("#lvName")).toHaveText("Linked");
 	await page.close();
 });
 
-test("when the clipboard fails, Copy link selects the link in its own box, and Copy code still copies the code", async ({
+test("when the clipboard fails, Copy link selects the link in the share box, and editing puts the code back", async ({
 	browser,
 }) => {
 	const {page} = await open(browser, "");
@@ -97,18 +97,30 @@ test("when the clipboard fails, Copy link selects the link in its own box, and C
 		navigator.clipboard.writeText = async () => Promise.reject(new Error("denied"));
 	});
 	await page.locator("#titleEdit").click();
+	const code = await page.locator("#edCode").inputValue();
 	await page.locator("#edCopyLink").click();
 	await expect(page.locator("#edCodeNote")).toHaveText("Selected. Copy the link from the box.");
-	const code = await page.locator("#edCode").inputValue();
-	const box = page.locator("#edLinkText");
+	const box = page.locator("#edCode");
 	await expect(box).toBeFocused();
 	expect(await box.inputValue()).toBe(`${BASE_URL}/?${code}`);
-	expect(await box.evaluate((el: HTMLInputElement) => [el.selectionStart, el.selectionEnd])).toStrictEqual([
+	expect(await box.evaluate((el: HTMLTextAreaElement) => [el.selectionStart, el.selectionEnd])).toStrictEqual([
 		0,
 		`${BASE_URL}/?${code}`.length,
 	]);
-	await page.locator("#edName").click();
-	await expect(box).toBeHidden();
+	await expect(page.locator("#edLinkText")).toHaveCount(0);
+	await page.locator("#edName").fill("Renamed");
+	expect(await box.inputValue()).toMatch(/^CUBLITZ:/);
+	await page.close();
+});
+
+test("a link pasted into the editor's share box loads that level", async ({browser}) => {
+	const {page} = await open(browser, "");
+	await page.locator("#titleEdit").click();
+	await page.locator("#edCode").fill(`${BASE_URL}/${FLIP}&fbclid=IwAR0abc`);
+	await page.locator("#edImport").click();
+	await expect(page.locator("#edName")).toHaveValue("Flip it and reverse it");
+	await expect(page.locator("#edCodeNote")).toHaveText("Loaded “Flip it and reverse it”.");
+	await expect(page.locator("#edCode")).toHaveValue(FLIP.slice(1));
 	await page.close();
 });
 

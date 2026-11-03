@@ -51,7 +51,10 @@ for (const [name, setup] of CLIPBOARDS) {
 			await openEditor(pair);
 			await pair.click("#edCopyLink");
 			expect(await text(pair, "#edCodeNote")).toBe("Selected. Copy the link from the box.");
-			await pair.click("#edName", "leaving the box hides it");
+			const link = await pair.legacy.locator("#edCode").inputValue();
+			expect(link).toMatch(/^http:\/\/[^?]+\?CUBLITZ:/);
+			await pair.step("rename the level", async (page) => page.locator("#edName").fill("Renamed"));
+			expect(await pair.legacy.locator("#edCode").inputValue()).toMatch(/^CUBLITZ:/);
 		});
 	});
 }
