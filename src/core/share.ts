@@ -83,8 +83,8 @@ export function levelFromSearch(search: string): LevelSource | null {
 export function levelFromCode(text: string): LevelSource {
 	const s = text.trim();
 	const query = s.indexOf("?");
-	// A code's base64 never holds a ?, so one outside raw JSON starts a link's query.
-	const level = query >= 0 && !s.startsWith("{") ? levelFromSearch(s.slice(query)) : decodeLevel(s);
+	// A code's base64 never holds a ? or #, so outside raw JSON a ? starts a link's query and a # ends it.
+	const level = query >= 0 && !s.startsWith("{") ? levelFromSearch(s.slice(query).split("#")[0]!) : decodeLevel(s);
 	if (!level || !validSharedLevel(level)) throw new Error("bad");
 	return level;
 }

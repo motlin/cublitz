@@ -148,6 +148,8 @@ describe("levelFromCode", () => {
 		["a link with other parameters", `https://cublitz.example/?utm_source=chat&${code}&fbclid=IwAR0abc`],
 		["a link with no scheme", `cublitz.example/?${code}`],
 		["a link whose padding was percent-encoded", `https://cublitz.example/?${code.replaceAll("=", "%3D")}`],
+		["a link with a fragment", `https://cublitz.example/?${code}#editor`],
+		["a link with other parameters and a fragment", `https://cublitz.example/?${code}&fbclid=IwAR0abc#editor`],
 	])("reads %s", (_name, text) => {
 		expect(levelFromCode(text)).toStrictEqual(level);
 	});
