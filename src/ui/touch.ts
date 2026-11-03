@@ -91,7 +91,7 @@ function listenToFingers(): void {
 /** The tile size that fits a level into the board's area, remembered for the camera. */
 export function compactCell(L: Level): number {
 	const v = $("viewport");
-	fit = fitBoard(L.cols, L.rows, v.clientWidth, v.clientHeight);
+	fit = fitBoard(L.cols, L.rows, v.clientWidth, v.clientHeight, 1 + (L.cubes0?.length ?? 0));
 	builtSize = `${v.clientWidth}x${v.clientHeight}`;
 	return fit.cell;
 }

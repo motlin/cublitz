@@ -46,6 +46,23 @@ describe("fitBoard", () => {
 		}
 	});
 
+	it("leaves room for a block as tall as every cube on the level stacked", () => {
+		const big = 4000;
+		const one = fitBoard(6, 4, big, big);
+		const tower = fitBoard(6, 4, big, big, 3);
+		expect({one: one.cell, tower: tower.cell}).toStrictEqual({one: 62, tower: 62});
+		// Each cube stacked above the first lifts the top edge by about a cell times the sine of the tilt.
+		const lift = tower.height - one.height;
+		expect(lift > 2 * 62 * 0.7 && lift < 2 * 62 * 0.95).toBe(true);
+		expect(fitBoard(6, 4, big, big, 1)).toStrictEqual(one);
+	});
+
+	it("shrinks the tiles so a tower near the top row fits a phone", () => {
+		const one = fitBoard(8, 6, 360, 300);
+		const tower = fitBoard(8, 6, 360, 300, 8);
+		expect(tower.height <= 300 && tower.cell < one.cell).toBe(true);
+	});
+
 	it("does not fit an area that has no size yet", () => {
 		expect(fitBoard(5, 5, 0, 0).cell).toBe(24);
 	});

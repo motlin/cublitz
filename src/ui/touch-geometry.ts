@@ -53,15 +53,18 @@ export function swipeAxis(dx: number, dy: number): Direction {
 
 export type BoardFit = {cell: number; width: number; height: number; centerX: number; centerY: number};
 
-/** The largest tile size that keeps the whole level, with a cube standing on it, inside an area. */
-export function fitBoard(cols: number, rows: number, areaWidth: number, areaHeight: number): BoardFit {
+/**
+ * The largest tile size that keeps the whole level inside an area, with room above it for a block as tall as every
+ * cube on the level stacked, since merged cubes can stand as a tower.
+ */
+export function fitBoard(cols: number, rows: number, areaWidth: number, areaHeight: number, cubes = 1): BoardFit {
 	if (!areaWidth || !areaHeight) return {cell: 24, width: 0, height: 0, centerX: 0, centerY: 0};
 	let fit: BoardFit = {cell: MIN_CELL, width: 0, height: 0, centerX: 0, centerY: 0};
 	for (let cell = MAX_CELL; cell >= MIN_CELL; cell--) {
 		const halfW = (cols * cell) / 2,
 			halfH = (rows * cell) / 2;
 		const corners = [-halfW, halfW].flatMap((x) =>
-			[-halfH, halfH].flatMap((y) => [0, cell].map((z) => project(x, y, z))),
+			[-halfH, halfH].flatMap((y) => [0, cubes * cell].map((z) => project(x, y, z))),
 		);
 		const xs = corners.map(([x]) => x),
 			ys = corners.map(([, y]) => y);
