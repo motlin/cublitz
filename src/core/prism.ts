@@ -42,6 +42,10 @@ export function rollUnits(units: Unit[], d: Direction): Unit[] {
 export const footprint = (units: Unit[]): Unit[] =>
 	units.filter((u) => u.z === 0).sort((a, b) => a.x + a.y - (b.x + b.y));
 
+/** The cells a roll that way would put the block's floor cubes on, in order along the block. */
+export const landingTiles = (st: State, d: Direction): [number, number][] =>
+	footprint(rollUnits(st.units ?? withUnits(st).units!, d)).map((u) => [u.x, u.y]);
+
 export const restsOn = (st: State, x: number, y: number): boolean =>
 	st.units ? st.units.some((u) => u.z === 0 && u.x === x && u.y === y) : st.x === x && st.y === y;
 

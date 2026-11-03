@@ -1,5 +1,5 @@
-import {DIRS, FACES, solidColor, workColor} from "../core/cube.ts";
-import {solidColorOf, workColorOf} from "../core/prism.ts";
+import {FACES, solidColor, workColor} from "../core/cube.ts";
+import {landingTiles, solidColorOf, workColorOf} from "../core/prism.ts";
 import {doorOpen, openColors, pressed} from "../core/rules.ts";
 import type {Cell, Direction, Face, Level, Need, PieceColor, Unit} from "../core/types.ts";
 import {$, type ElementById} from "./dom.ts";
@@ -372,11 +372,9 @@ export function aimTiles(d: Direction | null): void {
 	});
 	aimed = [];
 	if (!d || S.won) return;
-	const [dx, dy] = DIRS[d];
-	const cubes = S.st.units ?? [{x: S.st.x, y: S.st.y}];
-	for (const {x, y} of cubes) {
-		const t = tiles[x + dx + "," + (y + dy)];
-		if (!t || cubes.some((u) => u.x === x + dx && u.y === y + dy)) continue;
+	for (const [x, y] of landingTiles(S.st, d)) {
+		const t = tiles[x + "," + y];
+		if (!t) continue;
 		t.classList.add("aim");
 		aimed.push(t);
 	}
