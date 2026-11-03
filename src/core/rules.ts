@@ -103,6 +103,14 @@ export function tryMove(L: Level, st: State, d: Direction): MoveResult {
 	return {ok: true, nx, ny, st: ns, painted, washed, pushed, flipped, goal, won, cell};
 }
 
+const meetsNeed = (L: Level, f: Faces) => needEntries(L).every(([k, v]) => f[k] === v);
+
+/** The faces of the cube a target judges: one that meets the need if any does, else the first cube on a target. */
+export function judgedGoalFaces(L: Level, units: Unit[]): Faces | undefined {
+	const onGoal = units.filter((u) => u.z === 0 && cellAt(L, u.x, u.y)?.t === "goal").map((u) => u.f);
+	return onGoal.find((f) => meetsNeed(L, f)) ?? onGoal[0];
+}
+
 // The rules above for any number of cubes: each cube answers for the cell under it, and a press into a loose cube
 // merges it rather than rolling. tests/unit/core/merge.test.ts holds a one-cube block to exactly what tryMove does.
 function tryBlockMove(L: Level, st: State, units: Unit[], loose: LooseCube[], d: Direction): MoveResult {
@@ -194,8 +202,8 @@ function tryBlockMove(L: Level, st: State, units: Unit[], loose: LooseCube[], d:
 	const goalAt = on("goal");
 	const goal = goalAt >= 0;
 	const goalFoot = standing[goalAt];
-	const goalFaces = goalFoot && landed[moved.indexOf(goalFoot.u)]!.f;
-	const won = goal && needEntries(L).every(([k, v]) => goalFaces![k] === v);
+	// Any cube on any target can win, so a second target's cube counts even when the first's misses
+	const won = standing.some(({u, cell}) => cell.t === "goal" && meetsNeed(L, landed[moved.indexOf(u)]!.f));
 	const featured = goal ? goalFoot! : (standing.find(({cell}) => cell.t !== "floor") ?? standing[0]!);
 	return {
 		ok: true,

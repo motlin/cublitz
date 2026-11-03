@@ -1,9 +1,9 @@
-import {cellAt, parseLevel, initState} from "../core/level.ts";
+import {parseLevel, initState} from "../core/level.ts";
 import {LEVELS} from "../core/levels.ts";
 import {MERGE_LEVELS} from "../core/merge-levels.ts";
 import {CNAME, dirWord, FNAME} from "../core/names.ts";
 import {solidColorOf} from "../core/prism.ts";
-import {openColors, tryMove} from "../core/rules.ts";
+import {judgedGoalFaces, openColors, tryMove} from "../core/rules.ts";
 import type {Direction, Face, Level, LevelSource, Paint, State, SwitchCell} from "../core/types.ts";
 import {
 	boxEls,
@@ -244,7 +244,7 @@ export function move(d: Direction): void {
 			if (r.goal) SFX.play("blocked");
 		}
 		if (r.goal && !r.won) {
-			const onGoal = S.st.units?.find((u) => u.z === 0 && cellAt(L, u.x, u.y)?.t === "goal")?.f ?? S.st.f;
+			const onGoal = S.st.units ? judgedGoalFaces(L, S.st.units)! : S.st.f;
 			const miss = (Object.entries(L.need!) as [Face, Paint][])
 				.filter(([k, v]) => onGoal[k] !== v)
 				.map(([k, v]) => `${CNAME[v]} on ${FNAME[k]}`)

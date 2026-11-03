@@ -4,7 +4,7 @@ import {cellAt, initState, parseLevel} from "../../../src/core/level.ts";
 import {LEVELS} from "../../../src/core/levels.ts";
 import {MERGE_LEVELS} from "../../../src/core/merge-levels.ts";
 import {exposedWorkColor, withUnits} from "../../../src/core/prism.ts";
-import {openColors, stateKey, tryMove} from "../../../src/core/rules.ts";
+import {judgedGoalFaces, openColors, stateKey, tryMove} from "../../../src/core/rules.ts";
 import {decodeLevel, encodeLevel, levelFromSearch} from "../../../src/core/share.ts";
 import {solve} from "../../../src/core/solver.ts";
 import type {Direction, Level, LevelSource, MoveSuccess, State} from "../../../src/core/types.ts";
@@ -187,6 +187,19 @@ describe("rolling a block", () => {
 		const needy = parseLevel({map: ["S+", ".X"], k: CUBE, need: {t: "r"}});
 		const refused = step(needy, walk(needy, initState(needy), "E"), "S");
 		expect([refused.goal, refused.won]).toStrictEqual([true, false]);
+	});
+
+	it("wins on two targets when the cube that meets the need is not the first", () => {
+		const level = parseLevel({map: ["S+", ".r", "XX"], k: CUBE, need: {n: "r"}});
+		const r = step(level, walk(level, initState(level), "ES"), "S");
+		const red = {...blank(), n: "r" as const};
+		expect([r.goal, r.won, judgedGoalFaces(level, r.st.units!)]).toStrictEqual([true, true, red]);
+	});
+
+	it("judges the first target's cube when no cube on a target meets the need", () => {
+		const level = parseLevel({map: ["S+", ".r", "XX"], k: CUBE, need: {n: "g"}});
+		const r = step(level, walk(level, initState(level), "ES"), "S");
+		expect([r.goal, r.won, judgedGoalFaces(level, r.st.units!)]).toStrictEqual([true, false, blank()]);
 	});
 
 	it("holds a button and opens its door from any cell of the footprint", () => {
