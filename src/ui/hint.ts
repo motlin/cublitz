@@ -1,5 +1,4 @@
-import {solidColor} from "../core/cube.ts";
-import {hintTexts, type Milestone, nextMilestone} from "../core/hints.ts";
+import {hintTexts, type Milestone, milestoneReached, nextMilestone} from "../core/hints.ts";
 import {solve} from "../core/solver.ts";
 import type {MoveSuccess, State} from "../core/types.ts";
 import {$} from "./dom.ts";
@@ -85,16 +84,7 @@ export function hint(more?: boolean): void {
 export function hintAfterMove(r: MoveSuccess): string | undefined {
 	if (!hintState) return undefined;
 	clearTrail();
-	const m = hintState.m,
-		st = S.st;
-	let done = false;
-	if (m.type === "gate" || m.type === "door" || m.type === "wgate" || m.type === "wash")
-		done = st.x === m.x && st.y === m.y;
-	else if (m.type === "merge") done = !!r.merged;
-	else if (m.type === "switch") done = r.flipped >= 0 && r.nx === m.x && r.ny === m.y;
-	else if (m.type === "solid") done = solidColor(st.f) === m.c;
-	else if (m.type === "button") done = st.boxes[m.box]!.x === m.x && st.boxes[m.box]!.y === m.y;
-	if (done) {
+	if (milestoneReached(hintState.m, r)) {
 		clearHint();
 		return "That was the hinted step.";
 	}

@@ -1,5 +1,5 @@
 import {FACES, roll, workColor} from "./cube.ts";
-import type {Direction, Face, LooseCube, PieceColor, State, Unit} from "./types.ts";
+import type {Direction, Face, LooseCube, Paint, PieceColor, State, Unit} from "./types.ts";
 
 const FACE_OFFSET: Record<Face, [number, number, number]> = {
 	t: [0, 0, 1],
@@ -63,7 +63,7 @@ export function exposedWorkColor(units: readonly Unit[]): PieceColor | "" {
 export const workColorOf = (st: State): PieceColor | "" => (st.units ? exposedWorkColor(st.units) : workColor(st.f));
 
 /** The paint covering all of the outside of the block or cube, or '' while nothing does. */
-export function solidColorOf(st: State): PieceColor | "" {
+export function solidColorOf(st: State): Paint | "" {
 	const c = workColorOf(st);
 	return c === "w" ? "" : c;
 }

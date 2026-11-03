@@ -1,6 +1,7 @@
-import {FACES, roll, solidColor, workColor} from "./cube.ts";
+import {FACES, roll} from "./cube.ts";
 import {cellAt, needEntries} from "./level.ts";
 import {CNAME, dirWord, FNAME, howWork, list, wgateName} from "./names.ts";
+import {restsOn, solidColorOf, workColorOf} from "./prism.ts";
 import {openColors, tryMove} from "./rules.ts";
 import type {Box, Direction, Face, Level, MoveSuccess, Paint, PieceColor, State, SwitchCell} from "./types.ts";
 
@@ -40,8 +41,8 @@ export function nextMilestone(L: Level, st0: State, sol: string): Milestone | nu
 		};
 		if (r.painted) paints.push(r.painted);
 		if (r.pushed >= 0) pushes.push({d, box: r.pushed});
-		const now = solidColor(st.f),
-			before = solidColor(prev.f);
+		const now = solidColorOf(st),
+			before = solidColorOf(prev);
 		if (r.won) return {...base, type: "goal"};
 		if (r.merged) return {...base, type: "merge"};
 		if (r.cell.t === "gate" && !before) return {...base, type: "gate", c: r.cell.c};
@@ -73,6 +74,17 @@ export function nextMilestone(L: Level, st0: State, sol: string): Milestone | nu
 	return null;
 }
 
+/** Whether the roll r, made while m was the hint, carried out m. */
+export function milestoneReached(m: Milestone, r: MoveSuccess): boolean {
+	const st = r.st;
+	if (m.type === "gate" || m.type === "door" || m.type === "wgate" || m.type === "wash") return restsOn(st, m.x, m.y);
+	if (m.type === "merge") return !!r.merged;
+	if (m.type === "switch") return r.flipped >= 0 && r.nx === m.x && r.ny === m.y;
+	if (m.type === "solid") return solidColorOf(st) === m.c;
+	if (m.type === "button") return st.boxes[m.box]!.x === m.x && st.boxes[m.box]!.y === m.y;
+	return false;
+}
+
 // Which face, before rolling d, ends up as face k after the roll
 export const preFace = (d: Direction, k: Face): Face =>
 	roll<Face>({t: "t", b: "b", n: "n", s: "s", e: "e", w: "w"}, d)[k];
@@ -81,7 +93,8 @@ const OPP: Record<Direction, string> = {N: "south", S: "north", E: "west", W: "e
 /** The hint for a milestone: first what to do next, then how to do it. */
 export function hintTexts(L: Level, st: State, m: Milestone): [string, string] {
 	const cn = ("c" in m ? CNAME[m.c] : "") || "";
-	const has = (c: Paint | PieceColor) => FACES.some((k) => st.f[k] === c);
+	const cubes = st.units?.map((u) => u.f) ?? [st.f];
+	const has = (c: Paint | PieceColor) => cubes.some((f) => FACES.some((k) => f[k] === c));
 	switch (m.type) {
 		case "goal": {
 			const need = needEntries(L);
@@ -108,7 +121,7 @@ export function hintTexts(L: Level, st: State, m: Milestone): [string, string] {
 			];
 		case "wgate": {
 			const pf = preFace(m.d, m.f),
-				bare = FACES.filter((k) => !st.f[k]).length;
+				bare = cubes.reduce((n, f) => n + FACES.filter((k) => !f[k]).length, 0);
 			return [
 				`Your next goal is the highlighted ${wgateName(m.f)}. You have ${bare} bare face${bare === 1 ? "" : "s"} left.`,
 				`Roll onto it heading ${dirWord(m.d)}. That roll moves your ${FNAME[pf]} face to the ${FNAME[m.f]}, so keep your ${FNAME[pf]} face bare until then. Plan which faces the puddles on the way are allowed to paint.`,
@@ -127,7 +140,7 @@ export function hintTexts(L: Level, st: State, m: Milestone): [string, string] {
 		case "switch":
 			return [
 				`Next, flip the highlighted ${cn} switch.`,
-				workColor(st.f) === m.c
+				workColorOf(st) === m.c
 					? `You're ${howWork(m.c)} already. Roll onto it from any side.`
 					: `It only flips for a cube that is ${howWork(m.c)} when it lands.`,
 			];

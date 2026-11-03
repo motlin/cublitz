@@ -1,9 +1,11 @@
 import {describe, expect, it} from "vite-plus/test";
 import {blank} from "../../../src/core/cube.ts";
-import {hintTexts, nextMilestone, preFace} from "../../../src/core/hints.ts";
+import {hintTexts, milestoneReached, nextMilestone, preFace} from "../../../src/core/hints.ts";
 import type {Milestone} from "../../../src/core/hints.ts";
 import {initState, parseLevel} from "../../../src/core/level.ts";
-import type {Faces, LevelSource, Paint, State} from "../../../src/core/types.ts";
+import {MERGE_LEVELS} from "../../../src/core/merge-levels.ts";
+import {tryMove} from "../../../src/core/rules.ts";
+import type {Direction, Faces, Level, LevelSource, MoveSuccess, Paint, State} from "../../../src/core/types.ts";
 
 const solid = (c: Paint): Faces => ({t: c, b: c, n: c, s: c, e: c, w: c});
 const setup = (source: LevelSource, overrides: Partial<State> = {}) => {
@@ -280,5 +282,75 @@ describe("hintTexts", () => {
 			"Next, get through the highlighted red door.",
 			"It has to be open as you finish the roll onto it. A flipped red switch, or a red box sitting on a red button, keeps it open.",
 		]);
+	});
+});
+
+const roll = (level: Level, state: State, d: string) => tryMove(level, state, d as Direction) as MoveSuccess;
+const walk = (level: Level, state: State, path: string) =>
+	path.split("").reduce((st, d) => roll(level, st, d).st, state);
+const block = (a: Faces, b: Faces): State => ({
+	x: 0,
+	y: 0,
+	f: a,
+	boxes: [],
+	sw: [],
+	units: [
+		{x: 0, y: 0, z: 0, f: a},
+		{x: 1, y: 0, z: 0, f: b},
+	],
+	loose: [],
+});
+const sideBySide = () => {
+	const level = MERGE_LEVELS.find((l) => l.name === "Side by Side")!;
+	return {level, state: initState(level)};
+};
+
+describe("milestoneReached for a block", () => {
+	it("counts a gate passed by a foot other than the first cube", () => {
+		const {level, state} = sideBySide();
+		const before = walk(level, state, "EEESSSS");
+		const m = nextMilestone(level, before, "SS")!;
+		const r = roll(level, before, "S");
+		expect([m.type, m.x, m.y, r.st.x, r.st.y, milestoneReached(m, r)]).toStrictEqual(["gate", 3, 5, 4, 5, true]);
+	});
+
+	it("does not count a gate the block has not reached yet", () => {
+		const {level, state} = sideBySide();
+		const before = walk(level, state, "EEESSS");
+		const m = nextMilestone(level, before, "SSS")!;
+		expect([m.type, milestoneReached(m, roll(level, before, "S"))]).toStrictEqual(["gate", false]);
+	});
+
+	it("counts a coat only once it covers every cube of the block", () => {
+		const {level, state} = sideBySide();
+		const r = roll(level, state, "E");
+		const m = {...base(r.st), type: "solid", c: "r"} as Milestone;
+		const reached = (st: State) => milestoneReached(m, {...r, st});
+		expect([reached(block(solid("r"), solid("r"))), reached(block(solid("r"), blank()))]).toStrictEqual([
+			true,
+			false,
+		]);
+	});
+});
+
+describe("hintTexts for a block", () => {
+	const level = parseLevel({map: ["S.R"]});
+
+	it("gate: paint on the second cube counts", () => {
+		const st = block(blank(), {...blank(), t: "r"});
+		const [what] = hintTexts(level, st, {...base(st), type: "gate", c: "r"} as Milestone);
+		expect(what).toBe("Your next goal is the highlighted red gate.");
+	});
+
+	it("white gate: counts the bare faces of every cube", () => {
+		const st = block(solid("r"), {...blank(), t: "r"});
+		const [what] = hintTexts(level, st, {...base(st), type: "wgate", f: "t"} as Milestone);
+		expect(what).toBe("Your next goal is the highlighted top white gate. You have 5 bare faces left.");
+	});
+
+	it("switch: reads the whole block's working color", () => {
+		const st = block(solid("r"), blank());
+		const [, how] = hintTexts(level, st, {...base(st), type: "switch", c: "r"} as Milestone);
+		expect(how).toBe("It only flips for a cube that is solid red when it lands.");
 	});
 });

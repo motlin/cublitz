@@ -323,6 +323,18 @@ test("a hint on a merge level names the merge", async ({browser}) => {
 	await page.close();
 });
 
+test("a gate hint on a block clears once the block rolls through the gate", async ({browser}) => {
+	const page = await open(browser, "reduce");
+	await page.locator('#levels button[title="Side by Side"]').click();
+	await roll(page, "EEESSSS");
+	await page.locator("#hintBtn").click();
+	await expect(page.locator("#hintBox")).toContainText("Your next goal is the highlighted red gate.");
+	await roll(page, "S");
+	await expect(page.locator("#hintBox")).toBeHidden();
+	await expect(page.locator("#status")).toContainText("That was the hinted step.");
+	await page.close();
+});
+
 test("Edit then Play resumes a merge level with its moves intact", async ({browser}) => {
 	const page = await open(browser, "reduce");
 	await page.locator('#levels button[title="Side by Side"]').click();
