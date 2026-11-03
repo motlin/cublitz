@@ -208,5 +208,12 @@
 		"par": 40,
 		"path": "ENEESWNWWSEEEEEEEEEESEEENWWNWSWSEEESEEEE",
 		"hitLimit": false
+	},
+	{
+		"index": 30,
+		"name": "Stinkley tinkles",
+		"par": 67,
+		"path": "EENWSENWSESWNENWSESWNESSSNNNEEEEEEEWSSEENNNENWWWWWWWEEEEEESSWWWWSSS",
+		"hitLimit": false
 	}
 ]

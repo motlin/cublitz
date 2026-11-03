@@ -1,8 +1,8 @@
 import {parseLevel} from "./level.ts";
 import type {Level, LevelSource} from "./types.ts";
 
-// The campaign from the original script, with Crown and Checkpoints swapped and some tips reworded. Its key order is
-// part of the game, and progress finds a level by name, so a save from the original order still works.
+// The campaign from the original script, with Crown and Checkpoints swapped, some tips reworded and a player's level
+// added at the end. Its key order is part of the game, and progress finds a level by name, so a save from the original order still works.
 const SOURCES: LevelSource[] = [
  {"name":"First Roll","tip":"Roll the cube to the target. Watch the face map on the right: every roll tips the cube onto a new side.","par":6,"map":[
   "S...",
@@ -206,7 +206,20 @@ const SOURCES: LevelSource[] = [
   ".oo....  ...p..",
   "Soo..1.2..Z.a..",
   ".......  ....bp",
-  "         ......cX"]}
+  "         ......cX"]},
+ {"name":"Stinkley tinkles","tip":"Go solid red for the switch, then wash it off and push the white box onto the white button. The cyan boxes never move.","k":{"1":["box",
+  "c"],"2":["button",
+  "w"],"3":["door",
+  "r"],"4":["box",
+  "w"],"5":["door",
+  "w"],"6":["switch",
+  "r"]},"par":67,"map":[
+  "1112........",
+  "1..1111111..",
+  "S.rZ34.....1",
+  "1..11151.1.1",
+  "11.111.1...1",
+  "116111X11111"]}
 ];
 
 export const LEVELS: Level[] = SOURCES.map((L) => parseLevel(L));

@@ -23,7 +23,7 @@ import {atLevel, BASE_URL} from "./harness/pair.ts";
 /** Long enough that a thumb already down reads as resting, not as the start of a pinch with the next finger. */
 const REST = 250;
 const DOCK = ["#dpad button", "#undoBtn", "#resetBtn", "#hintBtn", "#net", "#moves", "#par", "#menuBtn"];
-const LEVELS = ["1", "9", "16", "27", "30", "M1", "M2", "M3"];
+const LEVELS = ["1", "9", "16", "27", "30", "31", "M1", "M2", "M3"];
 
 const targetSizes = async (page: Page): Promise<string[]> =>
 	page.evaluate(() =>

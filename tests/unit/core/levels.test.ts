@@ -1,11 +1,16 @@
 import {describe, expect, it} from "vite-plus/test";
 import {initState} from "../../../src/core/level.ts";
 import {LEVELS} from "../../../src/core/levels.ts";
+import {encodeLevel} from "../../../src/core/share.ts";
 import {solve} from "../../../src/core/solver.ts";
 import {readSolveGolden} from "../../support/golden.ts";
 import {loadExpectedEngine} from "../../support/original-engine.ts";
 
 const golden = readSolveGolden("solve-post-fix.json");
+
+// The share code the user sent for their level.
+const STINKLEY_TINKLES_CODE =
+	"CUBLITZ:eyJuYW1lIjoiU3RpbmtsZXkgdGlua2xlcyIsIm1hcCI6WyIxMTEyLi4uLi4uLi4iLCIxLi4xMTExMTExLi4iLCJTLnJaMzQuLi4uLjEiLCIxLi4xMTE1MS4xLjEiLCIxMS4xMTEuMS4uLjEiLCIxMTYxMTFYMTExMTEiXSwiayI6eyIxIjpbImJveCIsImMiXSwiMiI6WyJidXR0b24iLCJ3Il0sIjMiOlsiZG9vciIsInIiXSwiNCI6WyJib3giLCJ3Il0sIjUiOlsiZG9vciIsInciXSwiNiI6WyJzd2l0Y2giLCJyIl19fQ==";
 
 describe("LEVELS", () => {
 	const solved = LEVELS.map((level, index) => {
@@ -28,6 +33,19 @@ describe("LEVELS", () => {
 			["Crown", 17],
 			["Checkpoints", 19],
 		]);
+	});
+
+	it("plays the user's Stinkley tinkles last, after Clean Sweep, with the solver's shortest move count as par", () => {
+		const last = LEVELS.slice(-2).map((level) => [level.name, level.par]);
+		expect(last).toStrictEqual([
+			["Clean Sweep", 40],
+			["Stinkley tinkles", 67],
+		]);
+	});
+
+	it("keeps the user's name, map and legend exactly, so the level encodes back to the user's share code", () => {
+		const {name, map, k} = LEVELS.find((level) => level.name === "Stinkley tinkles")!;
+		expect(encodeLevel({name: name!, map, k: k!})).toBe(STINKLEY_TINKLES_CODE);
 	});
 
 	it("has Two Sides say what is true of that level, which has no paint remover", () => {

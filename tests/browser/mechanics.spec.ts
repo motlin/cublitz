@@ -307,7 +307,7 @@ test("solution reveal: next, up to goal, reveal the rest, pause, follow, diverge
 test("title screen: progress text, tutorial replay, reset arm, timeout and confirm", async ({browser}) => {
 	await withPair(browser, {storage: atLevel(4)}, async (pair) => {
 		const title = async () => pair.legacy.locator("#titleProgress").textContent();
-		expect(await title()).toBe("4 of 30 levels cleared");
+		expect(await title()).toBe("4 of 31 levels cleared");
 		await pair.click("#tipsReplay");
 		await pair.fireParkedTimers();
 		await pair.click("#resetProgress");
@@ -315,7 +315,7 @@ test("title screen: progress text, tutorial replay, reset arm, timeout and confi
 		await pair.click("#resetProgress", "arm");
 		const erased = await pair.click("#resetProgress", "confirm");
 		expect(erased.storage).toStrictEqual({"cubist-progress-v2": "{}"});
-		expect(await title()).toBe("30 levels");
+		expect(await title()).toBe("31 levels");
 		await pair.fireParkedTimers();
 		await pair.reload();
 		await pair.press("Space", "space starts the game when no button has focus");
@@ -329,7 +329,7 @@ test("navigation: brand, mode buttons, levels list, hash and window resize", asy
 	await withPair(browser, {storage: atLevel(6)}, async (pair) => {
 		await openLevel(pair);
 		await pair.click(".lvbtn:nth-child(2)", "go back to an unlocked level");
-		expect(pair.last.hud.num).toBe("Level 2 of 30");
+		expect(pair.last.hud.num).toBe("Level 2 of 31");
 		await pair.click("#modeEdit");
 		expect(pair.last.location).toBe("#editor");
 		await pair.click("#modePlay");
@@ -381,7 +381,7 @@ test("level data order and names reach the page unchanged", async ({browser}) =>
 			await openLevel(pair);
 			for (const {index, name, par} of golden) {
 				const shown = await pair.click(`.lvbtn:nth-child(${index + 1})`, `open level ${index + 1}`);
-				expect(shown.hud).toStrictEqual({name, num: `Level ${index + 1} of 30`, moves: "0", par: String(par)});
+				expect(shown.hud).toStrictEqual({name, num: `Level ${index + 1} of 31`, moves: "0", par: String(par)});
 			}
 		},
 	);

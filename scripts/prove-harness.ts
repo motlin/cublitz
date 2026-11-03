@@ -27,6 +27,19 @@ const swapLevels = (html: string, first: string, second: string, following: stri
 	return html.slice(0, a) + html.slice(b, c) + html.slice(a, b) + html.slice(c);
 };
 
+// Removes the campaign's last level, cut from the comma before its object to the end of the level array, so the
+// bundler's formatting of the level data does not matter.
+const removeLastLevel = (html: string, name: string): string | null => {
+	const anchor = new RegExp(String.raw`\{\s*"?name"?\s*:\s*"${name}"`, "g");
+	const found = [...html.matchAll(anchor)];
+	const [only] = found;
+	if (found.length !== 1 || !only) return null;
+	const comma = html.lastIndexOf(",", only.index);
+	const end = html.indexOf("].map(", only.index);
+	if (comma < 0 || end < 0 || html.slice(comma + 1, only.index).trim() !== "") return null;
+	return html.slice(0, comma) + "\n" + html.slice(end);
+};
+
 const MUTATIONS: Mutation[] = [
 	{
 		name: "rule: gates judge the top face instead of the bottom",
@@ -338,6 +351,11 @@ const MUTATIONS: Mutation[] = [
 		name: "intentional divergence: Checkpoints goes back before Crown",
 		mutate: (html) => swapLevels(html, "Crown", "Checkpoints", "Stripes"),
 		grep: "level 5 Crown",
+	},
+	{
+		name: "intentional divergence: Stinkley tinkles is removed from the campaign",
+		mutate: (html) => removeLastLevel(html, "Stinkley tinkles"),
+		grep: "level 31 Stinkley tinkles",
 	},
 	{
 		name: "intentional divergence: Next level goes back to the following level even when it is beaten",

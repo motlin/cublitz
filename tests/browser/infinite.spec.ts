@@ -51,7 +51,7 @@ test("a pinned seed plays three canvases to a first rank", async ({browser}) => 
 		});
 		await pair.click(".brand");
 		expect(await pair.legacy.locator("#titleInf").textContent()).toBe("Infinite · Canvas 4");
-		expect(await pair.legacy.locator("#titleProgress").textContent()).toBe("30 levels · Infinite best 3");
+		expect(await pair.legacy.locator("#titleProgress").textContent()).toBe("31 levels · Infinite best 3");
 		await pair.reload();
 		await pair.click("#titleInf", "resume the saved run after a reload");
 		expect(pair.last.hud.name).toBe("Canvas 4");
@@ -104,7 +104,7 @@ test("skip, new-run arm and timeout, and a seed drawn from the pinned Math.rando
 		expect(won.win.hidden).toBe(false);
 		await pair.click("#winNext");
 		await pair.click("#modePlay", "leave infinite for the campaign");
-		expect(pair.last.hud.num).toBe("Level 1 of 30");
+		expect(pair.last.hud.num).toBe("Level 1 of 31");
 	});
 });
 

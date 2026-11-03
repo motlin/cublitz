@@ -19,6 +19,23 @@ const levelText = (name: string, nextName: string): string => {
 const CHECKPOINTS = levelText("Checkpoints", "Crown");
 const CROWN = levelText("Crown", "Stripes");
 
+// The end of the original's campaign, where a player's level is added after Clean Sweep.
+const CAMPAIGN_END = `  "         ......cX"]}\n];`;
+const STINKLEY_TINKLES = ` {"name":"Stinkley tinkles","tip":"Go solid red for the switch, then wash it off and push the white box onto the white button. The cyan boxes never move.","k":{"1":["box",
+  "c"],"2":["button",
+  "w"],"3":["door",
+  "r"],"4":["box",
+  "w"],"5":["door",
+  "w"],"6":["switch",
+  "r"]},"par":67,"map":[
+  "1112........",
+  "1..1111111..",
+  "S.rZ34.....1",
+  "1..11151.1.1",
+  "11.111.1...1",
+  "116111X11111"]}
+`;
+
 export const INTENTIONAL_DIVERGENCES: IntentionalDivergence[] = [
 	{
 		name: "Skip canvas is disabled on the infinite win card",
@@ -198,6 +215,11 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
 		name: "A hot-reload snapshot is restored only onto the level with its name",
 		from: "LEVELS[data.lvl] && unlocked(data.lvl)",
 		to: "LEVELS[data.lvl] && LEVELS[data.lvl].name === data.name && unlocked(data.lvl)",
+	},
+	{
+		name: "Stinkley tinkles, a level from a player, is level 31, after Clean Sweep",
+		from: CAMPAIGN_END,
+		to: `  "         ......cX"]},\n${STINKLEY_TINKLES}];`,
 	},
 ];
 

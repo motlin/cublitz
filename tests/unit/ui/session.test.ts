@@ -83,6 +83,33 @@ test("Next level after replaying level 3 with levels 1 to 7 beaten goes to level
 	expect(nextLevel(2)).toBe(7);
 });
 
+// Stinkley tinkles came after the original 30 levels, so saves from before it never name it.
+const ORIGINAL_THIRTY = LEVELS.slice(0, LEVELS.findIndex((level) => level.name === "Clean Sweep") + 1);
+const STINKLEY = LEVELS.findIndex((level) => level.name === "Stinkley tinkles");
+
+test("a save that beat all 30 original levels keeps every score and opens Stinkley tinkles", () => {
+	withSave(Object.fromEntries(ORIGINAL_THIRTY.map((level) => [level.name!, 99])));
+	expect(open().slice(-3)).toStrictEqual([
+		["Clean Push", true, 99],
+		["Clean Sweep", true, 99],
+		["Stinkley tinkles", true, null],
+	]);
+	expect(open().length).toBe(LEVELS.length);
+});
+
+test("a save that stopped before Clean Sweep keeps Stinkley tinkles locked", () => {
+	withSave(Object.fromEntries(ORIGINAL_THIRTY.slice(0, -1).map((level) => [level.name!, 99])));
+	expect([unlocked(STINKLEY - 1), unlocked(STINKLEY)]).toStrictEqual([true, false]);
+});
+
+test("Next level after Clean Sweep goes to Stinkley tinkles, and from any level when only it is unbeaten", () => {
+	withSave(Object.fromEntries(ORIGINAL_THIRTY.map((level) => [level.name!, 99])));
+	expect([nextLevel(STINKLEY - 1), nextLevel(0)].map((index) => LEVELS[index]?.name)).toStrictEqual([
+		"Stinkley tinkles",
+		"Stinkley tinkles",
+	]);
+});
+
 test("Next level goes to the following level when every level is beaten, and stays on the last level", () => {
 	withSave(Object.fromEntries(LEVELS.map((level) => [level.name!, 99])));
 	expect([nextLevel(0), nextLevel(CROWN), nextLevel(LEVELS.length - 1)]).toStrictEqual([

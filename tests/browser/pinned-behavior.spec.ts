@@ -97,7 +97,7 @@ test("hot data for a locked level is ignored and the first open level loads", as
 	};
 	for (const useReady of [false, true]) {
 		await withPair(browser, {storage: atLevel(1), hot: {data, useReady}}, (pair) => {
-			expect(pair.last.hud.num).toBe("Level 2 of 30");
+			expect(pair.last.hud.num).toBe("Level 2 of 31");
 			expect(pair.last.errors).toStrictEqual([]);
 		});
 	}
@@ -120,7 +120,7 @@ test("hot data from the old order, a Checkpoints state under index 4, is not res
 			{storage: OLD_ORDER_SAVE, hot: {data: {lvl: 4, st, hist: [st]}, useReady}},
 			async (pair) => {
 				const opened = await pair.click("#titlePlay");
-				expect(opened.hud).toStrictEqual({name: "Crown", num: "Level 5 of 30", moves: "0", par: "17"});
+				expect(opened.hud).toStrictEqual({name: "Crown", num: "Level 5 of 31", moves: "0", par: "17"});
 				expect(opened.errors).toStrictEqual([]);
 			},
 		);
@@ -133,7 +133,7 @@ test("Next level after Crown skips Checkpoints when an old save already beat it"
 		const won = await pair.roll(golden[4]!.path!);
 		expect(won.win.hidden).toBe(false);
 		const next = await pair.click("#winNext");
-		expect(next.hud).toStrictEqual({name: "Stripes", num: "Level 7 of 30", moves: "0", par: "26"});
+		expect(next.hud).toStrictEqual({name: "Stripes", num: "Level 7 of 31", moves: "0", par: "26"});
 	});
 });
 
@@ -146,7 +146,7 @@ test("Next level after Checkpoints goes back to Crown when an old save beat Chec
 		const won = await pair.roll(golden[5]!.path!);
 		expect(won.win.hidden).toBe(false);
 		const next = await pair.click("#winNext");
-		expect(next.hud).toStrictEqual({name: "Crown", num: "Level 5 of 30", moves: "0", par: "17"});
+		expect(next.hud).toStrictEqual({name: "Crown", num: "Level 5 of 31", moves: "0", par: "17"});
 	});
 });
 

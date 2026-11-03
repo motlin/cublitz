@@ -1,6 +1,6 @@
 # Cublitz
 
-A rolling paint puzzle. You roll a cube over a board, picking up paint on whichever face touches the floor, and bring it to the target past gates, switches, boxes and doors. There are 30 campaign levels, an infinite mode and a level editor.
+A rolling paint puzzle. You roll a cube over a board, picking up paint on whichever face touches the floor, and bring it to the target past gates, switches, boxes and doors. There are 31 campaign levels, an infinite mode and a level editor.
 
 ## `legacy/original.html`
 
@@ -59,6 +59,7 @@ The shipped game differs from `legacy/original.html` in exactly these ways, whic
 - Next level goes to the first level in the campaign not yet beaten, so a save that beat Checkpoints before Crown goes back to Crown
 - A hot-reload snapshot holds its level's name
 - A hot-reload snapshot is restored only onto the level with its name
+- Stinkley tinkles, a level from a player, is level 31, after Clean Sweep
 
 `tests/support/intentional-divergences.ts` holds each one as an exact edit to the original's text. The harness applies those edits to an in-memory copy of the original and compares `dist/` against that copy, so any other difference still fails. A unit test checks the list above against that file.
 
@@ -106,9 +107,9 @@ The toolchain is synced from `~/projects/typescript-template` on Vite+. Node mat
 
 `tests/browser/harness/instruments.ts` makes that deterministic in both pages. It pins `Math.random` and `Date`, replaces `AudioContext` with a recorder, holds timers of a second or more and intervals until a script fires them, and holds back resize events the browser sends on its own. Google Fonts requests are answered with an empty stylesheet, so comparisons use fallback fonts; the links themselves are compared. The harness reads only what a player's browser exposes, so it keeps working when the script is split into modules.
 
-`tests/golden/` holds `solve()` results for all 30 levels and generated infinite levels, produced by evaluating the original script. `tests/browser/smoke.spec.ts` checks those files against the original running in Chromium as well as in Node. The original's infinite generation relies on a sort with a random comparator, whose result depends on the JavaScript engine and how far it has optimized the sort: the same seed gives different levels on Node 24 and Node 26, and on one long-lived page. So `infinite.json` only holds on the pinned Node, and the unit tests have to run through `pnpm exec` or `just`, which use it.
+`tests/golden/` holds `solve()` results for the original's 30 levels and generated infinite levels, produced by evaluating the original script. `tests/browser/smoke.spec.ts` checks those files against the original running in Chromium as well as in Node. The original's infinite generation relies on a sort with a random comparator, whose result depends on the JavaScript engine and how far it has optimized the sort: the same seed gives different levels on Node 24 and Node 26, and on one long-lived page. So `infinite.json` only holds on the pinned Node, and the unit tests have to run through `pnpm exec` or `just`, which use it.
 
-`tests/golden/solve-post-fix.json` holds the `solve()` results with the intentional divergences applied, so in the shipped campaign order, and the tests that play the shipped levels use it. `tests/golden/infinite-post-fix.json` holds the same seeds with the intentional divergences applied, which is what the shipped generator has to produce. `tests/browser/cross-engine.spec.ts` generates levels from one seed in Chromium, Firefox and WebKit and compares them, so `just test-browser` needs all three browsers. Changing the generator changes which levels a saved run continues on, while the saved run itself keeps working, because it stores a seed and a position and not the levels.
+`tests/golden/solve-post-fix.json` holds the `solve()` results with the intentional divergences applied, so for the shipped campaign of 31 levels in its order, and the tests that play the shipped levels use it. `tests/golden/infinite-post-fix.json` holds the same seeds with the intentional divergences applied, which is what the shipped generator has to produce. `tests/browser/cross-engine.spec.ts` generates levels from one seed in Chromium, Firefox and WebKit and compares them, so `just test-browser` needs all three browsers. Changing the generator changes which levels a saved run continues on, while the saved run itself keeps working, because it stores a seed and a position and not the levels.
 
 `just prove-harness` counts a mutant as caught only when a test fails on an assertion. A run where no test matched, the server did not start or the browser failed reports `INVALID` and fails the proof.
 

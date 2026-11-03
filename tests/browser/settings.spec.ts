@@ -164,7 +164,7 @@ const SWIPES: Record<string, [number, number]> = {N: [0, -60], S: [0, 60], E: [6
 test("mobile viewport: swipe every direction, short swipes ignored, d-pad taps, win", async ({browser}) => {
 	await withPair(browser, {viewport: MOBILE, mobile: true, storage: atLevel(1)}, async (pair) => {
 		await pair.step("tap play", async (page) => page.locator("#titlePlay").tap());
-		expect(pair.last.hud.num).toBe("Level 2 of 30");
+		expect(pair.last.hud.num).toBe("Level 2 of 31");
 		const ignored = await pair.step("a too-short swipe", async (page) => swipe(page, 10, 5));
 		expect(ignored.hud.moves).toBe("0");
 		const swiped = await pair.step("swipe east", async (page) => swipe(page, 60, 0));

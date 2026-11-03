@@ -45,6 +45,7 @@ describe("the intentional divergences", () => {
 			"Next level goes to the first level in the campaign not yet beaten, so a save that beat Checkpoints before Crown goes back to Crown",
 			"A hot-reload snapshot holds its level's name",
 			"A hot-reload snapshot is restored only onto the level with its name",
+			"Stinkley tinkles, a level from a player, is level 31, after Clean Sweep",
 		]);
 	});
 

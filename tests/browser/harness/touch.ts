@@ -24,7 +24,7 @@ export const sleep = async (ms: number): Promise<void> => {
 	});
 };
 
-const ALL_LEVELS = 30;
+const ALL_LEVELS = 31;
 
 export async function openPhone(
 	browser: Browser,
