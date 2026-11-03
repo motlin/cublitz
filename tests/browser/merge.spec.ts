@@ -42,6 +42,7 @@ test("the four merge levels play through to the end, and record their best", asy
 	for (const [index, level] of MERGE_LEVELS.entries()) {
 		await expect(page.locator("#lvName")).toHaveText(level.name!);
 		await expect(page.locator("#lvNum")).toHaveText(`Merge level ${index + 1} of 4`);
+		await expect(page.locator("#lvTip")).toHaveText(level.tip ?? "");
 		await expect(page.locator(".cube")).toHaveCount(1 + level.cubes0!.length);
 		await roll(page, solve(level, initState(level))!);
 		await expect(page.locator("#win")).toBeVisible();
@@ -272,6 +273,7 @@ test("a merge level built in the editor checks, tests, saves and shares", async 
 
 	await page.locator("#edTest").click();
 	await expect(page.locator(".cube")).toHaveCount(2);
+	await expect(page.locator("#lvTip")).toHaveText("Testing a level from the editor.");
 	await roll(page, path);
 	await expect(page.locator("#win")).toBeVisible();
 	await page.locator("#winNext").click();

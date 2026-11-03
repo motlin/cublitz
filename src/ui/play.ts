@@ -90,7 +90,11 @@ export function startLevel(source: LevelSource, i: number, snap?: Snapshot | nul
 						: "Your level";
 	$("lvTip").textContent =
 		L.tip ||
-		(i === SHARED ? "Someone shared this level with you." : i < 0 ? "Testing a level from the editor." : "");
+		(i === SHARED
+			? "Someone shared this level with you."
+			: i < 0 && mergeIndex(i) < 0
+				? "Testing a level from the editor."
+				: "");
 	$("par").textContent = domValue(L.par ?? "?");
 	$("backEdit").hidden = i !== -1;
 	$("winRetry").hidden = false;
