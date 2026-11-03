@@ -8,7 +8,7 @@ import {mode, setMode} from "./modes.ts";
 import {loadLevel, loadMergeLevel, mergeIndex, move, restart, SHARED, undo} from "./play.ts";
 import {nextLevel, S} from "./session.ts";
 import {dismissTip, tipOpen} from "./tips.ts";
-import {takesTouch} from "./touch.ts";
+import {isCompact, takesTouch} from "./touch.ts";
 
 export const KEYMAP: Record<string, Direction> = {
 	ArrowUp: "N",
@@ -99,7 +99,8 @@ export function initInput(): void {
 		clearTimeout(rt);
 		rt = setTimeout(() => {
 			if (mode === "play") {
-				if (S && !S.busy) renderBoard();
+				// On a phone the board's own resize observer refits it, so building it here too would do it twice.
+				if (S && !S.busy && !isCompact()) renderBoard();
 			} else renderEditor();
 		}, 120);
 	});

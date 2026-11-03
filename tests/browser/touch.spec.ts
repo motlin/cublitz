@@ -486,6 +486,27 @@ test("rotating the phone refits the board and keeps the swipe mapping", async ({
 	await context.close();
 });
 
+test("rotating the phone builds the board once", async ({browser}) => {
+	const [portrait] = SCREENS;
+	const {context, page} = await openPhone(browser, portrait!, atLevel(30), OPEN_FLOOR);
+	await page.evaluate(() => {
+		const w = window as unknown as {boardBuilds: number};
+		w.boardBuilds = 0;
+		new MutationObserver((records) => {
+			for (const r of records)
+				if ([...r.removedNodes].some((n) => n instanceof Element && n.classList.contains("tile")))
+					w.boardBuilds++;
+		}).observe(document.querySelector("#board")!, {childList: true});
+	});
+	await page.setViewportSize({width: 568, height: 320});
+	await sleep(400);
+	expect({builds: await page.evaluate("boardBuilds"), clipped: await clippedTiles(page)}).toStrictEqual({
+		builds: 1,
+		clipped: 0,
+	});
+	await context.close();
+});
+
 test("rotating in the middle of a roll refits once the roll ends", async ({browser}) => {
 	const [portrait] = SCREENS;
 	const {context, page} = await openPhone(browser, portrait!, atLevel(30), OPEN_FLOOR);
