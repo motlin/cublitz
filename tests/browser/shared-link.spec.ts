@@ -45,6 +45,33 @@ test("a share code in the query opens the level, with a par the game worked out"
 	await page.close();
 });
 
+test("a shared level paints with par unknown before the game works out its par", async ({browser}) => {
+	const context = await browser.newContext({reducedMotion: "reduce"});
+	await context.addInitScript(() => {
+		const seen: string[] = [];
+		(window as unknown as {parSeen: string[]}).parSeen = seen;
+		const watch = () => {
+			const par = document.getElementById("par");
+			const name = document.getElementById("lvName");
+			if (par && name?.textContent) {
+				const at = `${name.textContent}|${par.textContent}`;
+				if (seen.at(-1) !== at) seen.push(at);
+			}
+			requestAnimationFrame(watch);
+		};
+		requestAnimationFrame(watch);
+	});
+	const page = await context.newPage();
+	await page.goto(`${BASE_URL}/${FLIP}`);
+	const level = parseLevel({map: ["..roy...YORX", "S.roy...YORX", "..roy...YORX"], k: {}});
+	const par = String(solve(level, initState(level), 600000)!.length);
+	await expect(page.locator("#par")).toHaveText(par);
+	await expect
+		.poll(async () => page.evaluate(() => (window as unknown as {parSeen: string[]}).parSeen))
+		.toStrictEqual(["Flip it and reverse it|?", `Flip it and reverse it|${par}`]);
+	await context.close();
+});
+
 test("winning a shared level saves no progress and leads into the campaign", async ({browser}) => {
 	const {page} = await open(browser, FLIP);
 	const before = await page.evaluate(() => localStorage.getItem("cubist-progress-v2"));

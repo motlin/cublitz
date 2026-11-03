@@ -2,9 +2,10 @@ import {initState, parseLevel} from "../core/level.ts";
 import {levelFromSearch} from "../core/share.ts";
 import {solve} from "../core/solver.ts";
 import type {LevelSource} from "../core/types.ts";
-import {$} from "./dom.ts";
+import {$, domValue} from "./dom.ts";
 import {setMode} from "./modes.ts";
 import {SHARED, startLevel} from "./play.ts";
+import {S} from "./session.ts";
 
 function showBadLink(): void {
 	const note = document.createElement("p");
@@ -26,8 +27,13 @@ export function openSharedLink(search: string): void {
 	}
 	if (!source) return;
 	const L = parseLevel(source);
-	const sol = solve(L, initState(L), 600000);
-	L.par = sol ? sol.length : null;
+	L.par = null;
 	startLevel(L, SHARED);
 	setMode("play");
+	// A big level can take seconds to solve, so the board paints first with par unknown.
+	setTimeout(() => {
+		const sol = solve(L, initState(L), 600000);
+		L.par = sol ? sol.length : null;
+		if (S.L === L) $("par").textContent = domValue(L.par ?? "?");
+	});
 }
