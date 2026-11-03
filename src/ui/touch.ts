@@ -27,6 +27,11 @@ let fitBtn: HTMLButtonElement | null = null;
 let builtSize = "";
 let refitTimer: ReturnType<typeof setTimeout> | undefined;
 let chromeBuilt = false;
+/** The phone's own buttons, each with how it goes back on the page, so they leave it whenever the query stops matching. */
+const chromeParts: {el: HTMLElement; attach: (el: HTMLElement) => void}[] = [];
+const PHONE_HELP =
+	"One finger paints tiles. Two fingers pan, and pinch to zoom. Puddles, gates, switches, buttons, boxes and doors use the selected color. Placing a start moves it.";
+let desktopHelp = "";
 
 /** The surfaces that fingers act on. A surface that is on screen hears every finger on the page, so a pinch can start
  * off its edge, and is told which of them landed elsewhere. */
@@ -182,7 +187,12 @@ function buildChrome(): void {
 	menu.addEventListener("click", () => {
 		document.querySelector(".app")!.classList.add("menu-open");
 	});
-	document.querySelector(".levelhead")!.prepend(menu);
+	chromeParts.push({
+		el: menu,
+		attach: (el) => {
+			document.querySelector(".levelhead")!.prepend(el);
+		},
+	});
 
 	const close = document.createElement("button");
 	close.type = "button";
@@ -190,7 +200,12 @@ function buildChrome(): void {
 	close.className = "act";
 	close.textContent = "×";
 	close.setAttribute("aria-label", "Close the menu");
-	$("topbar").append(close);
+	chromeParts.push({
+		el: close,
+		attach: (el) => {
+			$("topbar").append(el);
+		},
+	});
 	// In the capture phase, because a level's button is gone from the page once its own click has run.
 	$("topbar").addEventListener(
 		"click",
@@ -209,7 +224,12 @@ function buildChrome(): void {
 	more.textContent = "⋯";
 	more.setAttribute("aria-label", "More actions");
 	more.addEventListener("click", () => playView.classList.toggle("more-open"));
-	$("undoBtn").parentElement!.append(more);
+	chromeParts.push({
+		el: more,
+		attach: (el) => {
+			$("undoBtn").parentElement!.append(el);
+		},
+	});
 	const closeMore = (e: Event): void => {
 		const target = e.target as Element;
 		if (target.closest("#moreBtn") || (e.type === "pointerdown" && target.closest("#playView aside .btnrow")))
@@ -228,11 +248,15 @@ function buildChrome(): void {
 	fitBtn.hidden = true;
 	fitBtn.addEventListener("click", resetCamera);
 	const viewport = $("viewport");
-	viewport.append(fitBtn);
+	chromeParts.push({
+		el: fitBtn,
+		attach: (el) => {
+			viewport.append(el);
+		},
+	});
 
 	$("lvTip").addEventListener("click", () => $("lvTip").classList.toggle("open"));
-	document.querySelector(".ed-help")!.textContent =
-		"One finger paints tiles. Two fingers pan, and pinch to zoom. Puddles, gates, switches, buttons, boxes and doors use the selected color. Placing a start moves it.";
+	desktopHelp = document.querySelector(".ed-help")!.textContent ?? "";
 
 	const fingers = fingerGestures({
 		aim: (swipe) => {
@@ -251,13 +275,26 @@ function buildChrome(): void {
 	new ResizeObserver(refit).observe(viewport);
 }
 
+function showChrome(shown: boolean): void {
+	for (const {el, attach} of chromeParts) {
+		if (shown) attach(el);
+		else el.remove();
+	}
+	document.querySelector(".ed-help")!.textContent = shown ? PHONE_HELP : desktopHelp;
+}
+
 function sync(): void {
 	if (!isCompact()) {
 		$("board").style.transform = "";
-		if (chromeBuilt) closeMenu();
+		if (chromeBuilt) {
+			closeMenu();
+			$("playView").classList.remove("more-open");
+			showChrome(false);
+		}
 		return;
 	}
 	if (!chromeBuilt) buildChrome();
+	showChrome(true);
 }
 
 /** A phone's words for the two tips that read differently there. */

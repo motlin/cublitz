@@ -561,3 +561,32 @@ test("desktop stays the original: no touch stylesheet, no touch controls", async
 	expect(found).toBe(0);
 	await context.close();
 });
+
+test("turning a tablet from the phone layout to desktop width takes the phone chrome away, and back brings it", async ({
+	browser,
+}) => {
+	const {context, page} = await openPhone(browser, {name: "iPad portrait", width: 820, height: 1180});
+	await page.locator("#titlePlay").tap();
+	const chrome = async (): Promise<{buttons: string[]; help: string}> =>
+		page.evaluate(() => ({
+			buttons: [...document.querySelectorAll("#menuBtn, #menuClose, #moreBtn, #fitBtn")].map((el) => el.id),
+			help: document.querySelector(".ed-help")!.textContent,
+		}));
+	const phone = {
+		buttons: ["menuClose", "menuBtn", "fitBtn", "moreBtn"],
+		help: "One finger paints tiles. Two fingers pan, and pinch to zoom. Puddles, gates, switches, buttons, boxes and doors use the selected color. Placing a start moves it.",
+	};
+	expect(await chrome()).toStrictEqual(phone);
+	await page.setViewportSize({width: 1180, height: 820});
+	await sleep(150);
+	expect(await chrome()).toStrictEqual({
+		buttons: [],
+		help: "Click or drag to paint tiles. Puddles, gates, switches, buttons, boxes and doors use the selected color. Placing a start moves it.",
+	});
+	await page.setViewportSize({width: 820, height: 1180});
+	await sleep(150);
+	expect(await chrome()).toStrictEqual(phone);
+	await page.locator("#menuBtn").tap();
+	await expect(page.locator("#menuClose")).toBeVisible();
+	await context.close();
+});
