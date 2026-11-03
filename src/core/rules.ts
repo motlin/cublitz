@@ -174,9 +174,11 @@ function tryBlockMove(L: Level, st: State, units: Unit[], loose: LooseCube[], d:
 		if (bc.t === "door" && !openColors(L, synced({...st, units: moved, boxes}))[bc.c])
 			return {ok: false, why: "door", c: bc.c, nx: bx, ny: by};
 	}
-	const open = openColors(L, synced({...st, units: moved, boxes}));
-	for (const {u, cell} of standing)
-		if (cell.t === "door" && !open[cell.c]) return {ok: false, why: "door", c: cell.c, nx: u.x, ny: u.y};
+	if (standing.some(({cell}) => cell.t === "door")) {
+		const open = openColors(L, synced({...st, units: moved, boxes}));
+		for (const {u, cell} of standing)
+			if (cell.t === "door" && !open[cell.c]) return {ok: false, why: "door", c: cell.c, nx: u.x, ny: u.y};
+	}
 	let painted: Paint | null = null;
 	let landed = moved.map((u) => {
 		const cell = standing.find((foot) => foot.u === u)?.cell;

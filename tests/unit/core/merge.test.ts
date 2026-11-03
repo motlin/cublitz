@@ -28,6 +28,19 @@ const lying = (map: string[], k: LevelSource["k"] = CUBE) => {
 	return {level, state: walk(level, state, "E")};
 };
 
+// openColors is the only reader of L.switches during a move, so counting reads counts its calls
+const counted = (level: Level) => {
+	let reads = 0;
+	const proxy: Level = {
+		...level,
+		get switches() {
+			reads++;
+			return level.switches;
+		},
+	};
+	return {proxy, reads: () => reads};
+};
+
 describe("a level with loose cubes", () => {
 	it("parses them onto floor cells and starts them unmerged", () => {
 		const {level, state} = start(["S+X"]);
@@ -206,6 +219,16 @@ describe("rolling a block", () => {
 		const {level, state} = lying(["S+", ".1", "2."], {...CUBE, "1": ["button", "w"], "2": ["door", "w"]});
 		const st = step(level, state, "S").st;
 		expect(openColors(level, st)).toStrictEqual({w: true});
+	});
+
+	it("reads the door colors only when a foot lands on a door", () => {
+		const {level, state} = lying(["S+", "..", "2."], {...CUBE, "2": ["door", "w"]});
+		const plain = counted(level);
+		const floor = step(plain.proxy, state, "S");
+		expect([floor.nx, floor.ny, plain.reads()]).toStrictEqual([0, 1, 0]);
+		const door = counted(level);
+		expect(tryMove(door.proxy, floor.st, "S")).toStrictEqual({ok: false, why: "door", c: "w", nx: 0, ny: 2});
+		expect(door.reads()).toBe(1);
 	});
 
 	it("flips a switch only when the block's exposed faces are all that color", () => {
