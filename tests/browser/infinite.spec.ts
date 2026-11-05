@@ -1,6 +1,8 @@
 import {expect, test} from "@playwright/test";
 import {type InfiniteGolden, readInfiniteGolden} from "../support/golden.ts";
-import {atLevel, engine, withPair} from "./harness/pair.ts";
+import {engine} from "../support/engine.ts";
+import {atLevel} from "./harness/page.ts";
+import {withSession} from "./harness/session.ts";
 
 const golden = readInfiniteGolden("infinite-post-fix.json");
 const SEED = 12345;
@@ -22,7 +24,7 @@ const pinnedRun =
 
 test("a pinned seed plays three canvases to a first rank", async ({browser}) =>
 {
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage:
@@ -31,13 +33,13 @@ test("a pinned seed plays three canvases to a first rank", async ({browser}) =>
 				...pinnedRun,
 			},
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			await pair.click("#titleInf");
+			await session.click("#titleInf");
 			for (const n of [0, 1, 2])
 			{
 				const {level, path} = canvas(n);
-				expect(pair.last.hud).toStrictEqual(
+				expect(session.last.hud).toStrictEqual(
 					{
 						name: `Canvas ${n + 1}`,
 						num: "Infinite mode",
@@ -45,8 +47,8 @@ test("a pinned seed plays three canvases to a first rank", async ({browser}) =>
 						par: String(level.par),
 					},
 				);
-				await pair.dismissTips();
-				const won = await pair.roll(path);
+				await session.dismissTips();
+				const won = await session.roll(path);
 				expect(won.win).toStrictEqual(
 					{
 						hidden: false,
@@ -60,29 +62,29 @@ test("a pinned seed plays three canvases to a first rank", async ({browser}) =>
 						retryHidden: true,
 					},
 				);
-				await pair.press("Enter", "next canvas");
+				await session.press("Enter", "next canvas");
 			}
-			expect(pair.last.hud.name).toBe("Canvas 4");
-			expect(JSON.parse(pair.last.storage["cublitz-infinite-best-v1"]!)).toStrictEqual(
+			expect(session.last.hud.name).toBe("Canvas 4");
+			expect(JSON.parse(session.last.storage["cublitz-infinite-best-v1"]!)).toStrictEqual(
 				{
 					cleared: 3,
 					score: 300,
 					rating: 100,
 				},
 			);
-			await pair.click(".brand");
-			expect(await pair.legacy.locator("#titleInf").textContent()).toBe("Infinite · Canvas 4");
-			expect(await pair.legacy.locator("#titleProgress").textContent()).toBe("31 levels · Infinite best 3");
-			await pair.reload();
-			await pair.click("#titleInf", "resume the saved run after a reload");
-			expect(pair.last.hud.name).toBe("Canvas 4");
+			await session.click(".brand");
+			expect(await session.page.locator("#titleInf").textContent()).toBe("Infinite · Canvas 4");
+			expect(await session.page.locator("#titleProgress").textContent()).toBe("31 levels · Infinite best 3");
+			await session.reload();
+			await session.click("#titleInf", "resume the saved run after a reload");
+			expect(session.last.hud.name).toBe("Canvas 4");
 		},
 	);
 });
 
 test("rolls all count: undo, restart and an over-par win", async ({browser}) =>
 {
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage:
@@ -91,18 +93,18 @@ test("rolls all count: undo, restart and an over-par win", async ({browser}) =>
 				...pinnedRun,
 			},
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			await pair.click("#titleInf");
+			await session.click("#titleInf");
 			const {level, path} = canvas(0);
-			await pair.roll(path.slice(0, 2));
-			await pair.press("z");
-			expect(pair.last.hud.moves).toBe("2");
-			await pair.press("h", "hints are disabled in infinite mode");
-			expect(pair.last.hint.hidden).toBe(true);
-			await pair.press("r");
-			expect(pair.last.hud.moves).toBe("2");
-			const won = await pair.roll(path);
+			await session.roll(path.slice(0, 2));
+			await session.press("z");
+			expect(session.last.hud.moves).toBe("2");
+			await session.press("h", "hints are disabled in infinite mode");
+			expect(session.last.hint.hidden).toBe(true);
+			await session.press("r");
+			expect(session.last.hud.moves).toBe("2");
+			const won = await session.roll(path);
 			const m = level.par + 2;
 			expect(won.win).toStrictEqual(
 				{
@@ -120,14 +122,14 @@ test("rolls all count: undo, restart and an over-par win", async ({browser}) =>
 
 test("skip, new-run arm and timeout, and a seed drawn from the pinned Math.random", async ({browser}) =>
 {
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage: atLevel(0),
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			const fresh = await pair.click("#titleInf");
+			const fresh = await session.click("#titleInf");
 			const seed = (
 				JSON.parse(fresh.storage["cublitz-infinite-run-v1"]!) as
 				{
@@ -135,16 +137,16 @@ test("skip, new-run arm and timeout, and a seed drawn from the pinned Math.rando
 				}
 			).seed;
 			expect(seed).toBe(Math.floor(seedFromPinnedRandom() * 1e9));
-			await pair.click("#infSkip");
-			expect(await pair.legacy.locator("#infNote").textContent()).toBe(
+			await session.click("#infSkip");
+			expect(await session.page.locator("#infNote").textContent()).toBe(
 				"Skipped. That canvas counts as 0 toward your rating.",
 			);
-			expect(pair.last.hud.name).toBe("Canvas 2");
-			await pair.fireParkedTimers();
-			await pair.click("#infNew", "arm new run");
-			await pair.fireParkedTimers();
-			await pair.click("#infNew", "arm again");
-			const renewed = await pair.click("#infNew", "confirm new run");
+			expect(session.last.hud.name).toBe("Canvas 2");
+			await session.fireParkedTimers();
+			await session.click("#infNew", "arm new run");
+			await session.fireParkedTimers();
+			await session.click("#infNew", "arm again");
+			const renewed = await session.click("#infNew", "confirm new run");
 			const run = JSON.parse(renewed.storage["cublitz-infinite-run-v1"]!) as
 			{
 				seed: number;
@@ -152,11 +154,11 @@ test("skip, new-run arm and timeout, and a seed drawn from the pinned Math.rando
 			};
 			expect(run.n).toBe(0);
 			const level = engine.parseLevel(JSON.parse(JSON.stringify(engine.generateInfinite(run.seed, 0))));
-			const won = await pair.roll(engine.solve(level, engine.initState(level))!);
+			const won = await session.roll(engine.solve(level, engine.initState(level))!);
 			expect(won.win.hidden).toBe(false);
-			await pair.click("#winNext");
-			await pair.click("#modePlay", "leave infinite for the campaign");
-			expect(pair.last.hud.num).toBe("Level 1 of 31");
+			await session.click("#winNext");
+			await session.click("#modePlay", "leave infinite for the campaign");
+			expect(session.last.hud.num).toBe("Level 1 of 31");
 		},
 	);
 });
@@ -178,14 +180,14 @@ test("a run saved before levels changed resumes where it was and keeps its score
 		...atLevel(0),
 		"cublitz-infinite-run-v1": JSON.stringify(saved),
 	};
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage,
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			const opened = await pair.click("#titleInf");
+			const opened = await session.click("#titleInf");
 			const {level, path} = canvas(5);
 			expect(opened.hud).toStrictEqual(
 				{
@@ -196,8 +198,8 @@ test("a run saved before levels changed resumes where it was and keeps its score
 				},
 			);
 			expect(JSON.parse(opened.storage["cublitz-infinite-run-v1"]!)).toStrictEqual(saved);
-			await pair.dismissTips();
-			const won = await pair.roll(path);
+			await session.dismissTips();
+			const won = await session.roll(path);
 			expect(JSON.parse(won.storage["cublitz-infinite-run-v1"]!)).toStrictEqual(
 				{
 					seed: SEED,
@@ -215,7 +217,7 @@ test("a run saved before levels changed resumes where it was and keeps its score
 
 test("Skip canvas is disabled on the win card, and works again on the next canvas", async ({browser}) =>
 {
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage:
@@ -224,13 +226,13 @@ test("Skip canvas is disabled on the win card, and works again on the next canva
 				...pinnedRun,
 			},
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			await pair.click("#titleInf");
-			const skip = pair.dist.locator("#infSkip");
+			await session.click("#titleInf");
+			const skip = session.page.locator("#infSkip");
 			await expect(skip).toBeEnabled();
-			await pair.dismissTips();
-			const won = await pair.roll(canvas(0).path);
+			await session.dismissTips();
+			const won = await session.roll(canvas(0).path);
 			await expect(skip).toBeDisabled();
 			const saved = won.storage["cublitz-infinite-run-v1"];
 			expect(JSON.parse(saved!)).toStrictEqual(
@@ -246,17 +248,17 @@ test("Skip canvas is disabled on the win card, and works again on the next canva
 			);
 
 			// A click on a disabled button does nothing, from the mouse or from a script.
-			const clicked = await pair.step("click skip on the win card", async (page) =>
+			const clicked = await session.step("click skip on the win card", async (page) =>
 				page.evaluate(() => document.getElementById("infSkip")?.click()),
 			);
 			expect(clicked.storage["cublitz-infinite-run-v1"]).toBe(saved);
 			expect(clicked.win.hidden).toBe(false);
-			expect(await pair.dist.locator("#infNote").textContent()).toBe("");
+			expect(await session.page.locator("#infNote").textContent()).toBe("");
 
-			await pair.press("Enter", "next canvas");
-			expect(pair.last.hud.name).toBe("Canvas 2");
+			await session.press("Enter", "next canvas");
+			expect(session.last.hud.name).toBe("Canvas 2");
 			await expect(skip).toBeEnabled();
-			const skipped = await pair.click("#infSkip", "skip the next canvas");
+			const skipped = await session.click("#infSkip", "skip the next canvas");
 			expect(JSON.parse(skipped.storage["cublitz-infinite-run-v1"]!)).toStrictEqual(
 				{
 					seed: SEED,

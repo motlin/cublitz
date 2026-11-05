@@ -1,19 +1,22 @@
 import {type BrowserType, expect, test} from "@playwright/test";
 import {readInfiniteGolden} from "../support/golden.ts";
-import {BASE_URL, DIST_PATH} from "./harness/pair.ts";
+import {BASE_URL, DIST_PATH} from "./harness/page.ts";
 
 const golden = readInfiniteGolden("infinite-post-fix.json");
 const DEEP_CASES = [1, 4, 9, 77, 2024, 31337].flatMap((seed) => [6, 10, 15, 21, 27].map((n) => [seed, n]));
 const CASES = [...golden.map(({seed, n}) => [seed, n]), ...DEEP_CASES];
 const CANDIDATE_LEVEL_NUMBERS = [0, 2, 4, 6, 8, 10, 12, 14, 20, 33];
 
-// A string, because genInf, run, infRng and infCandidate are lexical globals of the page rather than window properties.
+// A string, because it imports the game's generator in the page from the test server's copy of src/core/.
 const GENERATE = `(async () => {
-	const levels = [];
-	for (const [seed, n] of ${JSON.stringify(CASES)}) {
-		run = { seed, n:0 };
-		levels.push(await new Promise(resolve => genInf(n, lv => resolve(JSON.parse(JSON.stringify(lv))))));
-	}
+	const {infCandidate, infRng, infSearch} = await import("/src/core/infinite.ts");
+	const levels = ${JSON.stringify(CASES)}.map(([seed, n]) => {
+		const next = infSearch(seed, n);
+		for (;;) {
+			const level = next();
+			if (level) return JSON.parse(JSON.stringify(level));
+		}
+	});
 	const candidates = ${JSON.stringify(CANDIDATE_LEVEL_NUMBERS)}.map(n => {
 		const R = infRng(n + 1);
 		return Array.from({length: 300}, () => infCandidate(R, n));

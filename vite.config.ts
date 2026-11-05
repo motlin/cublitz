@@ -1,6 +1,5 @@
 import {readFileSync} from "node:fs";
 import {defineConfig, type Plugin} from "vite-plus";
-import {keepOriginalGlobalScope, topLevelNames} from "./scripts/original-global-scope.ts";
 import {serviceWorker, SW_FILE} from "./scripts/service-worker-build.ts";
 import {inlineStylesheets, plainRegionComments} from "./scripts/single-file-page.ts";
 
@@ -8,26 +7,9 @@ process.title = "cublitz";
 
 const APP_TAG = '<script type="module" src="/src/main.ts"></script>';
 
-// Original globals no game code needs under these names: two it never reads, and storage keys that the
-// modules keep in one table. Tree shaking and constant inlining would drop them from any source declaration.
-const UNUSED_ORIGINAL_GLOBALS = `var ARROW = { N:'↑', S:'↓', E:'→', W:'←' };
-var skipArmed = null;
-var TIPS_KEY = 'cubist-tips-seen-v1';
-var INF_RUN_KEY = 'cublitz-infinite-run-v1', INF_BEST_KEY = 'cublitz-infinite-best-v1';
-var DRAFT_KEY = 'cubist-editor-draft-v1', MINE_KEY = 'cubist-my-levels-v1';
-var PAL_KEY = 'cubist-colors-v1';
-`;
-
-const originalScript = (): string =>
-{
-	const script = /(?<=<script>\n)[\s\S]*(?=<\/script>)/.exec(readFileSync("legacy/original.html", "utf8"))?.[0];
-	if (!script) throw new Error("legacy/original.html has no inline script");
-	return script;
-};
-
-// The shipped page has to stay the original single file. Vite would minify the CSS and move it and the
-// script to deferred external files, which can paint the page before the game has set it up. So the raw
-// page goes out with its CSS back in place and the bundled code as a classic inline script in its spot.
+// The shipped page is one file. Vite would minify the CSS and move it and the script to deferred external
+// files, which can paint the page before the game has set it up. So the raw page goes out with its CSS back
+// in place and the bundled code as a classic inline script in its spot.
 function shipSingleFilePage(): Plugin
 {
 	return {
@@ -45,10 +27,7 @@ function shipSingleFilePage(): Plugin
 			if (/<\/script/i.test(chunk.code)) throw new Error("The script would close its own inline tag");
 			const raw = inlineStylesheets(readFileSync("index.html", "utf8"), (path) => readFileSync(path, "utf8"));
 			if (raw.split(APP_TAG).length !== 2) throw new Error(`index.html must contain ${APP_TAG} exactly once`);
-			const script = keepOriginalGlobalScope(
-				UNUSED_ORIGINAL_GLOBALS + plainRegionComments(chunk.code),
-				topLevelNames(originalScript()),
-			);
+			const script = plainRegionComments(chunk.code);
 			page.source = raw.replace(APP_TAG, () => `<script>\n${script}</script>`);
 			for (const output of Object.values(bundle))
 				if (output !== page && output.fileName !== SW_FILE) delete bundle[output.fileName];
@@ -139,15 +118,7 @@ export default defineConfig(
 			{
 				builtin: true,
 			},
-			ignorePatterns: [
-				"dist",
-				"build",
-				"storybook-static",
-				".llm/**",
-				"vitest.shims.d.ts",
-				"legacy/**",
-				"test-results/**",
-			],
+			ignorePatterns: ["dist", "build", "storybook-static", ".llm/**", "vitest.shims.d.ts", "test-results/**"],
 			overrides: [
 				{
 					files: ["public/**/*.{ts,tsx}"],
@@ -297,7 +268,7 @@ export default defineConfig(
 						"@typescript-eslint/prefer-nullish-coalescing": "off", // 43: || also replaces 0 and "", which saved data and share codes can hold.
 						"import/no-cycle": "off", // 44: module order sets the order of top-level code in the bundle, and untangling the ui modules would change it.
 						"unicorn/no-array-sort": "off", // 2: both sort a fresh array, and toSorted would drop browsers that run the game today.
-						"unicorn/prefer-set-has": "off", // 1: COLORED is one of the original's page globals, and the harness requires it to stay an array.
+						"unicorn/prefer-set-has": "off", // 1: COLORED stays an array.
 					},
 				},
 				// Each step waits for the last, so the awaits in a loop are the point. The harness's own names on window start with two underscores to stay clear of the game's.
@@ -323,23 +294,6 @@ export default defineConfig(
 					rules:
 					{
 						"@typescript-eslint/unbound-method": "off",
-					},
-				},
-				// This runs the original's own script, which arrives as text.
-				{
-					files: ["tests/support/original-engine.ts"],
-					rules:
-					{
-						"@typescript-eslint/no-implied-eval": "off",
-						"@typescript-eslint/no-unsafe-call": "off",
-					},
-				},
-				// Both read the bundler's parser output. Moving off the deprecated parseAst could change the parse that shapes the shipped script.
-				{
-					files: ["scripts/original-global-scope.ts", "tests/unit/original-strings.test.ts"],
-					rules:
-					{
-						"@typescript-eslint/no-deprecated": "off",
 					},
 				},
 				// Parser output and JSON reports have no static type to check against.

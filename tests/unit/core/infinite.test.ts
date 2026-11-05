@@ -1,7 +1,6 @@
 import {describe, expect, it} from "vite-plus/test";
 import
 {
-	infCandidate,
 	infRank,
 	infRating,
 	infRelaxed,
@@ -13,10 +12,8 @@ import
 } from "../../../src/core/infinite.ts";
 import type {GeneratedLevel} from "../../../src/core/infinite.ts";
 import {readInfiniteGolden} from "../../support/golden.ts";
-import {loadExpectedEngine} from "../../support/original-engine.ts";
 
 const golden = readInfiniteGolden("infinite-post-fix.json");
-const original = loadExpectedEngine();
 const generate = (seed: number, n: number): GeneratedLevel =>
 {
 	const batch = infSearch(seed, n);
@@ -27,15 +24,8 @@ const generate = (seed: number, n: number): GeneratedLevel =>
 	}
 };
 
-const drawFour = (rng: () => number) => [rng(), rng(), rng(), rng()];
-
 describe("infRng", () =>
 {
-	it("produces the original's stream for a seed", () =>
-	{
-		expect(drawFour(infRng(12345))).toStrictEqual(drawFour(original.infRng(12345)));
-	});
-
 	it("produces known values, in [0, 1)", () =>
 	{
 		const rng = infRng(0);
@@ -115,33 +105,11 @@ const drawAttempts = (attempt: (R: () => number, n: number) => unknown, rng: (se
 		);
 	});
 
-describe("infCandidate and infTry", () =>
+describe("infTry", () =>
 {
-	const levelNumbers = [0, 2, 4, 6, 8, 10, 12, 14, 20, 33];
-
-	const drawCandidates = (candidate: (R: () => number, n: number) => unknown, rng: (seed: number) => () => number) =>
-		levelNumbers.flatMap((n) =>
-		{
-			const R = rng(n + 1);
-			return Array.from(
-				{
-					length: 800,
-				},
-				() => candidate(R, n),
-			);
-		});
-
-	it("draws the same candidates as the original at every tier, for many draws", () =>
-	{
-		expect(drawCandidates(infCandidate, infRng)).toStrictEqual(
-			drawCandidates(original.infCandidate, original.infRng),
-		);
-	});
-
-	it("accepts and rejects the same candidates as the original", () =>
+	it("rejects some candidates and accepts others", () =>
 	{
 		const tried = drawAttempts(infTry, infRng);
-		expect(tried).toStrictEqual(drawAttempts(original.infTry, original.infRng));
 		expect(tried.some((level) => level === null)).toBe(true);
 		expect(tried.some((level) => level !== null)).toBe(true);
 	});
@@ -149,19 +117,6 @@ describe("infCandidate and infTry", () =>
 
 describe("infSearch", () =>
 {
-	it("generates what the original generates, across seeds and deep into a run", () =>
-	{
-		const pairs = [
-			[4, 8],
-			[9, 10],
-			[77, 15],
-		] as const;
-		const generated = pairs.map(([seed, n]) => JSON.parse(JSON.stringify(generate(seed, n))) as unknown);
-		expect(generated).toStrictEqual(
-			pairs.map(([seed, n]) => JSON.parse(JSON.stringify(original.generateInfinite(seed, n))) as unknown),
-		);
-	});
-
 	it("generates every golden level from its seed", () =>
 	{
 		const generated = golden.map(({seed, n}) => JSON.parse(JSON.stringify(generate(seed, n))) as unknown);
@@ -181,9 +136,7 @@ describe("infSearch", () =>
 		const first = batch();
 		const second = batch();
 		expect(first).toBe(null);
-		expect(JSON.parse(JSON.stringify(second))).toStrictEqual(
-			JSON.parse(JSON.stringify(original.generateInfinite(370, 0))),
-		);
+		expect(JSON.parse(JSON.stringify(second))).toStrictEqual(JSON.parse(JSON.stringify(generate(370, 0))));
 	});
 });
 

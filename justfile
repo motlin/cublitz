@@ -25,10 +25,9 @@ format: install
     pre-commit run just-fmt --all-files
     oxfmt-next-line {{ if ci != "" { "--check" } else { "" } }}
 
-# Run checks (lint + typecheck; formatting is `just format`) and confirm the legacy artifact is untouched
+# Run checks (lint + typecheck; formatting is `just format`)
 check *args: install
     vp run --cache check {{ if ci != "" { "" } else { "--fix" } }} {{ args }}
-    node scripts/verify-legacy.ts
 
 # Run tests
 test *args: install
@@ -46,17 +45,9 @@ typecheck: install
 build: install
     vp run --cache build
 
-# Run the Playwright differential harness against a fresh build
+# Run the Playwright browser tests against a fresh build
 test-browser *args: build
     pnpm exec playwright test {{ args }}
-
-# Regenerate golden files from legacy/original.html
-golden: install
-    pnpm run golden
-
-# Prove the harness catches mutated copies of dist/, optionally only those whose name contains the given text
-prove-harness *args: build
-    pnpm run prove-harness {{ args }}
 
 # Render the app icons in public/icons/ from scripts/icons/ (needs rsvg-convert)
 icons:
@@ -64,6 +55,10 @@ icons:
     rsvg-convert -w 512 -h 512 scripts/icons/icon.svg -o public/icons/icon-512.png
     rsvg-convert -w 512 -h 512 scripts/icons/icon-maskable.svg -o public/icons/icon-maskable-512.png
     rsvg-convert -w 180 -h 180 scripts/icons/icon-maskable.svg -o public/icons/apple-touch-icon.png
+
+# Render the link preview image public/og.png from scripts/og-image.ts (needs the network for Google Fonts)
+og-image: install
+    node scripts/og-image.ts
 
 # Upload dist/ to the production Cloudflare Pages deployment
 deploy: build

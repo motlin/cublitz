@@ -1,6 +1,8 @@
 import {expect, test} from "@playwright/test";
 import {readSolveGolden} from "../support/golden.ts";
-import {atLevel, engine, type Pair, withPair} from "./harness/pair.ts";
+import {engine} from "../support/engine.ts";
+import {atLevel} from "./harness/page.ts";
+import {type Session, withSession} from "./harness/session.ts";
 
 // Behavior a session never reaches on its own, so each one is driven here on purpose.
 
@@ -12,17 +14,17 @@ for (const modifier of ["Meta", "Control", "Alt"])
 {
 	test(`game keys with ${modifier} held do nothing`, async ({browser}) =>
 	{
-		await withPair(
+		await withSession(
 			browser,
 			{
 				storage: atLevel(1),
 			},
-			async (pair) =>
+			async (session) =>
 			{
-				await pair.click("#titlePlay");
+				await session.click("#titlePlay");
 				for (const key of ROLL_KEYS)
 				{
-					const pressed = await pair.press(`${modifier}+${key}`);
+					const pressed = await session.press(`${modifier}+${key}`);
 					expect(
 						{
 							moves: pressed.hud.moves,
@@ -41,14 +43,14 @@ for (const modifier of ["Meta", "Control", "Alt"])
 
 	test(`the M key with ${modifier} held leaves the sound alone`, async ({browser}) =>
 	{
-		await withPair(
+		await withSession(
 			browser,
 			{
 				storage: atLevel(1),
 			},
-			async (pair) =>
+			async (session) =>
 			{
-				const pressed = await pair.press(`${modifier}+m`);
+				const pressed = await session.press(`${modifier}+m`);
 				expect(pressed.storage).toStrictEqual(atLevel(1));
 			},
 		);
@@ -70,7 +72,7 @@ for (const key of SAVED_KEYS)
 {
 	test(`unparseable JSON in ${key} boots and walks every mode without an error`, async ({browser}) =>
 	{
-		await withPair(
+		await withSession(
 			browser,
 			{
 				storage:
@@ -79,25 +81,25 @@ for (const key of SAVED_KEYS)
 					[key]: "{bad",
 				},
 			},
-			async (pair) =>
+			async (session) =>
 			{
-				expect(pair.last.errors).toStrictEqual([]);
-				await pair.click("#titleEdit");
-				await pair.click("#modePlay");
-				await pair.press("h");
-				const reloaded = await pair.reload();
+				expect(session.last.errors).toStrictEqual([]);
+				await session.click("#titleEdit");
+				await session.click("#modePlay");
+				await session.press("h");
+				const reloaded = await session.reload();
 				expect(reloaded.errors).toStrictEqual([]);
 			},
 		);
 	});
 }
 
-const finishFirstCanvas = async (pair: Pair, seed: number) =>
+const finishFirstCanvas = async (session: Session, seed: number) =>
 {
-	await pair.click("#titleInf");
-	await pair.dismissTips();
+	await session.click("#titleInf");
+	await session.dismissTips();
 	const level = engine.parseLevel(JSON.parse(JSON.stringify(engine.generateInfinite(seed, 0))));
-	return pair.roll(engine.solve(level, engine.initState(level), 400000)!);
+	return session.roll(engine.solve(level, engine.initState(level), 400000)!);
 };
 
 test("the rating averages the last ten canvases, dropping the eleventh back", async ({browser}) =>
@@ -114,7 +116,7 @@ test("the rating averages the last ten canvases, dropping the eleventh back", as
 		streak: 0,
 		bestStreak: 0,
 	};
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage:
@@ -123,9 +125,9 @@ test("the rating averages the last ten canvases, dropping the eleventh back", as
 				"cublitz-infinite-run-v1": JSON.stringify(run),
 			},
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			const won = await finishFirstCanvas(pair, seed);
+			const won = await finishFirstCanvas(session, seed);
 			const saved = JSON.parse(won.storage["cublitz-infinite-run-v1"]!) as
 			{
 				effs: number[];
@@ -140,16 +142,13 @@ test("the rating averages the last ten canvases, dropping the eleventh back", as
 				).rating,
 			).toBe(90);
 			const ratings = await Promise.all(
-				pair.pages.map(async (page) =>
+				[session.page].map(async (page) =>
 					page.evaluate(
 						"[infRating({effs:[0,1,1,1,1,1,1,1,1,1]}), infRating({effs:[0,0,1,1,1,1,1,1,1,1,1]})]",
 					),
 				),
 			);
-			expect(ratings).toStrictEqual([
-				[90, 90],
-				[90, 90],
-			]);
+			expect(ratings).toStrictEqual([[90, 90]]);
 		},
 	);
 });
@@ -180,7 +179,7 @@ test("hot data for a locked level is ignored and the first open level loads", as
 	};
 	for (const useReady of [false, true])
 	{
-		await withPair(
+		await withSession(
 			browser,
 			{
 				storage: atLevel(1),
@@ -190,10 +189,10 @@ test("hot data for a locked level is ignored and the first open level loads", as
 					useReady,
 				},
 			},
-			(pair) =>
+			(session) =>
 			{
-				expect(pair.last.hud.num).toBe("Level 2 of 31");
-				expect(pair.last.errors).toStrictEqual([]);
+				expect(session.last.hud.num).toBe("Level 2 of 31");
+				expect(session.last.errors).toStrictEqual([]);
 			},
 		);
 	}
@@ -232,7 +231,7 @@ test("hot data from the old order, a Checkpoints state under index 4, is not res
 	};
 	for (const useReady of [false, true])
 	{
-		await withPair(
+		await withSession(
 			browser,
 			{
 				storage: OLD_ORDER_SAVE,
@@ -247,9 +246,9 @@ test("hot data from the old order, a Checkpoints state under index 4, is not res
 					useReady,
 				},
 			},
-			async (pair) =>
+			async (session) =>
 			{
-				const opened = await pair.click("#titlePlay");
+				const opened = await session.click("#titlePlay");
 				expect(opened.hud).toStrictEqual(
 					{
 						name: "Crown",
@@ -266,17 +265,17 @@ test("hot data from the old order, a Checkpoints state under index 4, is not res
 
 test("Next level after Crown skips Checkpoints when an old save already beat it", async ({browser}) =>
 {
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage: OLD_ORDER_SAVE,
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			await pair.click("#titlePlay");
-			const won = await pair.roll(golden[4]!.path!);
+			await session.click("#titlePlay");
+			const won = await session.roll(golden[4]!.path!);
 			expect(won.win.hidden).toBe(false);
-			const next = await pair.click("#winNext");
+			const next = await session.click("#winNext");
 			expect(next.hud).toStrictEqual(
 				{
 					name: "Stripes",
@@ -293,18 +292,18 @@ test("Next level after Checkpoints goes back to Crown when an old save beat Chec
 	browser,
 }) =>
 {
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage: OLD_ORDER_SAVE,
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			await pair.click("#titlePlay");
-			await pair.click('#levels button[title^="Checkpoints"]');
-			const won = await pair.roll(golden[5]!.path!);
+			await session.click("#titlePlay");
+			await session.click('#levels button[title^="Checkpoints"]');
+			const won = await session.roll(golden[5]!.path!);
 			expect(won.win.hidden).toBe(false);
-			const next = await pair.click("#winNext");
+			const next = await session.click("#winNext");
 			expect(next.hud).toStrictEqual(
 				{
 					name: "Crown",
@@ -333,17 +332,17 @@ test("the white gates tip and level 23's tip no longer say that paint never come
 		...atLevel(22),
 		"cubist-tips-seen-v1": JSON.stringify(seenExceptWhiteGates),
 	};
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage,
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			const opened = await pair.click("#titlePlay");
+			const opened = await session.click("#titlePlay");
 			expect([opened.hud.name, opened.tip.title]).toStrictEqual(["Two Sides", "White gates"]);
 			const shown = await Promise.all(
-				pair.pages.map(async (page) => [
+				[session.page].map(async (page) => [
 					await page.locator("#tipBody").textContent(),
 					await page.locator("#lvTip").textContent(),
 				]),
@@ -352,44 +351,43 @@ test("the white gates tip and level 23's tip no longer say that paint never come
 				"White gates want a bare side. A plain one needs a bare face down. An arrow means the side it points to must still be bare when you land, and a ring means a bare top. Paint stays on until a paint remover wipes it, so every puddle you cross uses up a white face. A solid cube never gets through.",
 				"West bare for the first wall, top bare for the second. Nothing here takes paint off.",
 			];
-			expect(shown).toStrictEqual([expected, expected]);
+			expect(shown).toStrictEqual([expected]);
 		},
 	);
 });
 
 test("the rolling tip is two short sentences", async ({browser}) =>
 {
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage: atLevel(0, false),
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			const opened = await pair.click("#titlePlay");
+			const opened = await session.click("#titlePlay");
 			expect(opened.tip.title).toBe("Rolling");
-			const shown = await Promise.all(pair.pages.map(async (page) => page.locator("#tipBody").textContent()));
+			const shown = await Promise.all([session.page].map(async (page) => page.locator("#tipBody").textContent()));
 			const expected = "Swipe or use the arrows to roll. Roll the cube to the target.";
-			expect(shown).toStrictEqual([expected, expected]);
+			expect(shown).toStrictEqual([expected]);
 		},
 	);
 });
 
 test("the infinite mode tip is short", async ({browser}) =>
 {
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage: atLevel(0),
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			await pair.click("#titleInf");
-			const shown = await Promise.all(pair.pages.map(async (page) => page.locator("#lvTip").textContent()));
+			await session.click("#titleInf");
+			const shown = await Promise.all([session.page].map(async (page) => page.locator("#lvTip").textContent()));
 			expect(shown[0]).toMatch(
 				/^Every canvas is new\. Par is \d+\. You can undo, but every roll counts toward your score\.$/,
 			);
-			expect(shown[1]).toBe(shown[0]);
 		},
 	);
 });
@@ -400,26 +398,26 @@ test("the tutorial pop-ups after the rolling tip are reworded", async ({browser}
 	const shown: Record<string, (string | null)[]> = {};
 	for (const index of [18, 25, 29])
 	{
-		await withPair(
+		await withSession(
 			browser,
 			{
 				storage: atLevel(index, false),
 			},
-			async (pair) =>
+			async (session) =>
 			{
-				await pair.click("#titlePlay");
-				while (!pair.last.tip.hidden)
+				await session.click("#titlePlay");
+				while (!session.last.tip.hidden)
 				{
-					const title = pair.last.tip.title;
+					const title = session.last.tip.title;
 					shown[title] = await Promise.all(
-						pair.pages.map(async (page) => page.locator("#tipBody").textContent()),
+						[session.page].map(async (page) => page.locator("#tipBody").textContent()),
 					);
-					await pair.press("Enter", `dismiss tip ${title}`);
+					await session.press("Enter", `dismiss tip ${title}`);
 				}
 			},
 		);
 	}
-	const both = (text: string): (string | null)[] => [text, text];
+	const both = (text: string): (string | null)[] => [text];
 	expect(shown).toStrictEqual(
 		{
 			Rolling: both("Swipe or use the arrows to roll. Roll the cube to the target."),
@@ -461,42 +459,36 @@ test("the solver's default limit is 400000 states", async ({browser}) =>
 		window.Set = RealSet;
 		return [path, solve.hitLimit];
 	})()`;
-	await withPair(browser, {}, async (pair) =>
+	await withSession(browser, {}, async (session) =>
 	{
 		const results = async (size: number) =>
-			Promise.all(pair.pages.map(async (page) => page.evaluate(solveAtSize(size))));
+			Promise.all([session.page].map(async (page) => page.evaluate(solveAtSize(size))));
 		const path = golden[0]?.path;
-		expect(await results(399_999)).toStrictEqual([
-			[path, false],
-			[path, false],
-		]);
-		expect(await results(400_000)).toStrictEqual([
-			[null, true],
-			[null, true],
-		]);
+		expect(await results(399_999)).toStrictEqual([[path, false]]);
+		expect(await results(400_000)).toStrictEqual([[null, true]]);
 	});
 });
 
 test("confirming the reset cancels the disarm timer, so only the note's own timer is left", async ({browser}) =>
 {
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage: atLevel(4),
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			await pair.click("#resetProgress", "arm");
-			const armed = pair.last;
+			await session.click("#resetProgress", "arm");
+			const armed = session.last;
 			expect(armed.timers).toStrictEqual([["timeout", 5000]]);
-			const confirmed = await pair.click("#resetProgress", "confirm");
+			const confirmed = await session.click("#resetProgress", "confirm");
 			expect(confirmed.timers).toStrictEqual([
 				["clearTimeout", 5000],
 				["timeout", 3000],
 			]);
-			await pair.fireParkedTimers();
-			expect(await pair.legacy.locator("#resetNote").isHidden()).toBe(true);
-			expect(await pair.dist.locator("#resetNote").isHidden()).toBe(true);
+			await session.fireParkedTimers();
+			expect(await session.page.locator("#resetNote").isHidden()).toBe(true);
+			expect(await session.page.locator("#resetNote").isHidden()).toBe(true);
 		},
 	);
 });

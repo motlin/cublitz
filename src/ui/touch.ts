@@ -10,7 +10,7 @@ import {S} from "./session.ts";
 import {type BoardFit, fitBoard, swipeAxis} from "./touch-geometry.ts";
 
 // The phone layout and its gestures. All of it starts when the query first matches, so a desktop page holds none of
-// it: the original's markup and stylesheets stay as they are, and a finger on a big touch screen acts as it always did.
+// it: the markup and game.css stay as they are, and a finger on a big touch screen acts as it always did.
 const COMPACT = "(pointer: coarse) and (max-width: 932px), (pointer: coarse) and (max-height: 500px)";
 const MAX_ZOOM = 5;
 const PAN_SLACK = 16;

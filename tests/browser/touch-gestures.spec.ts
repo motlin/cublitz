@@ -1,5 +1,5 @@
 import {type CDPSession, expect, type Page, test} from "@playwright/test";
-import {atLevel, BASE_URL} from "./harness/pair.ts";
+import {atLevel, BASE_URL} from "./harness/page.ts";
 import
 {
 	cameraOf,

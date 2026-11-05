@@ -10,8 +10,6 @@
 		"unused-dependencies": "error",
 		// src/ui/ is cyclic by design; README.md says why that is safe.
 		"circular-dependencies": "off",
-		// tests/support/original-engine.ts types the original script with the same names as src/core/.
-		"duplicate-exports": "off",
 		// The browser specs reach Pair through a fixture that fallow does not follow.
 		"unused-class-members": "off",
 	},

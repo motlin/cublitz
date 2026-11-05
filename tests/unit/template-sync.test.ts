@@ -56,8 +56,6 @@ it("runs every package script through the template's tools and keeps the project
 				typecheck: "tsc --noEmit",
 				test: "node node_modules/vitest/dist/cli.js",
 				"test:browser": "vp build && playwright test",
-				golden: "node scripts/generate-golden.ts",
-				"prove-harness": "node scripts/prove-harness.ts",
 				deploy: "wrangler pages deploy --branch main",
 				prepare: "VITE_GIT_HOOKS=0 vp config",
 			},
@@ -81,7 +79,7 @@ it("carries the template's oxfmt-next-line settings, with the byte-exact page so
 			bracketSpacing: false,
 			trailingComma: "all",
 			arrowParens: "always",
-			ignorePatterns: ["legacy/**", "index.html", "src/styles/**", "src/core/levels.ts", "tests/golden/**"],
+			ignorePatterns: ["index.html", "src/styles/**", "src/core/levels.ts", "tests/golden/**"],
 			overrides: [
 				{
 					files: [".yamllint.yaml", "**/*.yaml", "**/*.yml"],
@@ -154,7 +152,7 @@ it("carries the template's lint settings and adds the project's overrides after 
 			plugins: lint?.plugins,
 			categories: lint?.categories,
 			options: lint?.options,
-			lastOverrideFiles: lint?.overrides?.slice(-8).map((override) => override.files),
+			lastOverrideFiles: lint?.overrides?.slice(-6).map((override) => override.files),
 		},
 	).toStrictEqual(
 		{
@@ -175,8 +173,6 @@ it("carries the template's lint settings and adds the project's overrides after 
 				["tests/**/*.ts"],
 				["tests/browser/**/*.ts"],
 				["tests/browser/harness/instruments.ts"],
-				["tests/support/original-engine.ts"],
-				["scripts/original-global-scope.ts", "tests/unit/original-strings.test.ts"],
 				["scripts/**/*.ts"],
 				["vite.config.ts"],
 			],

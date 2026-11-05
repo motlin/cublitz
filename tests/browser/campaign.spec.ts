@@ -1,7 +1,8 @@
 import {expect, test} from "@playwright/test";
 import {readSolveGolden} from "../support/golden.ts";
 import {keyFor} from "../support/paths.ts";
-import {atLevel, withPair} from "./harness/pair.ts";
+import {atLevel} from "./harness/page.ts";
+import {withSession} from "./harness/session.ts";
 
 const golden = readSolveGolden("solve-post-fix.json");
 const WASD: Record<string, string> =
@@ -21,18 +22,18 @@ for (const {index, name, par, path} of golden)
 {
 	test(`level ${index + 1} ${name}: solver path to a win, with its tutorial tips`, async ({browser}) =>
 	{
-		await withPair(
+		await withSession(
 			browser,
 			{
 				storage: atLevel(index, false),
 			},
-			async (pair) =>
+			async (session) =>
 			{
-				await pair.click("#titlePlay");
-				expect(pair.last.hud.num).toBe(`Level ${index + 1} of 31`);
-				const tips = await pair.dismissTips();
+				await session.click("#titlePlay");
+				expect(session.last.hud.num).toBe(`Level ${index + 1} of 31`);
+				const tips = await session.dismissTips();
 				expect(tips.length).toBeGreaterThan(0);
-				const won = await pair.roll(path!, mixedKeys);
+				const won = await session.roll(path!, mixedKeys);
 				expect(won.win).toStrictEqual(
 					{
 						hidden: false,
@@ -50,7 +51,7 @@ for (const {index, name, par, path} of golden)
 				expect(JSON.parse(won.storage["cubist-progress-v2"]!)[name]).toBe(par);
 				if (index === LAST)
 				{
-					const replay = await pair.click("#winRetry");
+					const replay = await session.click("#winRetry");
 					expect(replay.hud).toStrictEqual(
 						{
 							name,
@@ -62,7 +63,7 @@ for (const {index, name, par, path} of golden)
 				}
 				else
 				{
-					const next = await pair.click("#winNext");
+					const next = await session.click("#winNext");
 					expect(next.hud.num).toBe(`Level ${index + 2} of 31`);
 				}
 			},
@@ -72,30 +73,30 @@ for (const {index, name, par, path} of golden)
 
 test("fresh save: all 31 levels unlock one by one, with reduced motion", async ({browser}) =>
 {
-	await withPair(
+	await withSession(
 		browser,
 		{
 			reducedMotion: true,
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			const enabled = async () => pair.legacy.locator(".lvbtn:not([disabled])").count();
-			await pair.press("Enter", "start from the title with Enter");
+			const enabled = async () => session.page.locator(".lvbtn:not([disabled])").count();
+			await session.press("Enter", "start from the title with Enter");
 			for (const {index, path} of golden)
 			{
-				expect(pair.last.hud.num).toBe(`Level ${index + 1} of 31`);
-				await pair.dismissTips();
+				expect(session.last.hud.num).toBe(`Level ${index + 1} of 31`);
+				await session.dismissTips();
 				expect(await enabled()).toBe(index + 1);
-				const won = await pair.roll(path!);
+				const won = await session.roll(path!);
 				expect(won.win.hidden).toBe(false);
 				expect(await enabled()).toBe(Math.min(31, index + 2));
-				if (index < LAST) await pair.press("Enter", "next level with Enter");
+				if (index < LAST) await session.press("Enter", "next level with Enter");
 			}
-			await pair.click(".brand");
-			expect(await pair.legacy.locator("#titleProgress").textContent()).toBe("All 31 levels cleared");
-			expect(await pair.legacy.locator("#titlePlay").textContent()).toBe("Play again");
-			await pair.reload();
-			expect(await pair.legacy.locator("#titleProgress").textContent()).toBe("All 31 levels cleared");
+			await session.click(".brand");
+			expect(await session.page.locator("#titleProgress").textContent()).toBe("All 31 levels cleared");
+			expect(await session.page.locator("#titlePlay").textContent()).toBe("Play again");
+			await session.reload();
+			expect(await session.page.locator("#titleProgress").textContent()).toBe("All 31 levels cleared");
 		},
 	);
 });

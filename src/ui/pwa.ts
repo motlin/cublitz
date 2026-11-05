@@ -1,7 +1,7 @@
 // Makes the page an installable app that plays offline: the head gets the manifest and the tags Safari reads for a
-// home screen app, and the service worker built from src/pwa/sw.ts is registered. The page outside the script has to
-// stay the original's, so the tags are added here. The worker shares no code with the page, so the paths and the
-// color are spelled out; tests/unit/pwa/manifest.test.ts checks them against src/pwa/manifest.ts.
+// home screen app, and the service worker built from src/pwa/sw.ts is registered. The worker shares no code with the
+// page, so the paths and the color are spelled out; tests/unit/pwa/manifest.test.ts checks them against
+// src/pwa/manifest.ts.
 export const HEAD_TAGS: [tag: string, attributes: Record<string, string>][] = [
 	[
 		"link",

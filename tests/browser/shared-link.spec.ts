@@ -3,7 +3,8 @@ import {parseLevel, initState} from "../../src/core/level.ts";
 import {encodeLevel} from "../../src/core/share.ts";
 import {solve} from "../../src/core/solver.ts";
 import type {Direction} from "../../src/core/types.ts";
-import {atLevel, BASE_URL, engine} from "./harness/pair.ts";
+import {engine} from "../support/engine.ts";
+import {atLevel, BASE_URL} from "./harness/page.ts";
 
 const FLIP =
 	"?CUBLITZ:eyJuYW1lIjoiRmxpcCBpdCBhbmQgcmV2ZXJzZSBpdCIsIm1hcCI6WyIuLnJveS4uLllPUlgiLCJTLnJveS4uLllPUlgiLCIuLnJveS4uLllPUlgiXSwiayI6e319";

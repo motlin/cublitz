@@ -1,6 +1,6 @@
 import type {Browser, BrowserContext, CDPSession, Page} from "@playwright/test";
 import {encodeLevel} from "../../../src/core/share.ts";
-import {atLevel, BASE_URL} from "./pair.ts";
+import {atLevel, BASE_URL} from "./page.ts";
 
 // Real touch input: Input.dispatchTouchEvent goes through the browser's own gesture handling, so a drag that the page
 // leaves to the browser really scrolls, and a pinch really zooms. Synthetic TouchEvents could not show either.

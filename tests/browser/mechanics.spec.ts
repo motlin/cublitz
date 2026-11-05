@@ -1,14 +1,16 @@
 import {expect, test} from "@playwright/test";
 import {readSolveGolden} from "../support/golden.ts";
 import {findBlockedMove, findDeadEnd, findMissedGoal, keyFor} from "../support/paths.ts";
-import {atLevel, engine, type Pair, withPair} from "./harness/pair.ts";
+import {engine} from "../support/engine.ts";
+import {atLevel} from "./harness/page.ts";
+import {type Session, withSession} from "./harness/session.ts";
 
 const golden = readSolveGolden("solve-post-fix.json");
 const pathOf = (index: number): string => golden[index]!.path!;
 const level = (index: number) => engine.LEVELS[index]!;
-const openLevel = async (pair: Pair): Promise<void> =>
+const openLevel = async (session: Session): Promise<void> =>
 {
-	await pair.click("#titlePlay");
+	await session.click("#titlePlay");
 };
 const CNAME: Record<string, string> =
 {
@@ -108,19 +110,25 @@ for (const {title, index, why, accept, text} of BLOCKED)
 	{
 		const found = findBlockedMove(engine, level(index), why, accept);
 		if (!found) throw new Error(`No ${why} block on level ${index}`);
-		await withPair(
+		await withSession(
 			browser,
 			{
 				storage: atLevel(index),
 			},
-			async (pair) =>
+			async (session) =>
 			{
-				await openLevel(pair);
-				await pair.roll(found.path);
-				const moves = pair.last.hud.moves;
-				const blocked = await pair.press(keyFor(found.dir), "blocked roll");
+				await openLevel(session);
+				await session.roll(found.path);
+				const moves = session.last.hud.moves;
+				const blocked = await session.press(keyFor(found.dir), "blocked roll");
 				let state = engine.initState(level(index));
-				for (const d of found.path) state = engine.tryMove(level(index), state, d).st!;
+				for (const d of found.path)
+					state = (
+						engine.tryMove(level(index), state, d) as
+						{
+							st: typeof state;
+						}
+					).st;
 				const detail = engine.tryMove(level(index), state, found.dir) as unknown as Record<string, string>;
 				expect(blocked.status).toStrictEqual(
 					{
@@ -131,7 +139,7 @@ for (const {title, index, why, accept, text} of BLOCKED)
 				);
 				expect(blocked.hud.moves).toBe(moves);
 				expect(blocked.audio.length).toBeGreaterThan(0);
-				await pair.press(keyFor(found.dir), "blocked roll again");
+				await session.press(keyFor(found.dir), "blocked roll again");
 			},
 		);
 	});
@@ -140,15 +148,15 @@ for (const {title, index, why, accept, text} of BLOCKED)
 test("landing on a picky target without its colors", async ({browser}) =>
 {
 	const path = findMissedGoal(engine, level(4))!;
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage: atLevel(4),
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			await openLevel(pair);
-			const missed = await pair.roll(path);
+			await openLevel(session);
+			const missed = await session.roll(path);
 			expect(missed.status).toStrictEqual(
 				{
 					text: "Not yet. The target needs yellow on top.",
@@ -163,42 +171,42 @@ test("landing on a picky target without its colors", async ({browser}) =>
 
 test("undo and restart with every input", async ({browser}) =>
 {
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage: atLevel(3),
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			await openLevel(pair);
-			await pair.roll(pathOf(3).slice(0, 6));
-			expect((await pair.press("z")).status.text).toBe("Undid one roll.");
-			await pair.press("Z");
-			await pair.press("Backspace");
-			await pair.click("#undoBtn");
-			expect(pair.last.hud.moves).toBe("2");
-			await pair.press("r");
-			expect(pair.last.hud.moves).toBe("0");
-			await pair.press("z", "undo with nothing to undo");
-			await pair.roll(pathOf(3).slice(0, 3));
-			await pair.click("#resetBtn");
-			await pair.press("R");
-			expect(pair.last.hud.moves).toBe("0");
+			await openLevel(session);
+			await session.roll(pathOf(3).slice(0, 6));
+			expect((await session.press("z")).status.text).toBe("Undid one roll.");
+			await session.press("Z");
+			await session.press("Backspace");
+			await session.click("#undoBtn");
+			expect(session.last.hud.moves).toBe("2");
+			await session.press("r");
+			expect(session.last.hud.moves).toBe("0");
+			await session.press("z", "undo with nothing to undo");
+			await session.roll(pathOf(3).slice(0, 3));
+			await session.click("#resetBtn");
+			await session.press("R");
+			expect(session.last.hud.moves).toBe("0");
 		},
 	);
 });
 
 test("keys pressed during a roll are queued, last one wins", async ({browser}) =>
 {
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage: atLevel(1),
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			await openLevel(pair);
-			const after = await pair.step("three fast rolls", async (page) =>
+			await openLevel(session);
+			const after = await session.step("three fast rolls", async (page) =>
 			{
 				await page.keyboard.press("ArrowRight");
 				await page.keyboard.press("ArrowLeft");
@@ -211,15 +219,15 @@ test("keys pressed during a roll are queued, last one wins", async ({browser}) =
 
 test("win below par, over par, replay and best score", async ({browser}) =>
 {
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage: atLevel(1),
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			await openLevel(pair);
-			const over = await pair.roll(`EW${pathOf(1)}`);
+			await openLevel(session);
+			const over = await session.roll(`EW${pathOf(1)}`);
 			expect(over.win).toStrictEqual(
 				{
 					hidden: false,
@@ -230,10 +238,10 @@ test("win below par, over par, replay and best score", async ({browser}) =>
 					retryHidden: false,
 				},
 			);
-			await pair.press("ArrowLeft", "input after a win is ignored");
-			await pair.press("z", "undo after a win is ignored");
-			await pair.click("#winRetry");
-			const best = await pair.roll(pathOf(1));
+			await session.press("ArrowLeft", "input after a win is ignored");
+			await session.press("z", "undo after a win is ignored");
+			await session.click("#winRetry");
+			const best = await session.roll(pathOf(1));
 			expect(best.storage["cubist-progress-v2"]).toBe(
 				JSON.stringify(
 					{
@@ -271,31 +279,31 @@ for (const [index, expected] of HINT_LEVELS)
 {
 	test(`hints at every tier while solving level ${index + 1}`, async ({browser}) =>
 	{
-		await withPair(
+		await withSession(
 			browser,
 			{
 				storage: atLevel(index),
 			},
-			async (pair) =>
+			async (session) =>
 			{
-				await openLevel(pair);
+				await openLevel(session);
 				const seen = new Set<string>();
 				let i = 0;
 				for (const d of pathOf(index))
 				{
-					const tier1 = await pair.press("h", `hint at roll ${i}`);
+					const tier1 = await session.press("h", `hint at roll ${i}`);
 					seen.add(milestone(tier1.hint.text));
 					expect(tier1.hint.hidden).toBe(false);
 					// A hint keeps its tier while the milestone stays the same, and starts over at a new one.
 					let tier = tier1.hint.step;
-					if (tier === "Hint 1 of 3") tier = (await pair.click("#hintMore")).hint.step;
-					if (tier === "Hint 2 of 3") tier = (await pair.click("#hintMore")).hint.step;
+					if (tier === "Hint 1 of 3") tier = (await session.click("#hintMore")).hint.step;
+					if (tier === "Hint 2 of 3") tier = (await session.click("#hintMore")).hint.step;
 					expect(tier).toBe("Hint 3 of 3");
-					await pair.press(keyFor(d), `roll after hint ${i}`);
+					await session.press(keyFor(d), `roll after hint ${i}`);
 					i++;
 				}
 				expect([...seen].toSorted()).toStrictEqual(expected);
-				expect(pair.last.win.hidden).toBe(false);
+				expect(session.last.win.hidden).toBe(false);
 			},
 		);
 	});
@@ -303,23 +311,23 @@ for (const [index, expected] of HINT_LEVELS)
 
 test("hint can be hidden and re-asked, and is cleared by the solution", async ({browser}) =>
 {
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage: atLevel(1),
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			await openLevel(pair);
-			await pair.click("#hintBtn");
-			await pair.click("#hintClose");
-			expect(pair.last.hint.hidden).toBe(true);
-			await pair.press("H");
-			await pair.click("#solBtn");
-			expect(pair.last.hint.hidden).toBe(true);
-			expect(pair.last.solution.hidden).toBe(false);
-			await pair.press("h", "hint clears the solution");
-			expect(pair.last.solution.hidden).toBe(true);
+			await openLevel(session);
+			await session.click("#hintBtn");
+			await session.click("#hintClose");
+			expect(session.last.hint.hidden).toBe(true);
+			await session.press("H");
+			await session.click("#solBtn");
+			expect(session.last.hint.hidden).toBe(true);
+			expect(session.last.solution.hidden).toBe(false);
+			await session.press("h", "hint clears the solution");
+			expect(session.last.solution.hidden).toBe(true);
 		},
 	);
 });
@@ -328,16 +336,16 @@ test("hints and solutions from a position with no way out", async ({browser}) =>
 {
 	const index = 20;
 	const path = findDeadEnd(engine, level(index))!;
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage: atLevel(index),
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			await openLevel(pair);
-			await pair.roll(path);
-			const stuck = await pair.press("h");
+			await openLevel(session);
+			await session.roll(path);
+			const stuck = await session.press("h");
 			expect(stuck.status).toStrictEqual(
 				{
 					text: "Stuck. No way to finish from here. Undo or restart.",
@@ -345,15 +353,15 @@ test("hints and solutions from a position with no way out", async ({browser}) =>
 					warn: true,
 				},
 			);
-			const noWay = await pair.click("#solBtn");
+			const noWay = await session.click("#solBtn");
 			expect(noWay.solution).toStrictEqual(
 				{
 					hidden: false,
 					text: "No way out from here. Undo a few rolls or restart, then ask again.",
 				},
 			);
-			await pair.press("z", "undo out of the dead end");
-			await pair.click("#solBtn", "solution again restores the buttons");
+			await session.press("z", "undo out of the dead end");
+			await session.click("#solBtn", "solution again restores the buttons");
 		},
 	);
 });
@@ -363,47 +371,47 @@ test("solution reveal: next, up to goal, reveal the rest, pause, follow, diverge
 }) =>
 {
 	const index = 8;
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage: atLevel(index),
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			await openLevel(pair);
+			await openLevel(session);
 			const path = pathOf(index);
-			const first = await pair.click("#solBtn");
+			const first = await session.click("#solBtn");
 			expect(first.solution).toStrictEqual(
 				{
 					hidden: false,
 					text: `Showing 1 of ${path.length} rolls. Follow the arrows in number order, or reveal more.`,
 				},
 			);
-			await pair.click("#solBtn", "pressing again reveals one more");
-			await pair.click("#solNext");
-			await pair.click("#solGoal");
-			await pair.click("#solAll");
-			await pair.tickIntervals(1);
-			await pair.click("#solAll", "pause the auto reveal");
-			await pair.tickIntervals(1);
-			await pair.click("#solAll", "resume the auto reveal");
-			const all = await pair.tickIntervals(path.length);
+			await session.click("#solBtn", "pressing again reveals one more");
+			await session.click("#solNext");
+			await session.click("#solGoal");
+			await session.click("#solAll");
+			await session.tickIntervals(1);
+			await session.click("#solAll", "pause the auto reveal");
+			await session.tickIntervals(1);
+			await session.click("#solAll", "resume the auto reveal");
+			const all = await session.tickIntervals(path.length);
 			expect(all.solution).toStrictEqual(
 				{
 					hidden: false,
 					text: `Full solution shown: ${path.length} rolls from where you are. Follow the arrows in number order; each one disappears as you roll it.`,
 				},
 			);
-			await pair.roll(path.slice(0, 3));
-			await pair.press("z", "undo keeps the reveal");
-			await pair.click("#solHide");
-			expect(pair.last.solution.hidden).toBe(true);
-			await pair.click("#solBtn");
+			await session.roll(path.slice(0, 3));
+			await session.press("z", "undo keeps the reveal");
+			await session.click("#solHide");
+			expect(session.last.solution.hidden).toBe(true);
+			await session.click("#solBtn");
 			const off = path[3] === "N" ? "S" : "N";
-			await pair.press(keyFor(off), "roll away from the solution re-plans it");
-			await pair.press("r");
-			await pair.click("#solBtn");
-			const solved = await pair.roll(path);
+			await session.press(keyFor(off), "roll away from the solution re-plans it");
+			await session.press("r");
+			await session.click("#solBtn");
+			const solved = await session.roll(path);
 			expect(solved.win).toStrictEqual(
 				{
 					hidden: false,
@@ -420,33 +428,33 @@ test("solution reveal: next, up to goal, reveal the rest, pause, follow, diverge
 
 test("title screen: progress text, tutorial replay, reset arm, timeout and confirm", async ({browser}) =>
 {
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage: atLevel(4),
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			const title = async () => pair.legacy.locator("#titleProgress").textContent();
+			const title = async () => session.page.locator("#titleProgress").textContent();
 			expect(await title()).toBe("4 of 31 levels cleared");
-			await pair.click("#tipsReplay");
-			await pair.fireParkedTimers();
-			await pair.click("#resetProgress");
-			await pair.fireParkedTimers();
-			await pair.click("#resetProgress", "arm");
-			const erased = await pair.click("#resetProgress", "confirm");
+			await session.click("#tipsReplay");
+			await session.fireParkedTimers();
+			await session.click("#resetProgress");
+			await session.fireParkedTimers();
+			await session.click("#resetProgress", "arm");
+			const erased = await session.click("#resetProgress", "confirm");
 			expect(erased.storage).toStrictEqual(
 				{
 					"cubist-progress-v2": "{}",
 				},
 			);
 			expect(await title()).toBe("31 levels");
-			await pair.fireParkedTimers();
-			await pair.reload();
-			await pair.press("Space", "space starts the game when no button has focus");
-			const tips = await pair.dismissTips();
+			await session.fireParkedTimers();
+			await session.reload();
+			await session.press("Space", "space starts the game when no button has focus");
+			const tips = await session.dismissTips();
 			expect(tips).toStrictEqual(["Rolling"]);
-			expect(pair.last.storage["cubist-tips-seen-v1"]).toBe(
+			expect(session.last.storage["cubist-tips-seen-v1"]).toBe(
 				JSON.stringify(
 					{
 						roll: true,
@@ -459,31 +467,31 @@ test("title screen: progress text, tutorial replay, reset arm, timeout and confi
 
 test("navigation: brand, mode buttons, levels list, hash and window resize", async ({browser}) =>
 {
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage: atLevel(6),
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			await openLevel(pair);
-			await pair.click(".lvbtn:nth-child(2)", "go back to an unlocked level");
-			expect(pair.last.hud.num).toBe("Level 2 of 31");
-			await pair.click("#modeEdit");
-			expect(pair.last.location).toBe("#editor");
-			await pair.click("#modePlay");
-			expect(pair.last.location).toBe("");
-			await pair.resize(700, 600);
-			await pair.click(".brand");
-			await pair.click("#titleEdit");
-			await pair.resize(1000, 700);
-			await pair.click(".brand");
-			await pair.step("hash navigation to the editor", async (page) =>
+			await openLevel(session);
+			await session.click(".lvbtn:nth-child(2)", "go back to an unlocked level");
+			expect(session.last.hud.num).toBe("Level 2 of 31");
+			await session.click("#modeEdit");
+			expect(session.last.location).toBe("#editor");
+			await session.click("#modePlay");
+			expect(session.last.location).toBe("");
+			await session.resize(700, 600);
+			await session.click(".brand");
+			await session.click("#titleEdit");
+			await session.resize(1000, 700);
+			await session.click(".brand");
+			await session.step("hash navigation to the editor", async (page) =>
 				page.evaluate(() => (location.hash = "#editor")),
 			);
-			expect(pair.last.location).toBe("#editor");
-			await pair.reload();
-			await pair.step("hash cleared", async (page) => page.evaluate(() => (location.hash = "")));
+			expect(session.last.location).toBe("#editor");
+			await session.reload();
+			await session.step("hash cleared", async (page) => page.evaluate(() => (location.hash = "")));
 		},
 	);
 });
@@ -515,7 +523,7 @@ test("window.claude.hot hooks: data resumes a level, with and without ready", as
 {
 	for (const useReady of [false, true])
 	{
-		await withPair(
+		await withSession(
 			browser,
 			{
 				storage: atLevel(1),
@@ -525,11 +533,11 @@ test("window.claude.hot hooks: data resumes a level, with and without ready", as
 					useReady,
 				},
 			},
-			async (pair) =>
+			async (session) =>
 			{
-				expect(pair.last.audio).toStrictEqual([["hot.snapshot", "function"]]);
+				expect(session.last.audio).toStrictEqual([["hot.snapshot", "function"]]);
 				const snapshots = await Promise.all(
-					pair.pages.map(async (page) =>
+					[session.page].map(async (page) =>
 						page.evaluate(() =>
 							(
 								window as unknown as
@@ -540,15 +548,14 @@ test("window.claude.hot hooks: data resumes a level, with and without ready", as
 						),
 					),
 				);
-				expect(snapshots[1]).toStrictEqual(snapshots[0]);
 				expect(snapshots[0]).toStrictEqual(
 					{
 						...RESUME,
 						mode: "title",
 					},
 				);
-				await pair.click("#titlePlay");
-				expect(pair.last.hud.moves).toBe("0");
+				await session.click("#titlePlay");
+				expect(session.last.hud.moves).toBe("0");
 			},
 		);
 	}
@@ -557,7 +564,7 @@ test("window.claude.hot hooks: data resumes a level, with and without ready", as
 test("level data order and names reach the page unchanged", async ({browser}) =>
 {
 	const everything = Object.fromEntries(golden.map((g) => [g.name, g.par]));
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage:
@@ -566,12 +573,12 @@ test("level data order and names reach the page unchanged", async ({browser}) =>
 				"cubist-progress-v2": JSON.stringify(everything),
 			},
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			await openLevel(pair);
+			await openLevel(session);
 			for (const {index, name, par} of golden)
 			{
-				const shown = await pair.click(`.lvbtn:nth-child(${index + 1})`, `open level ${index + 1}`);
+				const shown = await session.click(`.lvbtn:nth-child(${index + 1})`, `open level ${index + 1}`);
 				expect(shown.hud).toStrictEqual(
 					{
 						name,

@@ -481,7 +481,7 @@ export function initEditor(): void
 		painting = false;
 	});
 
-	// The cube's button is apart from TOOLS, which stays the original's list on the page's global scope.
+	// The cube's button is apart from TOOLS, the campaign's tile list.
 	$("edTools").innerHTML = `${TOOLS.map(([k, label]) =>
 	{
 		const sample = k === "erase" ? "void" : k;

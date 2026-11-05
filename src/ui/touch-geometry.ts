@@ -1,7 +1,7 @@
 import type {Direction} from "../core/types.ts";
 
 // What the board's CSS transform does to the grid, for a touch screen to fit the board and read swipes by what is
-// drawn. These are the numbers in .board and .viewport in game.css, which stays the original's.
+// drawn. These are the numbers in .board and .viewport in game.css.
 const TILT_X = (52 * Math.PI) / 180;
 const TILT_Z = (18 * Math.PI) / 180;
 const PERSPECTIVE = 1400;

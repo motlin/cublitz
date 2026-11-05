@@ -4,7 +4,6 @@ import {LEVELS} from "../../../src/core/levels.ts";
 import {encodeLevel} from "../../../src/core/share.ts";
 import {solve} from "../../../src/core/solver.ts";
 import {readSolveGolden} from "../../support/golden.ts";
-import {loadExpectedEngine} from "../../support/original-engine.ts";
 
 const golden = readSolveGolden("solve-post-fix.json");
 
@@ -24,11 +23,6 @@ describe("LEVELS", () =>
 			path,
 			hitLimit: solve.hitLimit,
 		};
-	});
-
-	it("is the original's data with the intentional divergences applied, parsed, with the same key order", () =>
-	{
-		expect(JSON.stringify(LEVELS)).toBe(JSON.stringify(loadExpectedEngine().LEVELS));
 	});
 
 	it("plays Crown fifth and Checkpoints sixth, the reverse of the original", () =>

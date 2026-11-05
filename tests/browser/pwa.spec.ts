@@ -9,7 +9,8 @@ import {solve} from "../../src/core/solver.ts";
 import type {Direction} from "../../src/core/types.ts";
 import {MANIFEST, PRECACHE_URLS} from "../../src/pwa/manifest.ts";
 import {cacheName} from "../../src/pwa/worker.ts";
-import {atLevel, BASE_URL, engine} from "./harness/pair.ts";
+import {engine} from "../support/engine.ts";
+import {atLevel, BASE_URL} from "./harness/page.ts";
 import {openFromMenu, openPhone, SCREENS, unreachable} from "./harness/touch.ts";
 
 const KEYS: Record<Direction, string> =

@@ -19,8 +19,6 @@
 		"typecheck": "tsc --noEmit",
 		"test": "node node_modules/vitest/dist/cli.js",
 		"test:browser": "vp build && playwright test",
-		"golden": "node scripts/generate-golden.ts",
-		"prove-harness": "node scripts/prove-harness.ts",
 		"deploy": "wrangler pages deploy --branch main",
 		"prepare": "VITE_GIT_HOOKS=0 vp config"
 	},

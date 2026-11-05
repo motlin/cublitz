@@ -1,11 +1,13 @@
 import {expect, test} from "@playwright/test";
-import {atLevel, engine, type Pair, withPair} from "./harness/pair.ts";
+import {engine} from "../support/engine.ts";
+import {atLevel} from "./harness/page.ts";
+import {type Session, withSession} from "./harness/session.ts";
 
-const text = async (pair: Pair, selector: string): Promise<string | null> =>
-	pair.legacy.locator(selector).textContent();
-const openEditor = async (pair: Pair): Promise<void> =>
+const text = async (session: Session, selector: string): Promise<string | null> =>
+	session.page.locator(selector).textContent();
+const openEditor = async (session: Session): Promise<void> =>
 {
-	await pair.click("#titleEdit");
+	await session.click("#titleEdit");
 };
 
 test("blocked storage: saving a level says so, and the rest of the page carries on", async ({browser}) =>
@@ -17,17 +19,17 @@ test("blocked storage: saving a level says so, and the rest of the page carries 
 			throw new DOMException("blocked", "QuotaExceededError");
 		};
 	};
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage: atLevel(1),
 			setup,
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			await openEditor(pair);
-			await pair.click("#edSave");
-			expect(await text(pair, "#edResult")).toBe(
+			await openEditor(session);
+			await session.click("#edSave");
+			expect(await text(session, "#edResult")).toBe(
 				"Couldn’t save. This browser is blocking storage. Copy the share code instead.",
 			);
 		},
@@ -61,38 +63,38 @@ for (const [name, setup] of CLIPBOARDS)
 {
 	test(`copying a share code when the clipboard ${name} selects the code instead`, async ({browser}) =>
 	{
-		await withPair(
+		await withSession(
 			browser,
 			{
 				storage: atLevel(1),
 				setup,
 			},
-			async (pair) =>
+			async (session) =>
 			{
-				await openEditor(pair);
-				await pair.click("#edCopy");
-				expect(await text(pair, "#edCodeNote")).toBe("Selected. Press Ctrl+C or Cmd+C to copy.");
+				await openEditor(session);
+				await session.click("#edCopy");
+				expect(await text(session, "#edCodeNote")).toBe("Selected. Press Ctrl+C or Cmd+C to copy.");
 			},
 		);
 	});
 
 	test(`copying a share link when the clipboard ${name} selects the link instead`, async ({browser}) =>
 	{
-		await withPair(
+		await withSession(
 			browser,
 			{
 				storage: atLevel(1),
 				setup,
 			},
-			async (pair) =>
+			async (session) =>
 			{
-				await openEditor(pair);
-				await pair.click("#edCopyLink");
-				expect(await text(pair, "#edCodeNote")).toBe("Selected. Copy the link from the box.");
-				const link = await pair.legacy.locator("#edCode").inputValue();
+				await openEditor(session);
+				await session.click("#edCopyLink");
+				expect(await text(session, "#edCodeNote")).toBe("Selected. Copy the link from the box.");
+				const link = await session.page.locator("#edCode").inputValue();
 				expect(link).toMatch(/^http:\/\/[^?]+\?CUBLITZ:/);
-				await pair.step("rename the level", async (page) => page.locator("#edName").fill("Renamed"));
-				expect(await pair.legacy.locator("#edCode").inputValue()).toMatch(/^CUBLITZ:/);
+				await session.step("rename the level", async (page) => page.locator("#edName").fill("Renamed"));
+				expect(await session.page.locator("#edCode").inputValue()).toMatch(/^CUBLITZ:/);
 			},
 		);
 	});
@@ -107,15 +109,15 @@ test("history.replaceState throwing falls back to setting the hash", async ({bro
 			throw new DOMException("too many calls", "SecurityError");
 		};
 	};
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage: atLevel(1),
 			setup,
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			const editing = await pair.click("#titleEdit");
+			const editing = await session.click("#titleEdit");
 			expect(editing.location).toBe("#editor");
 		},
 	);
@@ -155,15 +157,15 @@ for (const [name, setup, first] of AUDIO)
 {
 	test(`audio available ${name}`, async ({browser}) =>
 	{
-		await withPair(
+		await withSession(
 			browser,
 			{
 				storage: atLevel(1),
 				setup,
 			},
-			async (pair) =>
+			async (session) =>
 			{
-				const started = await pair.click("#titlePlay");
+				const started = await session.click("#titlePlay");
 				expect(started.audio[0]).toStrictEqual(first);
 				expect(started.errors).toStrictEqual([]);
 			},
@@ -173,8 +175,8 @@ for (const [name, setup, first] of AUDIO)
 
 // The solver gives up once it has seen too many states. Real ones take many seconds to reach, so its
 // set of seen states reports a huge size instead. The harness's own sets already exist by then.
-const makeSolverGiveUp = async (pair: Pair): Promise<unknown> =>
-	pair.step("the solver's limit will be hit at once", async (page) =>
+const makeSolverGiveUp = async (session: Session): Promise<unknown> =>
+	session.step("the solver's limit will be hit at once", async (page) =>
 		page.evaluate(() =>
 		{
 			window.Set = class extends Set
@@ -189,16 +191,16 @@ const makeSolverGiveUp = async (pair: Pair): Promise<unknown> =>
 
 test("the hint and the solution both report when the solver gives up", async ({browser}) =>
 {
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage: atLevel(1),
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			await pair.click("#titlePlay");
-			await makeSolverGiveUp(pair);
-			const hinted = await pair.click("#hintBtn");
+			await session.click("#titlePlay");
+			await makeSolverGiveUp(session);
+			const hinted = await session.click("#hintBtn");
 			expect(hinted.status).toStrictEqual(
 				{
 					text: "Too many possibilities. The hint gave up on this one.",
@@ -206,7 +208,7 @@ test("the hint and the solution both report when the solver gives up", async ({b
 					warn: true,
 				},
 			);
-			const solved = await pair.click("#solBtn");
+			const solved = await session.click("#solBtn");
 			expect(solved.solution).toStrictEqual(
 				{
 					hidden: false,
@@ -219,17 +221,17 @@ test("the hint and the solution both report when the solver gives up", async ({b
 
 test("pointercancel ends painting in the editor", async ({browser}) =>
 {
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage: atLevel(1),
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			await openEditor(pair);
-			await pair.click("#edClear");
-			await pair.click('[data-tool="floor"]');
-			const cellBox = async (page: Pair["legacy"], x: number) =>
+			await openEditor(session);
+			await session.click("#edClear");
+			await session.click('[data-tool="floor"]');
+			const cellBox = async (page: Session["page"], x: number) =>
 			{
 				const box = await page.locator(`#edGrid [data-x="${x}"][data-y="1"]`).boundingBox();
 				if (!box) throw new Error("the cell has no box");
@@ -238,7 +240,7 @@ test("pointercancel ends painting in the editor", async ({browser}) =>
 					y: box.y + 5,
 				};
 			};
-			const painted = await pair.step("press, cancel, then move on", async (page) =>
+			const painted = await session.step("press, cancel, then move on", async (page) =>
 			{
 				const from = await cellBox(page, 0);
 				const to = await cellBox(page, 2);
@@ -265,16 +267,16 @@ test("pointercancel ends painting in the editor", async ({browser}) =>
 
 test("arrow keys are swallowed but do not roll while a tip is open", async ({browser}) =>
 {
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage: atLevel(0, false),
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			await pair.click("#titlePlay");
-			expect(pair.last.tip.hidden).toBe(false);
-			const pressed = await pair.press("ArrowRight");
+			await session.click("#titlePlay");
+			expect(session.last.tip.hidden).toBe(false);
+			const pressed = await session.press("ArrowRight");
 			expect(pressed.prevented).toStrictEqual(["keydown ArrowRight"]);
 			expect(pressed.hud.moves).toBe("0");
 		},
@@ -295,7 +297,7 @@ test("focus moves without scrolling, to the tip's button and the next-canvas but
 			bestStreak: 0,
 		},
 	);
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage:
@@ -304,18 +306,18 @@ test("focus moves without scrolling, to the tip's button and the next-canvas but
 				"cublitz-infinite-run-v1": run,
 			},
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			const opened = await pair.click("#titleInf");
+			const opened = await session.click("#titleInf");
 			expect(opened.focusCalls).toContainEqual([
 				"tipOk",
 				{
 					preventScroll: true,
 				},
 			]);
-			await pair.dismissTips();
+			await session.dismissTips();
 			const level = engine.parseLevel(JSON.parse(JSON.stringify(engine.generateInfinite(SEED, 0))));
-			const won = await pair.roll(engine.solve(level, engine.initState(level), 400000)!);
+			const won = await session.roll(engine.solve(level, engine.initState(level), 400000)!);
 			expect(won.focusCalls).toStrictEqual([
 				[
 					"winNext",
@@ -353,17 +355,17 @@ test("a win with fewer cleared but more points still raises the best score", asy
 			},
 		),
 	};
-	await withPair(
+	await withSession(
 		browser,
 		{
 			storage,
 		},
-		async (pair) =>
+		async (session) =>
 		{
-			await pair.click("#titleInf");
-			await pair.dismissTips();
+			await session.click("#titleInf");
+			await session.dismissTips();
 			const level = engine.parseLevel(JSON.parse(JSON.stringify(engine.generateInfinite(SEED, 0))));
-			const won = await pair.roll(engine.solve(level, engine.initState(level), 400000)!);
+			const won = await session.roll(engine.solve(level, engine.initState(level), 400000)!);
 			expect(JSON.parse(won.storage["cublitz-infinite-best-v1"]!)).toStrictEqual(
 				{
 					cleared: 5,

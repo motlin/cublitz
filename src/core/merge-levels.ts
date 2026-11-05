@@ -1,8 +1,7 @@
 import {parseLevel} from "./level.ts";
 import type {Level, LevelSource} from "./types.ts";
 
-// Levels for merging cubes, kept apart from LEVELS, which has to match the original's campaign with the intentional
-// divergences applied.
+// Levels for merging cubes, kept apart from LEVELS, the campaign.
 const SOURCES: LevelSource[] = [
 	{
 		name: "Stick Together",

@@ -1,5 +1,5 @@
 /* The phone layout. The page holds this element only on a touch screen of phone size, as its media attribute says, and
-   game.css stays the original's. Play is one fixed screen with no page scroll: the markup's stage, side panel and cards
+   game.css has no phone rules. Play is one fixed screen with no page scroll: the markup's stage, side panel and cards
    give up their boxes, so their children share one grid. */
 /* The page itself never zooms. Fixed play has no gesture that could bring a zoomed page back, so a pinch anywhere,
    title and editor included, would strand the controls off screen. The board and the editor's grid have their own zoom. */

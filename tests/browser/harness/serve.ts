@@ -1,12 +1,11 @@
 import {readFile} from "node:fs/promises";
 import {createServer, type IncomingMessage, type ServerResponse} from "node:http";
+import {stripTypeScriptTypes} from "node:module";
 import {extname, join, normalize, resolve} from "node:path";
-import {readExpectedHtml} from "../../support/intentional-divergences.ts";
 
 process.title = "cublitz-harness";
 
-// Serves the untouched original and a build from one origin scheme, plus the page the build is compared with: the
-// original with the intentional divergences applied, made in memory so that legacy/ is never written.
+// Serves a build, plus src/core/ as plain JavaScript modules so a test can run the game's pure code in any browser.
 const root = resolve(import.meta.dirname, "../../..");
 const distDir = resolve(process.env["CUBLITZ_DIST_DIR"] ?? join(root, "dist"));
 const port = Number(process.env["CUBLITZ_PORT"] ?? "4817");
@@ -24,22 +23,27 @@ const TYPES: Record<string, string> =
 const respond = async (request: IncomingMessage, response: ServerResponse): Promise<void> =>
 {
 	const pathname = normalize(new URL(request.url ?? "/", "http://x").pathname);
-	if (pathname === "/legacy/expected.html")
+	if (pathname.startsWith("/src/core/") && pathname.endsWith(".ts"))
 	{
-		response.writeHead(
-			200,
-			{
-				"content-type": "text/html; charset=utf-8",
-				"cache-control": "no-store",
-			},
-		);
-		response.end(readExpectedHtml());
+		try
+		{
+			const source = await readFile(join(root, pathname), "utf8");
+			response.writeHead(
+				200,
+				{
+					"content-type": "text/javascript; charset=utf-8",
+					"cache-control": "no-store",
+				},
+			);
+			response.end(stripTypeScriptTypes(source));
+		}
+		catch
+		{
+			response.writeHead(404).end("not found");
+		}
 		return;
 	}
-	const file =
-		pathname === "/legacy/original.html"
-			? join(root, "legacy/original.html")
-			: join(distDir, pathname === "/" ? "index.html" : pathname);
+	const file = join(distDir, pathname === "/" ? "index.html" : pathname);
 	try
 	{
 		const body = await readFile(file);

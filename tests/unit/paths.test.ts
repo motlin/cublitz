@@ -1,11 +1,9 @@
 import {describe, expect, it} from "vite-plus/test";
-import {loadOriginalEngine} from "../support/original-engine.ts";
+import {engine} from "../support/engine.ts";
 import {findBlockedMove, findDeadEnd, keyFor} from "../support/paths.ts";
 
 describe("findBlockedMove", () =>
 {
-	const engine = loadOriginalEngine();
-
 	it("returns the moves that reach a blocked roll of the requested kind", () =>
 	{
 		const level = engine.parseLevel(
@@ -34,8 +32,6 @@ describe("findBlockedMove", () =>
 
 describe("findDeadEnd", () =>
 {
-	const engine = loadOriginalEngine();
-
 	it("finds the shortest path into a position the solver cannot finish", () =>
 	{
 		const level = engine.parseLevel(

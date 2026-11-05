@@ -124,7 +124,7 @@ export function renderLevels(): void
 		const current = mergeIndex(S.lvl) === j;
 		b.textContent = `M${j + 1}`;
 		b.title = L.name + (beaten(L) ? ` (best ${beaten(L)})` : "");
-		// Inline, because the stylesheets stay byte for byte the original's
+		// Inline, so the merge-level buttons need no rules in game.css
 		b.style.cssText =
 			MERGE_BUTTON + (current ? "background:var(--clay);color:#1b1e29;" : beaten(L) ? "color:var(--ink);" : "");
 		b.addEventListener("click", () =>

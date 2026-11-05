@@ -19,7 +19,7 @@ import
 	unreachable,
 	viewportCentre,
 } from "./harness/touch.ts";
-import {atLevel, BASE_URL} from "./harness/pair.ts";
+import {atLevel, BASE_URL} from "./harness/page.ts";
 
 /** Long enough that a thumb already down reads as resting, not as the start of a pinch with the next finger. */
 const REST = 250;

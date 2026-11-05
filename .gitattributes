@@ -1,5 +1,4 @@
 # Normalize all text files to LF line endings
 * text=auto eol=lf
-# Byte-exact source artifact and its shipped copy
-legacy/original.html -text
+# Shipped page source, kept byte for byte
 index.html -text

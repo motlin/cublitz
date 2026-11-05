@@ -3,13 +3,13 @@ import {expect, test} from "vite-plus/test";
 import {inlineStylesheets, plainRegionComments} from "../../../scripts/single-file-page.ts";
 
 const read = (path: string): string => readFileSync(new URL(`../../../${path}`, import.meta.url), "utf8");
-const withoutScript = (html: string): string => html.replace(/<script\b[\s\S]*<\/script>/, "<script>");
 
-test("the stylesheets put the page back to the original, byte for byte outside the script", () =>
+test("each stylesheet goes back into the page as a style element, with the same bytes", () =>
 {
-	expect(withoutScript(inlineStylesheets(read("index.html"), read))).toBe(
-		withoutScript(read("legacy/original.html")),
-	);
+	const page = inlineStylesheets(read("index.html"), read);
+	expect(page.includes(`<style>${read("src/styles/reset.css").trimEnd()}</style>`)).toBe(true);
+	expect(page.includes(`<style>\n${read("src/styles/game.css")}</style>`)).toBe(true);
+	expect(page.includes('<link rel="stylesheet" href="/src/styles/')).toBe(false);
 });
 
 test("the bundler's region comments become the plain path comments the page has always shipped", () =>

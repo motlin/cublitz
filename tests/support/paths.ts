@@ -1,4 +1,5 @@
-import type {Level, OriginalEngine, State} from "./original-engine.ts";
+import type {Level, State} from "../../src/core/types.ts";
+import type {Engine} from "./engine.ts";
 
 const KEYS: Record<string, string> =
 {
@@ -15,7 +16,7 @@ export const keyFor = (direction: string): string =>
 	return key;
 };
 
-function* reachable(engine: OriginalEngine, level: Level, limit: number): Generator<[State, string]>
+function* reachable(engine: Engine, level: Level, limit: number): Generator<[State, string]>
 {
 	const start = engine.initState(level);
 	const queue: [State, string][] = [[start, ""]];
@@ -27,7 +28,7 @@ function* reachable(engine: OriginalEngine, level: Level, limit: number): Genera
 		for (const d of "NSEW")
 		{
 			const r = engine.tryMove(level, entry[0], d);
-			if (!r.ok || r.won || !r.st) continue;
+			if (!r.ok || r.won) continue;
 			const key = engine.stateKey(r.st);
 			if (seen.has(key)) continue;
 			seen.add(key);
@@ -44,7 +45,7 @@ export type BlockedMove =
 
 /** Shortest path to a state where rolling `dir` is refused for reason `why`; `accept` narrows further. */
 export function findBlockedMove(
-	engine: OriginalEngine,
+	engine: Engine,
 	level: Level,
 	why: string,
 	accept: (detail: Record<string, unknown>) => boolean = () => true,
@@ -66,7 +67,7 @@ export function findBlockedMove(
 }
 
 /** Shortest path to a roll landing on the target without meeting its needs. */
-export function findMissedGoal(engine: OriginalEngine, level: Level): string | null
+export function findMissedGoal(engine: Engine, level: Level): string | null
 {
 	for (const [state, path] of reachable(engine, level, 200000))
 	{
@@ -80,7 +81,7 @@ export function findMissedGoal(engine: OriginalEngine, level: Level): string | n
 }
 
 /** Shortest path to a position that can no longer be finished, or null when every position can be. */
-export function findDeadEnd(engine: OriginalEngine, level: Level, limit = 3000): string | null
+export function findDeadEnd(engine: Engine, level: Level, limit = 3000): string | null
 {
 	for (const [state, path] of reachable(engine, level, limit))
 	{

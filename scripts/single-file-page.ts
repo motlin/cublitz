@@ -1,5 +1,4 @@
-// The shipped page has to stay the original single file, so the build writes each stylesheet back into
-// the <style> element it came from, in the same spot and with the same bytes.
+// The shipped page is one file, so the build writes each stylesheet into a <style> element where its link was.
 const STYLESHEETS = [
 	{
 		path: "src/styles/reset.css",
@@ -21,7 +20,6 @@ export function inlineStylesheets(html: string, read: (path: string) => string):
 	}, html);
 }
 
-// Vite+'s bundler marks each module with //#region and //#endregion lines. The page has always shipped a plain
-// path comment instead, and it stays the same bytes.
+// Vite+'s bundler marks each module with //#region and //#endregion lines. The page ships a plain path comment instead.
 export const plainRegionComments = (code: string): string =>
 	code.replace(/^\/\/#endregion\n/gm, "").replace(/^\/\/#region /gm, "// ");

@@ -3,7 +3,7 @@ import {initState, parseLevel} from "../../src/core/level.ts";
 import {MERGE_LEVELS} from "../../src/core/merge-levels.ts";
 import {solve} from "../../src/core/solver.ts";
 import type {Direction, LevelSource} from "../../src/core/types.ts";
-import {atLevel, BASE_URL} from "./harness/pair.ts";
+import {atLevel, BASE_URL} from "./harness/page.ts";
 
 const KEYS: Record<Direction, string> =
 {
