@@ -1,50 +1,25 @@
-import {readFileSync} from "node:fs";
+import {pathToFileURL} from "node:url";
 import {chromium} from "@playwright/test";
 
-// Renders public/og.png, the 1200x630 image link previews show, with the game's colors and fonts. The fonts come
-// from Google Fonts, so this needs the network. Run it with `just og-image` after changing the card.
+// Renders public/og.png, the 1200x630 image link previews show, from the built title screen itself: its spinning
+// cube stopped at one angle, its floor grid and its wordmark, with the buttons and links hidden. The fonts come from
+// Google Fonts, so this needs the network. Run it with `just og-image` after changing the title screen.
 const OUT = "public/og.png";
-const cube = readFileSync("scripts/icons/icon.svg", "utf8")
-	.replace(/<rect[^>]*\/>/, "")
-	.replace('viewBox="0 0 512 512"', 'viewBox="60 40 392 432" width="400" height="441"');
-const letters = "Cublitz"
-	.split("")
-	.map((letter, i) => `<span style="color: var(--c${i})">${letter}</span>`)
-	.join("");
+const PAGE = pathToFileURL("dist/index.html").href;
 
-const html = `<!doctype html>
-<html>
-<head>
-<meta charset="utf-8">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Outfit:wght@500&display=block">
-<style>
-	:root {
-		--c0: #ef5a52; --c1: #ff8a3d; --c2: #f3c23e; --c3: #3fc489; --c4: #38d3e2; --c5: #4b8cf2; --c6: #a77cf4;
-	}
-	html, body { margin: 0; }
-	body {
-		width: 1200px; height: 630px; overflow: hidden;
-		background:
-			radial-gradient(ellipse 70% 80% at 28% 55%, #222738 0%, transparent 70%),
-			#161923;
-		display: flex; align-items: center; gap: 56px; padding: 0 80px; box-sizing: border-box;
-		font-family: "Outfit", system-ui, sans-serif;
-	}
-	.stage { position: relative; flex: none; }
-	.stage svg { display: block; filter: drop-shadow(0 28px 30px rgba(0, 0, 0, 0.45)); }
-	.words { display: flex; flex-direction: column; gap: 18px; }
-	h1 { margin: 0; font-family: "Bagel Fat One", system-ui; font-weight: 400; font-size: 172px; line-height: 0.9; letter-spacing: 0.01em; }
-	p { margin: 0 0 0 6px; color: #9298ad; font-size: 44px; font-weight: 500; }
-</style>
-</head>
-<body>
-	<div class="stage">${cube}</div>
-	<div class="words">
-		<h1>${letters}</h1>
-		<p>a rolling paint puzzle</p>
-	</div>
-</body>
-</html>`;
+// Sizes the title screen up to fill the card. The angle shows the red, orange and yellow faces, the same three the
+// spin passes through on the title screen.
+const CARD_CSS = `
+	html, body { margin: 0; overflow: hidden; background: var(--ground); }
+	#titleView { position: fixed; inset: 0; min-height: 0; padding: 0; gap: 0; border-radius: 0; justify-content: center; }
+	#titleView .title-sound, #titleView .title-actions, #titleView .title-progress, #titleView .title-links, #titleView .title-keys { display: none; }
+	#titleView .title-stage { --s: 190px; height: calc(var(--s) * 1.62); }
+	#titleView .tcube { animation: none; transform: rotateX(-24deg) rotateY(146deg); }
+	#titleView .tf { border-radius: 16px; font-size: 54px; }
+	#titleView .tshadow { height: 28px; filter: blur(14px); }
+	#titleView .title-floor::before { top: 58%; background-size: 84px 84px; }
+	#titleView .title-name { font-size: 196px; margin: 4px 0 0; }
+`;
 
 const browser = await chromium.launch();
 try
@@ -58,16 +33,22 @@ try
 			},
 		},
 	);
-	await page.setContent(
-		html,
+	await page.goto(
+		PAGE,
 		{
 			waitUntil: "networkidle",
+		},
+	);
+	await page.locator("#titleView").waitFor();
+	await page.addStyleTag(
+		{
+			content: CARD_CSS,
 		},
 	);
 	const loaded = await page.evaluate(async () =>
 	{
 		const faces = await Promise.all(
-			['172px "Bagel Fat One"', '500 44px "Outfit"'].map(async (font) => document.fonts.load(font, "Cublitz")),
+			['196px "Bagel Fat One"'].map(async (font) => document.fonts.load(font, "Cublitz")),
 		);
 		return faces.every((face) => face.length > 0);
 	});

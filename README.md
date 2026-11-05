@@ -32,7 +32,7 @@ The game installs from the browser as a standalone app and plays offline: campai
 
 ## Link previews
 
-`index.html` carries Open Graph and Twitter card tags in its head, because the crawlers that build link previews read the page as served and run no script. They point at `https://cublitz.motlin.com/og.png`, a 1200×630 image that `scripts/og-image.ts` renders in Chromium with the game's colors and fonts. `tests/unit/page/social-card.test.ts` checks the tags and the image's size.
+`index.html` carries Open Graph and Twitter card tags in its head, because the crawlers that build link previews read the page as served and run no script. They point at `https://cublitz.motlin.com/og.png`, a 1200×630 image that `scripts/og-image.ts` screenshots from the built title screen, with its cube stopped at one angle and its buttons hidden. `tests/unit/page/social-card.test.ts` checks the tags and the image's size.
 
 ## Merge levels
 

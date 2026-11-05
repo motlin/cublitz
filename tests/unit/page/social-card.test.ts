@@ -25,7 +25,7 @@ test("the page's head carries the tags link previews read", () =>
 		["og:image", `${ORIGIN}/og.png`],
 		["og:image:width", "1200"],
 		["og:image:height", "630"],
-		["og:image:alt", "An isometric cube with red, blue and yellow faces beside the word Cublitz"],
+		["og:image:alt", "A cube with red, orange and yellow faces above the word Cublitz on a grid floor"],
 		["twitter:card", "summary_large_image"],
 		["twitter:title", "Cublitz: a rolling paint puzzle"],
 		["twitter:description", DESCRIPTION],
