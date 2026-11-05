@@ -123,7 +123,7 @@ test("the page links a manifest that Chromium reads without errors and can insta
 		await page.evaluate(() =>
 			[
 				...document.head.querySelectorAll(
-					"link[rel=manifest], link[rel=apple-touch-icon], meta[name]:not([name=viewport])",
+					"link[rel=manifest], link[rel=apple-touch-icon], meta[name=theme-color], meta[name$=web-app-capable], meta[name^=apple-mobile-web-app-]",
 				),
 			].map((el) => el.outerHTML),
 		),
