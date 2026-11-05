@@ -80,7 +80,7 @@ pre-commit: install
 # Run all pre-commit checks
 [arg("quick", long, value="true", help="Skip tests")]
 verify quick="": check build fallow pre-commit
-    {{ if quick != "true" { "just test" } else { "true" } }}
+    {{ if quick != "true" { "just test && just test-browser" } else { "true" } }}
     @echo "All pre-commit checks passed!"
 
 # Deprecated alias for `verify`

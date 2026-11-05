@@ -46,6 +46,7 @@ The game installs from the browser as a standalone app and plays offline: campai
 | `just test`         | Runs the fast unit tests and golden checks                     |
 | `just coverage`     | Runs the unit tests and reports coverage of `src/core/`        |
 | `just test-browser` | Builds, then runs the Playwright browser tests                 |
+| `just verify`       | Runs every check, the unit tests and the browser tests         |
 | `just build`        | Writes `dist/`                                                 |
 | `just deploy`       | Uploads `dist/` to the Cloudflare Pages project `cublitz`      |
 | `just icons`        | Renders the app icons in `public/icons/` from `scripts/icons/` |
