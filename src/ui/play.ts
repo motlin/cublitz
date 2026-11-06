@@ -89,6 +89,18 @@ export function startLevel(
 	},
 ): void
 {
+	// Leaving a shared level drops its link from the address, so a reload goes back to the game
+	if (S?.lvl === SHARED && i !== SHARED)
+	{
+		try
+		{
+			history.replaceState(null, "", location.pathname + location.hash);
+		}
+		catch
+		{
+			// A sandboxed page can refuse, and then a reload opens the shared level again
+		}
+	}
 	clearSolution();
 	clearHintState();
 	$("hintBox").hidden = true;

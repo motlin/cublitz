@@ -132,7 +132,9 @@ test("a shared level paints with par unknown before the game works out its par",
 	await context.close();
 });
 
-test("winning a shared level saves no progress and leads into the campaign", async ({browser}) =>
+test("winning a shared level saves no progress and leads into the campaign, leaving the link behind", async ({
+	browser,
+}) =>
 {
 	const {page} = await open(browser, FLIP);
 	const before = await page.evaluate(() => localStorage.getItem("cubist-progress-v2"));
@@ -153,6 +155,10 @@ test("winning a shared level saves no progress and leads into the campaign", asy
 	expect(await page.evaluate(() => localStorage.getItem("cubist-progress-v2"))).toBe(before);
 	await page.locator("#winNext").click();
 	await expect(page.locator("#lvNum")).toHaveText(`Level 2 of ${engine.LEVELS.length}`);
+	// The link has done its job, so a reload goes back to the game rather than to the shared level
+	expect(new URL(page.url()).search).toBe("");
+	await page.reload();
+	await expect(page.locator("#titleView")).toBeVisible();
 	await page.close();
 });
 
