@@ -13,6 +13,13 @@ export let infinite = false;
 export let campaignLvl = 0;
 let infNext: GeneratedLevel | null = null;
 let infGenToken = 0;
+/** The next canvas still mixing in the background, and who takes it if the player got there first. */
+let pending:
+{
+	run: SavedRun;
+	n: number;
+	taker: ((level: GeneratedLevel) => void) | null;
+} | null = null;
 export let run: SavedRun | null = null;
 export let best: BestRun;
 let newArmed: ReturnType<typeof setTimeout> | null = null;
@@ -22,6 +29,7 @@ export const enterCampaignLevel = (i: number): void =>
 {
 	campaignLvl = i;
 	infinite = false;
+	pending = null;
 };
 function newRun(): void
 {
@@ -37,15 +45,15 @@ function newRun(): void
 	};
 	writeRun(run);
 	infNext = null;
+	pending = null;
 }
-// Generate level n of the current run without freezing the page: a few tries per tick
-function genInf(n: number, cb: (level: GeneratedLevel) => void, background?: boolean): void
+// Generate level n of the current run without freezing the page: a few tries per tick, until it stops being wanted
+function genInf(n: number, cb: (level: GeneratedLevel) => void, wanted: () => boolean): void
 {
-	const token = background ? 0 : ++infGenToken,
-		nextBatch = infSearch(run!.seed, n);
+	const nextBatch = infSearch(run!.seed, n);
 	const step = (): void =>
 	{
-		if (!background && token !== infGenToken) return;
+		if (!wanted()) return;
 		const lv = nextBatch();
 		if (lv)
 		{
@@ -60,15 +68,24 @@ function pregenerate(): void
 {
 	const forRun = run!,
 		n = forRun.n + 1;
-	if (infNext?.inf === n) return;
+	if (infNext?.inf === n || (pending?.run === forRun && pending.n === n)) return;
+	const job =
+	{
+		run: forRun,
+		n,
+		taker: null as ((level: GeneratedLevel) => void) | null,
+	};
+	pending = job;
 	genInf(
 		n,
 		(lv) =>
 		{
+			pending = null;
+			if (job.taker) job.taker(lv);
 			// A new run started meanwhile has its own seed, so this canvas is not its next one
-			if (run === forRun && run.n + 1 === n) infNext = lv;
+			else if (run === forRun && run.n + 1 === n) infNext = lv;
 		},
-		true,
+		() => pending === job,
 	);
 }
 function startInfinite(): void
@@ -97,11 +114,19 @@ export function loadInfLevel(): void
 		return;
 	}
 	setStatus("Mixing a new canvas…");
-	genInf(n, go);
+	const token = ++infGenToken;
+	// The background search is already mixing this canvas, so wait for it rather than mixing it twice
+	if (pending?.run === run && pending.n === n)
+		pending.taker = (lv) =>
+		{
+			if (token === infGenToken) go(lv);
+		};
+	else genInf(n, go, () => token === infGenToken);
 }
 export function leaveInfinite(): void
 {
 	infinite = false;
+	pending = null;
 	renderInfCard();
 }
 export function renderInfCard(): void
