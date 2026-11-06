@@ -7,7 +7,8 @@ export default defineConfig(
 		testDir: "tests/browser",
 		testMatch: "*.spec.ts",
 		fullyParallel: true,
-		workers: process.env["CI"] ? 2 : 4,
+		// Most tests spend their time waiting on the page rather than on a core, so locally run more of them than half the cores.
+		workers: process.env["CI"] ? 2 : "75%",
 		timeout: 300_000,
 		reporter: process.env["CI"] ? "github" : "line",
 		forbidOnly: !!process.env["CI"],
