@@ -3,6 +3,7 @@ import {boxAt, cellAt, needEntries} from "./level.ts";
 import {exposedWorkColor, footprint, restsOn, rollUnits, synced, workColorOf} from "./prism.ts";
 import type
 {
+	Box,
 	ButtonCell,
 	Cell,
 	Direction,
@@ -10,6 +11,7 @@ import type
 	Faces,
 	Level,
 	LooseCube,
+	MoveFailure,
 	MoveResult,
 	OpenColors,
 	Paint,
@@ -45,6 +47,67 @@ export function doorOpen(L: Level, st: State, x: number, y: number, open: OpenCo
 {
 	const c = cellAt(L, x, y) as DoorCell;
 	return open[c.c] || restsOn(st, x, y) || boxAt(st, x, y) >= 0;
+}
+
+const meetsNeed = (L: Level, f: Faces) => needEntries(L).every(([k, v]) => f[k] === v);
+
+/**
+ * Pushes box bi from x, y one cell in direction d, for a cube or block whose pieces end up as after(boxes) says: the
+ * boxes once pushed, or why the push fails. taken says which cells hold something else a box can't slide onto.
+ */
+function pushBox(
+	L: Level,
+	st: State,
+	bi: number,
+	x: number,
+	y: number,
+	d: Direction,
+	after: (boxes: Box[]) => State,
+	taken: (x: number, y: number) => boolean = () => false,
+): MoveFailure | Box[]
+{
+	const box = st.boxes[bi]!;
+	if (workColorOf(st) !== box.c)
+		return {
+			ok: false,
+			why: "box",
+			c: box.c,
+			nx: x,
+			ny: y,
+		};
+	const [dx, dy] = DIRS[d];
+	const bx = x + dx,
+		by = y + dy,
+		bc = cellAt(L, bx, by);
+	const free = bc && !["gate", "wgate", "goal"].includes(bc.t) && boxAt(st, bx, by) < 0 && !taken(bx, by);
+	if (!free)
+		return {
+			ok: false,
+			why: "stuck",
+			c: box.c,
+			nx: x,
+			ny: y,
+		};
+	const boxes = st.boxes.map((b, i) =>
+		i === bi
+			?
+				{
+					...b,
+					x: bx,
+					y: by,
+				}
+			: b,
+	);
+	// A door the box slides into must stay open once everything has moved
+	if (bc.t === "door" && !openColors(L, after(boxes))[bc.c])
+		return {
+			ok: false,
+			why: "door",
+			c: bc.c,
+			nx: bx,
+			ny: by,
+		};
+	return boxes;
 }
 
 export function tryMove(L: Level, st: State, d: Direction): MoveResult
@@ -86,59 +149,17 @@ export function tryMove(L: Level, st: State, d: Direction): MoveResult
 	const bi = boxAt(st, nx, ny);
 	if (bi >= 0)
 	{
-		const box = st.boxes[bi]!;
-		if (workColor(st.f) !== box.c)
-			return {
-				ok: false,
-				why: "box",
-				c: box.c,
-				nx,
-				ny,
-			};
-		const bx = nx + dx,
-			by = ny + dy,
-			bc = cellAt(L, bx, by);
-		const free = bc && !["gate", "wgate", "goal"].includes(bc.t) && boxAt(st, bx, by) < 0;
-		if (!free)
-			return {
-				ok: false,
-				why: "stuck",
-				c: box.c,
-				nx,
-				ny,
-			};
-		boxes = st.boxes.map((b, i) =>
-			i === bi
-				?
-					{
-						...b,
-						x: bx,
-						y: by,
-					}
-				: b,
-		);
+		const push = pushBox(L, st, bi, nx, ny, d, (moved) => (
+		{
+			...st,
+			x: nx,
+			y: ny,
+			f: nf,
+			boxes: moved,
+		}));
+		if (!Array.isArray(push)) return push;
+		boxes = push;
 		pushed = bi;
-		// A door the box slides into must stay open once everything has moved
-		if (
-			bc.t === "door" &&
-			!openColors(
-				L,
-				{
-					...st,
-					x: nx,
-					y: ny,
-					f: nf,
-					boxes,
-				},
-			)[bc.c]
-		)
-			return {
-				ok: false,
-				why: "door",
-				c: bc.c,
-				nx: bx,
-				ny: by,
-			};
 	}
 	// Doors are judged after the move: stepping off a button lets its door shut in your face
 	if (
@@ -194,7 +215,7 @@ export function tryMove(L: Level, st: State, d: Direction): MoveResult
 		sw,
 	};
 	const goal = cell.t === "goal";
-	const won = goal && needEntries(L).every(([k, v]) => nf[k] === v);
+	const won = goal && meetsNeed(L, nf);
 	return {
 		ok: true,
 		nx,
@@ -209,8 +230,6 @@ export function tryMove(L: Level, st: State, d: Direction): MoveResult
 		cell,
 	};
 }
-
-const meetsNeed = (L: Level, f: Faces) => needEntries(L).every(([k, v]) => f[k] === v);
 
 /** The faces of the cube a target judges: one that meets the need if any does, else the first cube on a target. */
 export function judgedGoalFaces(L: Level, units: Unit[]): Faces | undefined
@@ -326,59 +345,26 @@ function tryBlockMove(L: Level, st: State, units: Unit[], loose: LooseCube[], d:
 				nx: u.x,
 				ny: u.y,
 			};
-		const box = st.boxes[bi]!;
-		if (workColorOf(st) !== box.c)
-			return {
-				ok: false,
-				why: "box",
-				c: box.c,
-				nx: u.x,
-				ny: u.y,
-			};
-		const [dx, dy] = DIRS[d];
-		const bx = u.x + dx,
-			by = u.y + dy,
-			bc = cellAt(L, bx, by);
-		const free = bc && !["gate", "wgate", "goal"].includes(bc.t) && boxAt(st, bx, by) < 0 && looseAt(bx, by) < 0;
-		if (!free)
-			return {
-				ok: false,
-				why: "stuck",
-				c: box.c,
-				nx: u.x,
-				ny: u.y,
-			};
-		boxes = st.boxes.map((b, i) =>
-			i === bi
-				?
-					{
-						...b,
-						x: bx,
-						y: by,
-					}
-				: b,
-		);
-		pushed = bi;
-		if (
-			bc.t === "door" &&
-			!openColors(
-				L,
+		const push = pushBox(
+			L,
+			st,
+			bi,
+			u.x,
+			u.y,
+			d,
+			(pushedBoxes) =>
 				synced(
 					{
 						...st,
 						units: moved,
-						boxes,
+						boxes: pushedBoxes,
 					},
 				),
-			)[bc.c]
-		)
-			return {
-				ok: false,
-				why: "door",
-				c: bc.c,
-				nx: bx,
-				ny: by,
-			};
+			(x, y) => looseAt(x, y) >= 0,
+		);
+		if (!Array.isArray(push)) return push;
+		boxes = push;
+		pushed = bi;
 	}
 	if (standing.some(({cell}) => cell.t === "door"))
 	{
