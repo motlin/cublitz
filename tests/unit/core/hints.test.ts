@@ -720,6 +720,28 @@ describe("milestoneReached for a block", () =>
 		expect([m.type, m.x, m.y, r.st.x, r.st.y, milestoneReached(m, r)]).toStrictEqual(["gate", 3, 5, 4, 5, true]);
 	});
 
+	it("points a gate milestone at the gate, not at the block's first cube", () =>
+	{
+		const level = parseLevel(
+			{
+				name: "T",
+				map: ["S..", ".R."],
+			},
+		);
+		const before = block(
+			{
+				...blank(),
+				s: "r",
+			},
+			{
+				...blank(),
+				s: "r",
+			},
+		);
+		const m = nextMilestone(level, before, "S")!;
+		expect([m.type, m.x, m.y, milestoneReached(m, roll(level, before, "S"))]).toStrictEqual(["gate", 1, 1, true]);
+	});
+
 	it("does not count a gate the block has not reached yet", () =>
 	{
 		const {level, state} = sideBySide();

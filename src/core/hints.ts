@@ -69,6 +69,13 @@ export type Milestone = MilestoneBase &
 		  }
 	);
 
+/** Where the cell a roll reports sits: for a block that is the foot standing on it, which need not be the first cube. */
+function cellSpot(L: Level, r: MoveSuccess): [number, number]
+{
+	const foot = r.st.units?.find((u) => u.z === 0 && cellAt(L, u.x, u.y) === r.cell);
+	return foot ? [foot.x, foot.y] : [r.nx, r.ny];
+}
+
 /** The first thing worth pointing out along sol, which has to be a path that works from st0. */
 export function nextMilestone(L: Level, st0: State, sol: string): Milestone | null
 {
@@ -81,12 +88,13 @@ export function nextMilestone(L: Level, st0: State, sol: string): Milestone | nu
 			prev = st,
 			r = tryMove(L, st, d) as MoveSuccess;
 		st = r.st;
+		const [x, y] = cellSpot(L, r);
 		const base: MilestoneBase =
 		{
 			i,
 			d,
-			x: r.nx,
-			y: r.ny,
+			x,
+			y,
 			path: sol.slice(0, i + 1),
 			prev,
 			paints: [...new Set(paints)],
@@ -157,7 +165,7 @@ export function nextMilestone(L: Level, st0: State, sol: string): Milestone | nu
 					from: st0.boxes[r.pushed]!,
 				};
 		}
-		if (r.cell.t === "door" && !(prev.x === r.nx && prev.y === r.ny))
+		if (r.cell.t === "door" && !restsOn(prev, x, y))
 		{
 			const wasOpen = openColors(L, st0)[r.cell.c];
 			if (!wasOpen || i === 0)
@@ -177,7 +185,7 @@ export function milestoneReached(m: Milestone, r: MoveSuccess): boolean
 	const st = r.st;
 	if (m.type === "gate" || m.type === "door" || m.type === "wgate" || m.type === "wash") return restsOn(st, m.x, m.y);
 	if (m.type === "merge") return !!r.merged;
-	if (m.type === "switch") return r.flipped >= 0 && r.nx === m.x && r.ny === m.y;
+	if (m.type === "switch") return r.flipped >= 0 && restsOn(st, m.x, m.y);
 	if (m.type === "solid") return solidColorOf(st) === m.c;
 	if (m.type === "button") return st.boxes[m.box]!.x === m.x && st.boxes[m.box]!.y === m.y;
 	return false;
