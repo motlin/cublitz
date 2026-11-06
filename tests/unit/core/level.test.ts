@@ -163,6 +163,21 @@ describe("parseLevel", () =>
 		]);
 	});
 
+	it("counts columns by character, so a legend key outside the basic plane is one column", () =>
+	{
+		const parsed = parseLevel(
+			{
+				name: "T",
+				map: ["S\u{1F7E5}X"],
+				k:
+				{
+					"\u{1F7E5}": ["box", "r"],
+				},
+			},
+		);
+		expect([parsed.cols, parsed.cells[0]!.length]).toStrictEqual([3, 3]);
+	});
+
 	it("treats any unknown character as floor", () =>
 	{
 		expect(

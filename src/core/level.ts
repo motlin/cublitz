@@ -15,7 +15,7 @@ export function parseLevel<T extends LevelSource>(source: T): T & Level
 	L.cells = [];
 	L.boxes0 = [];
 	L.switches = [];
-	L.cols = Math.max(...L.map.map((r) => r.length));
+	L.cols = Math.max(...L.map.map((r) => Array.from(r).length));
 	L.rows = L.map.length;
 	L.map.forEach((row, y) =>
 	{
