@@ -1,10 +1,10 @@
-import {parseLevel, initState} from "../core/level.ts";
+import {initState, needEntries, parseLevel} from "../core/level.ts";
 import {LEVELS} from "../core/levels.ts";
 import {MERGE_LEVELS} from "../core/merge-levels.ts";
 import {CNAME, dirWord, FNAME} from "../core/names.ts";
 import {solidColorOf} from "../core/prism.ts";
 import {judgedGoalFaces, openColors, tryMove} from "../core/rules.ts";
-import type {Direction, Face, Level, LevelSource, Paint, State, SwitchCell} from "../core/types.ts";
+import type {Direction, Level, LevelSource, Paint, State, SwitchCell} from "../core/types.ts";
 import
 {
 	aimShadows,
@@ -341,7 +341,7 @@ export function move(d: Direction): void
 		if (r.goal && !r.won)
 		{
 			const onGoal = S.st.units ? judgedGoalFaces(L, S.st.units)! : S.st.f;
-			const miss = (Object.entries(L.need!) as [Face, Paint][])
+			const miss = needEntries(L)
 				.filter(([k, v]) => onGoal[k] !== v)
 				.map(([k, v]) => `${CNAME[v]} on ${FNAME[k]}`)
 				.join(" and ");

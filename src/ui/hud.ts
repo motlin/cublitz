@@ -2,6 +2,7 @@ import {FACES, solidColor} from "../core/cube.ts";
 import {LEVELS} from "../core/levels.ts";
 import {MERGE_LEVELS} from "../core/merge-levels.ts";
 import {solidColorOf} from "../core/prism.ts";
+import {needEntries} from "../core/level.ts";
 import {CNAME, FNAME} from "../core/names.ts";
 import type {Face, Need, Paint} from "../core/types.ts";
 import {$, domValue} from "./dom.ts";
@@ -63,7 +64,7 @@ export function renderHud(popFace?: Face | null): void
 					return `<div>Cube ${i + 1}: ${painted.join(", ") || "bare"}.</div>`;
 				})
 				.join("") +
-			(Object.entries(need) as [Face, Paint][])
+			needEntries(L)
 				.map(([k, v]) => `<div class="needline">The target needs ${CNAME[v]} on ${FNAME[k]}.</div>`)
 				.join("");
 		$("moves").textContent = domValue(S.hist.length);
@@ -84,7 +85,7 @@ export function renderHud(popFace?: Face | null): void
 		: top
 			? `<div>Not solid: ${top[1]} of 6 faces ${CNAME[top[0]]}.</div>`
 			: `<div class="solidline" style="--sc:var(--clay)"><b>All bare</b>. Counts as white for white switches, buttons and boxes.</div>`;
-	const entries = Object.entries(need) as [Face, Paint][];
+	const entries = needEntries(L);
 	$("needBox").innerHTML =
 		solidLine +
 		(entries.length
