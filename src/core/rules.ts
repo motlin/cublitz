@@ -67,8 +67,6 @@ export function tryMove(L: Level, st: State, d: Direction): MoveResult
 			nx,
 			ny,
 		};
-	// The original computes this here and never reads it. It is kept so the code moves without changes.
-	openColors(L, st);
 	let nf: Faces = roll(st.f, d);
 	if (cell.t === "gate" && nf.b !== cell.c)
 		return {
