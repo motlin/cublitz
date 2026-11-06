@@ -6,26 +6,38 @@ const SEARCH_ORDER: Direction[] = ["N", "S", "E", "W"];
 
 export function solve(L: Level, st0: State, limit = 400000): string | null
 {
-	const q: [State, string][] = [[st0, ""]];
+	// Each state keeps only the roll that reached it and where it came from, and is dropped once expanded
+	const states: (State | null)[] = [st0];
+	const parents: number[] = [-1];
+	const moves: Direction[] = [];
 	const seen = new Set([stateKey(st0)]);
+	const pathTo = (i: number): string =>
+	{
+		let p = "";
+		for (let j = i; j > 0; j = parents[j]!) p = moves[j]! + p;
+		return p;
+	};
 	solve.hitLimit = false;
-	for (let i = 0; i < q.length; i++)
+	for (let i = 0; i < states.length; i++)
 	{
 		if (seen.size >= limit)
 		{
 			solve.hitLimit = true;
 			return null;
 		}
-		const [st, p] = q[i]!;
+		const st = states[i]!;
+		states[i] = null;
 		for (const d of SEARCH_ORDER)
 		{
 			const r = tryMove(L, st, d);
 			if (!r.ok) continue;
-			if (r.won) return p + d;
+			if (r.won) return pathTo(i) + d;
 			const k = stateKey(r.st);
 			if (seen.has(k)) continue;
 			seen.add(k);
-			q.push([r.st, p + d]);
+			moves[states.length] = d;
+			parents.push(i);
+			states.push(r.st);
 		}
 	}
 	return null;
