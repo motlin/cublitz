@@ -416,6 +416,46 @@ test("hints and solutions from a position with no way out", async ({browser}) =>
 	);
 });
 
+test("two quick rolls off the solution leave a solution that works from where the cube is", async ({browser}) =>
+{
+	await withSession(
+		browser,
+		{
+			storage: atLevel(1),
+			reducedMotion: true,
+		},
+		async (session) =>
+		{
+			await openLevel(session);
+			await session.click("#solBtn");
+			// North leaves the solution and starts a re-plan, and east lands before it runs
+			await session.step("roll off the path, then along the old one", async (page) =>
+				page.evaluate(
+					`for (const key of ["ArrowUp", "ArrowRight"]) document.dispatchEvent(new KeyboardEvent("keydown", {key}))`,
+				),
+			);
+			const replay = await session.page.evaluate(`(() =>
+			{
+				let st = S.st;
+				for (const d of solState.path)
+				{
+					const r = tryMove(S.L, st, d);
+					if (!r.ok) return {at: solState.at === S.st, works: false};
+					st = r.st;
+					if (r.won) return {at: solState.at === S.st, works: true};
+				}
+				return {at: solState.at === S.st, works: false};
+			})()`);
+			expect(replay).toStrictEqual(
+				{
+					at: true,
+					works: true,
+				},
+			);
+		},
+	);
+});
+
 test("solution reveal: next, up to goal, reveal the rest, pause, follow, diverge, undo, win as Solved", async ({
 	browser,
 }) =>

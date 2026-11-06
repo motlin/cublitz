@@ -82,7 +82,7 @@ function revealMore(n: number): void
 }
 function revealToNextGoal(): void
 {
-	if (!solState?.path) return;
+	if (!solState?.path || solState.at !== S.st) return;
 	let st = S.st;
 	for (let i = 0; i < solState.revealed; i++)
 		st = (tryMove(S.L, st, solState.path[i] as Direction) as MoveSuccess).st;
@@ -104,7 +104,8 @@ export function showSolution(): void
 export function solutionAfterMove(d: Direction): void
 {
 	if (!solState) return;
-	if (solState.path?.startsWith(d))
+	// A path planned from an older position, still waiting on its re-plan, has to be planned again
+	if (solState.path?.startsWith(d) && solState.at === S.hist[S.hist.length - 1])
 	{
 		solState.path = solState.path.slice(1);
 		solState.revealed = Math.max(0, solState.revealed - 1);
