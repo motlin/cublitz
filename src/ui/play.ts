@@ -152,6 +152,8 @@ export function move(d: Direction): void
 		queued = d;
 		return;
 	}
+	// A level started while this roll animates replaces S, and the roll's end must not land on it
+	const session = S;
 	const L = S.L;
 	const r = tryMove(L, S.st, d);
 	if (!r.ok)
@@ -212,6 +214,7 @@ export function move(d: Direction): void
 			S.busy = true;
 			const settle = (): void =>
 			{
+				if (S !== session) return;
 				S.busy = false;
 				flushQueue();
 			};
@@ -251,6 +254,7 @@ export function move(d: Direction): void
 	let blockAnims: Animation[] = [];
 	const finish = (): void =>
 	{
+		if (S !== session) return;
 		S.st = r.st;
 		placeCube();
 		if (anim) anim.cancel();

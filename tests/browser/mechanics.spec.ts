@@ -217,6 +217,56 @@ test("keys pressed during a roll are queued, last one wins", async ({browser}) =
 	);
 });
 
+/** Rolls east and, in the same task, runs `then`, so it lands while the roll is still animating. The roll's
+ * element is gone from the page by then, so settling doesn't wait for it, and the wait covers its 170ms. */
+const rollEastThen = async (session: Session, then: string): Promise<void> =>
+{
+	await session.step("roll east, then leave mid-roll", async (page) =>
+	{
+		await page.evaluate(`document.dispatchEvent(new KeyboardEvent("keydown", {key: "ArrowRight"})); ${then}`);
+		await page.waitForTimeout(400);
+	});
+};
+
+test("restarting mid-roll leaves the cube at the start", async ({browser}) =>
+{
+	await withSession(
+		browser,
+		{
+			storage: atLevel(1),
+		},
+		async (session) =>
+		{
+			await openLevel(session);
+			const start = await session.page.evaluate("JSON.stringify(S.st)");
+			await rollEastThen(session, "restart()");
+			expect(session.last.hud.moves).toBe("0");
+			expect(await session.page.evaluate("JSON.stringify(S.st)")).toBe(start);
+		},
+	);
+});
+
+test("leaving a level with a box mid-roll starts the next level clean", async ({browser}) =>
+{
+	await withSession(
+		browser,
+		{
+			storage: atLevel(1),
+		},
+		async (session) =>
+		{
+			await openLevel(session);
+			await session.page.evaluate(
+				`startLevel(parseLevel({name: "T", map: ["S..1."], k: {"1": ["box", "w"]}}), -3)`,
+			);
+			await rollEastThen(session, `document.querySelector('#levels button[title^="First Roll"]').click()`);
+			expect(await session.page.evaluate("JSON.stringify(S.st)")).toBe(
+				JSON.stringify(engine.initState(level(0))),
+			);
+		},
+	);
+});
+
 test("win below par, over par, replay and best score", async ({browser}) =>
 {
 	await withSession(
