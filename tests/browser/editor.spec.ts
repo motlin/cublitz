@@ -332,6 +332,33 @@ test("one share box shows the code and loads a pasted code or link, checked as s
 	);
 });
 
+test("saving shows a level's name as text, never as markup", async ({browser}) =>
+{
+	await withSession(
+		browser,
+		{
+			storage: atLevel(1),
+		},
+		async (session) =>
+		{
+			await openEditor(session);
+			await session.step("name with markup", async (page) => page.locator("#edName").fill("<img src=x>"));
+			await session.click("#edSave");
+			expect(
+				{
+					text: await session.page.locator("#edResult").textContent(),
+					images: await session.page.locator("#edResult img").count(),
+				},
+			).toStrictEqual(
+				{
+					text: "Saved. “<img src=x>” is in your levels on this browser.",
+					images: 0,
+				},
+			);
+		},
+	);
+});
+
 test("save, test play to a win, edit, play from the list, delete", async ({browser}) =>
 {
 	await withSession(

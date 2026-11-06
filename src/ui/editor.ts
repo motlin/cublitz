@@ -630,7 +630,7 @@ export function initEditor(): void
 		{
 			ok,
 			html: ok
-				? `<b>Saved.</b> “${level.name}” is in your levels on this browser.`
+				? `<b>Saved.</b> “${esc(level.name)}” is in your levels on this browser.`
 				: "<b>Couldn’t save.</b> This browser is blocking storage. Copy the share code instead.",
 		};
 		renderEditor();
