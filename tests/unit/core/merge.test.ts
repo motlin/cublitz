@@ -114,7 +114,17 @@ describe("a level with loose cubes", () =>
 				map: ["SX"],
 			},
 		);
-		expect(Object.keys(level)).toStrictEqual(["map", "cells", "boxes0", "switches", "cols", "rows", "sx", "sy"]);
+		expect(Object.keys(level)).toStrictEqual([
+			"map",
+			"cells",
+			"boxes0",
+			"switches",
+			"buttons",
+			"cols",
+			"rows",
+			"sx",
+			"sy",
+		]);
 		expect(Object.keys(initState(level))).toStrictEqual(["x", "y", "f", "boxes", "sw"]);
 	});
 });

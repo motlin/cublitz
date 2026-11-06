@@ -27,13 +27,7 @@ export function openColors(L: Level, st: State): OpenColors
 		if (st.sw[i]) open[s.c] = true;
 	});
 	const solid = workColorOf(st);
-	for (let y = 0; y < L.rows; y++)
-		for (let x = 0; x < L.cols; x++)
-		{
-			const c = cellAt(L, x, y);
-			if (c?.t !== "button") continue;
-			if (pressed(L, st, x, y, solid)) open[c.c] = true;
-		}
+	for (const b of L.buttons) if (pressed(L, st, b.x, b.y, solid)) open[b.c] = true;
 	return open;
 }
 

@@ -15,6 +15,7 @@ export function parseLevel<T extends LevelSource>(source: T): T & Level
 	L.cells = [];
 	L.boxes0 = [];
 	L.switches = [];
+	L.buttons = [];
 	L.cols = Math.max(...L.map.map((r) => Array.from(r).length));
 	L.rows = L.map.length;
 	L.map.forEach((row, y) =>
@@ -78,11 +79,21 @@ export function parseLevel<T extends LevelSource>(source: T): T & Level
 					);
 				}
 				else
+				{
 					cell =
 					{
 						t: kind,
 						c,
 					};
+					if (kind === "button")
+						L.buttons.push(
+							{
+								x,
+								y,
+								c,
+							},
+						);
+				}
 			}
 			else if (ch === "S")
 			{

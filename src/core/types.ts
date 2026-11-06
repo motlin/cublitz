@@ -106,6 +106,8 @@ export type Level = LevelSource &
 		y: number;
 	}[];
 	switches: BoardSwitch[];
+	/** Every button, so finding which doors are open never has to scan the board. */
+	buttons: BoardSwitch[];
 	cols: number;
 	rows: number;
 	sx: number;

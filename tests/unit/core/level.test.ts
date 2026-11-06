@@ -48,6 +48,7 @@ describe("parseLevel", () =>
 				],
 				boxes0: [],
 				switches: [],
+				buttons: [],
 				cols: 5,
 				rows: 2,
 				sx: 0,
@@ -77,6 +78,7 @@ describe("parseLevel", () =>
 				cells: parsed.cells,
 				boxes0: parsed.boxes0,
 				switches: parsed.switches,
+				buttons: parsed.buttons,
 			},
 		).toStrictEqual(
 			{
@@ -131,6 +133,13 @@ describe("parseLevel", () =>
 						x: 1,
 						y: 1,
 						c: "w",
+					},
+				],
+				buttons: [
+					{
+						x: 2,
+						y: 0,
+						c: "b",
 					},
 				],
 			},
