@@ -36,6 +36,16 @@ export function swipeDirection(dx: number, dy: number): Direction | null
 let touch0: [number, number] | null = null;
 let rt: ReturnType<typeof setTimeout>;
 
+function refit(): void
+{
+	if (mode !== "play") renderEditor();
+	// On a phone the board's own resize observer refits it, so building it here too would do it twice.
+	else if (!S || isCompact()) return;
+	// A roll in flight owns the board, so try again once it ends
+	else if (S.busy) rt = setTimeout(refit, 60);
+	else renderBoard();
+}
+
 export function initInput(): void
 {
 	$("undoBtn").addEventListener("click", undo);
@@ -115,14 +125,6 @@ export function initInput(): void
 	addEventListener("resize", () =>
 	{
 		clearTimeout(rt);
-		rt = setTimeout(() =>
-		{
-			if (mode === "play")
-			{
-				// On a phone the board's own resize observer refits it, so building it here too would do it twice.
-				if (S && !S.busy && !isCompact()) renderBoard();
-			}
-			else renderEditor();
-		}, 120);
+		rt = setTimeout(refit, 120);
 	});
 }

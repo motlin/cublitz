@@ -515,6 +515,39 @@ test("title screen: progress text, tutorial replay, reset arm, timeout and confi
 	);
 });
 
+test("a window resize during a roll refits the board once the roll ends", async ({browser}) =>
+{
+	await withSession(
+		browser,
+		{
+			storage: atLevel(1),
+		},
+		async (session) =>
+		{
+			await openLevel(session);
+			const before = await session.page.evaluate("C()");
+			// One step, since settling waits out the retries a held roll keeps scheduling
+			await session.step("resize mid-roll, then the roll ends", async (page) =>
+			{
+				await page.evaluate("S.busy = true");
+				await page.setViewportSize(
+					{
+						width: 420,
+						height: 400,
+					},
+				);
+				await page.evaluate(() => window.dispatchEvent(new Event("resize")));
+				await page.waitForTimeout(300);
+				await page.evaluate("S.busy = false");
+				await page.waitForTimeout(300);
+			});
+			const after = await session.page.evaluate("C()");
+			await session.page.evaluate("renderBoard()");
+			expect([after === before, after]).toStrictEqual([false, await session.page.evaluate("C()")]);
+		},
+	);
+});
+
 test("navigation: brand, mode buttons, levels list, hash and window resize", async ({browser}) =>
 {
 	await withSession(
