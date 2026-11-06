@@ -146,7 +146,8 @@ export function draftFromLevel(L: LevelSource, name: string, id: string | null):
 // Editor grid -> level data the game understands
 export function edToLevel(ED: EditorDraft): GridCheck
 {
-	const POOL = "1234567890@#$%&*+=~^!?<>[](){}|;:,_/";
+	// One character for each of the 38 pieces a grid can hold, ending in letters the map itself never uses
+	const POOL = "1234567890@#$%&*+=~^!?<>[](){}|;:,_/adefhijk";
 	const k: Legend = {},
 		rev: Record<string, string> = {};
 	let starts = 0,

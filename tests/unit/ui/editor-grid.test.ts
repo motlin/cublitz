@@ -165,6 +165,54 @@ test("the grid becomes map characters, with legend entries handed out in reading
 	);
 });
 
+test("every distinct piece the editor can make gets its own legend character", () =>
+{
+	const pieces: EditorDraft["grid"][number] = [
+		...(["t", "n", "s", "e", "w"] as const).map((f) => (
+		{
+			t: "wgate" as const,
+			f,
+		})),
+		{
+			t: "cube",
+		},
+		...(["switch", "button", "box", "door"] as const).flatMap((t) =>
+			(["r", "o", "y", "g", "c", "b", "p", "w"] as const).map((c) => (
+			{
+				t,
+				c,
+			})),
+		),
+	];
+	const {level} = edToLevel(
+		draft([
+			[
+				{
+					t: "start",
+				},
+				{
+					t: "goal",
+				},
+			],
+			pieces.slice(0, 19),
+			pieces.slice(19),
+		]),
+	);
+	expect(
+		{
+			kinds: pieces.length,
+			legend: Object.keys(level!.k!).length,
+			widths: level!.map.map((row) => Array.from(row).length),
+		},
+	).toStrictEqual(
+		{
+			kinds: 38,
+			legend: 38,
+			widths: [2, 19, 19],
+		},
+	);
+});
+
 test("trailing empty cells are trimmed, and a blank name becomes Untitled", () =>
 {
 	expect(
