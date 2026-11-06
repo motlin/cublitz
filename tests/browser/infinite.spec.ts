@@ -283,3 +283,70 @@ function seedFromPinnedRandom(): number
 	t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
 	return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 }
+
+test("a new run started while the old one is still mixing its next canvas gets its own next canvas", async ({
+	browser,
+}) =>
+{
+	await withSession(
+		browser,
+		{
+			storage:
+			{
+				...atLevel(0),
+				// Seed 7 is one whose second canvas takes more than one batch to mix, so it is still mixing a tick later
+				"cublitz-infinite-run-v1": JSON.stringify(
+					{
+						seed: 7,
+						n: 0,
+						score: 0,
+						effs: [],
+						cleared: 0,
+						streak: 0,
+						bestStreak: 0,
+					},
+				),
+			},
+		},
+		async (session) =>
+		{
+			// The old run's first canvas lands, and before its second has finished mixing a new run starts
+			await session.step("start, then a new run as the first canvas shows", async (page) =>
+				page.evaluate(() =>
+				{
+					const name = document.getElementById("lvName")!;
+					const observer = new MutationObserver(() =>
+					{
+						if (name.textContent !== "Canvas 1") return;
+						observer.disconnect();
+						document.getElementById("infNew")!.click();
+						document.getElementById("infNew")!.click();
+					});
+					observer.observe(
+						name,
+						{
+							childList: true,
+							characterData: true,
+							subtree: true,
+						},
+					);
+					document.getElementById("titleInf")!.click();
+				}),
+			);
+			const seed = await session.page.evaluate("run.seed");
+			await session.dismissTips();
+			await session.click("#infSkip");
+			expect(
+				{
+					seed: seed === 7,
+					map: await session.page.evaluate("S.L.map"),
+				},
+			).toStrictEqual(
+				{
+					seed: false,
+					map: engine.generateInfinite(seed as number, 1).map,
+				},
+			);
+		},
+	);
+});

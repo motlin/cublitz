@@ -58,13 +58,15 @@ function genInf(n: number, cb: (level: GeneratedLevel) => void, background?: boo
 }
 function pregenerate(): void
 {
-	const n = run!.n + 1;
+	const forRun = run!,
+		n = forRun.n + 1;
 	if (infNext?.inf === n) return;
 	genInf(
 		n,
 		(lv) =>
 		{
-			if (run!.n + 1 === n) infNext = lv;
+			// A new run started meanwhile has its own seed, so this canvas is not its next one
+			if (run === forRun && run.n + 1 === n) infNext = lv;
 		},
 		true,
 	);
