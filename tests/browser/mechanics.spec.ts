@@ -206,12 +206,21 @@ test("keys pressed during a roll are queued, last one wins", async ({browser}) =
 		async (session) =>
 		{
 			await openLevel(session);
+			// One task sends all three, so the second and third land while the first roll is still animating.
 			const after = await session.step("three fast rolls", async (page) =>
-			{
-				await page.keyboard.press("ArrowRight");
-				await page.keyboard.press("ArrowLeft");
-				await page.keyboard.press("ArrowRight");
-			});
+				page.evaluate(() =>
+				{
+					for (const key of ["ArrowRight", "ArrowLeft", "ArrowRight"])
+						document.dispatchEvent(
+							new KeyboardEvent(
+								"keydown",
+								{
+									key,
+								},
+							),
+						);
+				}),
+			);
 			expect(after.hud.moves).toBe("2");
 		},
 	);

@@ -28,6 +28,8 @@ async function afterLoad(page: Page, mobile: boolean): Promise<void>
 
 type Action = (page: Page) => Promise<unknown>;
 
+const ANIMATION_RATE = 100;
+
 /** Touch emulation without the phone layout, which tests/browser/touch.spec.ts covers on its own. */
 const withoutPhoneLayout = (): void =>
 {
@@ -115,6 +117,15 @@ export class Session
 		if (options.mobile) await context.addInitScript(withoutPhoneLayout);
 		if (options.setup) await context.addInitScript(options.setup);
 		const page = await context.newPage();
+		// Every step waits for animations to finish before it captures, so a fast animation clock changes only how long a script takes.
+		const cdp = await context.newCDPSession(page);
+		await cdp.send("Animation.enable");
+		await cdp.send(
+			"Animation.setPlaybackRate",
+			{
+				playbackRate: ANIMATION_RATE,
+			},
+		);
 		await page.goto(
 			BASE_URL + DIST_PATH,
 			{
