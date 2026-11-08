@@ -1,16 +1,20 @@
 import {afterEach, expect, test, vi} from "vite-plus/test";
 import {LEVELS} from "../../../src/core/levels.ts";
-import {beaten, eraseProgress, loadProgress, nextLevel, unlocked} from "../../../src/ui/session.ts";
+import {beaten, eraseProgress, loadProgress, nextLevel, recordWin, unlocked} from "../../../src/ui/session.ts";
 import {STORAGE_KEYS} from "../../../src/ui/storage.ts";
 
+/** What the game wrote to localStorage since the save was loaded. */
+let written: Record<string, string> = {};
 const withSave = (progress: Record<string, number>) =>
 {
+	written = {};
 	vi.stubGlobal(
 		"localStorage",
 		{
 			getItem: (key: string) => (key === STORAGE_KEYS.progress ? JSON.stringify(progress) : null),
-			setItem: () =>
+			setItem: (key: string, value: string) =>
 			{
+				written[key] = value;
 			},
 			removeItem: () =>
 			{
@@ -185,5 +189,52 @@ test("Next level goes to the following level when every level is beaten, and sta
 		1,
 		CROWN + 1,
 		LEVELS.length - 1,
+	]);
+});
+
+const openCount = () => LEVELS.filter((_, index) => unlocked(index)).length;
+
+test("a fresh save that wins each level at par in turn saves every score and opens exactly one more level each time", () =>
+{
+	withSave({});
+	const steps = LEVELS.map((level) =>
+	{
+		const before = openCount();
+		recordWin(level, level.par!);
+		return [level.name, before, openCount()];
+	});
+	expect(
+		{
+			steps,
+			saved: JSON.parse(written[STORAGE_KEYS.progress]!),
+		},
+	).toStrictEqual(
+		{
+			steps: LEVELS.map((level, index) => [level.name, index + 1, Math.min(LEVELS.length, index + 2)]),
+			saved: Object.fromEntries(LEVELS.map((level) => [level.name, level.par])),
+		},
+	);
+});
+
+test("a win keeps the best score: a slower replay leaves it and a faster one replaces it", () =>
+{
+	withSave(
+		{
+			"First Roll": 8,
+		},
+	);
+	recordWin(LEVELS[0]!, 9);
+	const afterSlower = [beaten(LEVELS[0]!), written[STORAGE_KEYS.progress] ?? null];
+	recordWin(LEVELS[0]!, 6);
+	expect([afterSlower, [beaten(LEVELS[0]!), written[STORAGE_KEYS.progress] ?? null]]).toStrictEqual([
+		[8, null],
+		[
+			6,
+			JSON.stringify(
+				{
+					"First Roll": 6,
+				},
+			),
+		],
 	]);
 });

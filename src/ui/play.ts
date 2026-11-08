@@ -25,11 +25,12 @@ import {clearHint, clearHintState, forgetHintPosition, hintAfterMove} from "./hi
 import {renderHud, renderLevels, setStatus} from "./hud.ts";
 import {campaignLvl, enterCampaignLevel, infWin, renderInfCard} from "./infinite-mode.ts";
 import {mode} from "./modes.ts";
-import {beaten, progress, reduced, S, saveProgress, setSession, unlocked} from "./session.ts";
+import {reduced, recordWin, S, setSession, unlocked} from "./session.ts";
 import {SFX} from "./sfx.ts";
 import {clearSolution, planSolution, solState, solutionAfterMove, stopAutoReveal} from "./solution.ts";
 import {cap} from "./text.ts";
 import {clearTipQueue, queueTips, tipOpen} from "./tips.ts";
+import {winCard} from "./win-card.ts";
 
 const ROT: Record<Direction, string> =
 {
@@ -420,37 +421,23 @@ function win(): void
 	}
 	const merge = mergeIndex(S.lvl);
 	const custom = S.lvl < 0 && merge < 0;
-	if (!custom)
-	{
-		const prev = beaten(L);
-		if (!prev || m < prev)
-		{
-			progress[L.name!] = m;
-			saveProgress();
-		}
-	}
+	if (!custom) recordWin(L, m);
 	renderLevels();
-	const par = L.par;
-	$("winTitle").textContent = S.usedSolution ? "Solved" : par && m <= par ? "Perfect roll" : "Dry and done";
-	$("winScore").textContent = par ? `${m} moves · par ${par}` : `${m} moves`;
 	const last = S.lvl === LEVELS.length - 1 || merge === MERGE_LEVELS.length - 1;
-	$("winNote").textContent =
-		S.lvl === SHARED
-			? "You cleared a shared level. Keep rolling in the main game."
-			: custom
-				? "Your level works. Head back to the editor to tweak or save it."
-				: merge === MERGE_LEVELS.length - 1
-					? "That was the last merge level. Replay any of them to chase par."
-					: last
-						? "That was the last canvas. Replay any level to chase par, or build your own in the editor."
-						: S.usedSolution
-							? "You followed the solution this time. Replay it from memory when you are ready."
-							: m <= par!
-								? "You matched the shortest solution."
-								: `Par is ${par}. Replay to tighten it up.`;
-	$("winNext").hidden = last && !custom;
-	$("winNext").firstChild!.textContent =
-		S.lvl === SHARED ? "Play the game " : custom ? "Back to editor " : "Next level ";
+	const card = winCard(
+		{
+			kind: S.lvl === SHARED ? "shared" : custom ? "custom" : merge >= 0 ? "merge" : "campaign",
+			last,
+			moves: m,
+			par: L.par,
+			usedSolution: S.usedSolution,
+		},
+	);
+	$("winTitle").textContent = card.title;
+	$("winScore").textContent = card.score;
+	$("winNote").textContent = card.note;
+	$("winNext").hidden = card.nextHidden;
+	$("winNext").firstChild!.textContent = card.next;
 	$("win").hidden = false;
 	setStatus("<b>Cleared.</b>");
 	(last && !custom ? $("winRetry") : $("winNext")).focus(

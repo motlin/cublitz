@@ -37,6 +37,22 @@ export const eraseProgress = (): void =>
 	saveProgress();
 };
 export const beaten = (L: {name?: string}): number | undefined => progress[L.name!];
+/** Saves a win's move count when it is the level's first win or beats its best. */
+export function recordWin(
+	L:
+	{
+		name?: string;
+	},
+	moves: number,
+): void
+{
+	const prev = beaten(L);
+	if (!prev || moves < prev)
+	{
+		progress[L.name!] = moves;
+		saveProgress();
+	}
+}
 export const unlocked = (i: number): boolean => i === 0 || !!beaten(LEVELS[i - 1]!) || !!beaten(LEVELS[i]!);
 /** Where Next level goes from campaign level i: the first level in the campaign not beaten yet, which goes back to a
  * level an old save skipped by beating a later one, or else the following level, staying on the last. */

@@ -1,8 +1,10 @@
 import {describe, expect, it} from "vite-plus/test";
 import {initState} from "../../../src/core/level.ts";
 import {LEVELS} from "../../../src/core/levels.ts";
+import {tryMove} from "../../../src/core/rules.ts";
 import {encodeLevel} from "../../../src/core/share.ts";
 import {solve} from "../../../src/core/solver.ts";
+import type {Direction} from "../../../src/core/types.ts";
 import {readSolveGolden} from "../../support/golden.ts";
 
 const golden = readSolveGolden("solve-post-fix.json");
@@ -98,5 +100,24 @@ describe("LEVELS", () =>
 	it("has a shortest solution of exactly par on every level", () =>
 	{
 		expect(solved.map((entry) => entry.path?.length)).toStrictEqual(LEVELS.map((level) => level.par));
+	});
+
+	it("wins every level on the golden path's last roll, at exactly par, rolling by the game's rules", () =>
+	{
+		const played = golden.map(({index, name, path}) =>
+		{
+			const level = LEVELS[index]!;
+			let state = initState(level);
+			const rolls: string[] = [];
+			for (const direction of path! as Iterable<Direction>)
+			{
+				const result = tryMove(level, state, direction);
+				rolls.push(result.ok ? (result.won ? "won" : "rolled") : `refused ${result.why}`);
+				if (!result.ok) break;
+				state = result.st;
+			}
+			return [name, rolls.length, rolls.at(-1), rolls.filter((roll) => roll === "rolled").length];
+		});
+		expect(played).toStrictEqual(LEVELS.map((level) => [level.name, level.par, "won", level.par! - 1]));
 	});
 });

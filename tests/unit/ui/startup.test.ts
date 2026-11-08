@@ -65,6 +65,7 @@ test("importing every ui module touches nothing in the browser", async () =>
 		"title.ts",
 		"touch-geometry.ts",
 		"touch.ts",
+		"win-card.ts",
 	]);
 	expect(touched).toStrictEqual([]);
 });
