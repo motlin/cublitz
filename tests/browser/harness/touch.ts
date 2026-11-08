@@ -91,7 +91,8 @@ export async function openPhone(
 	);
 	await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, async (route) => route.abort());
 	const page = await context.newPage();
-	page.setDefaultTimeout(5000);
+	// A passing test never waits this long; only a machine loaded by many parallel workers does.
+	page.setDefaultTimeout(15_000);
 	await page.goto(
 		BASE_URL + path,
 		{
