@@ -4,7 +4,7 @@ import {MERGE_LEVELS} from "../core/merge-levels.ts";
 import {CNAME, dirWord, FNAME} from "../core/names.ts";
 import {solidColorOf} from "../core/prism.ts";
 import {judgedGoalFaces, openColors, tryMove} from "../core/rules.ts";
-import type {Direction, Level, LevelSource, Paint, State, SwitchCell} from "../core/types.ts";
+import type {Direction, Level, LevelSource, MoveFailure, Paint, State, SwitchCell} from "../core/types.ts";
 import
 {
 	aimShadows,
@@ -156,6 +156,34 @@ export function startLevel(
 	setStatus("");
 }
 
+/** The status for a roll refused for reason r. */
+export function blockedText(r: MoveFailure, d: Direction): string
+{
+	if (r.why === "wgate")
+		return r.f === "b"
+			? `<b>White gate.</b> It needs a bare face down, but rolling ${dirWord(d)} would put ${CNAME[r.has as Paint]} down.`
+			: `<b>${cap(FNAME[r.f])} white gate.</b> Your ${FNAME[r.f]} face has to be bare when you land, but it would be ${CNAME[r.has as Paint]}.`;
+	if (r.why === "gate")
+		return `<b>${cap(CNAME[r.c])} gate.</b> Rolling ${dirWord(d)} would put ${r.down ? CNAME[r.down] : "a bare"} face down.`;
+	if (r.why === "door")
+	{
+		const cn = CNAME[r.c];
+		return `<b>${cap(cn)} door is shut.</b> Flip a ${cn} switch or hold down a ${cn} button.`;
+	}
+	if (r.why === "box")
+	{
+		const cn = CNAME[r.c];
+		return r.c === "w"
+			? "<b>White box.</b> Only a completely bare cube can push it."
+			: `<b>${cap(cn)} box.</b> Only a cube painted solid ${cn} can push it.`;
+	}
+	if (r.why === "stuck") return "<b>The box won't budge.</b> Something is in the way on the other side.";
+	if (r.why === "misaligned")
+		return "<b>Not lined up.</b> A block only takes on a cube straight ahead while lying along that line.";
+	if (r.why === "heavy") return "<b>Too clumsy.</b> A block of cubes can't push a box.";
+	return "<b>Edge.</b> Nothing to roll onto that way.";
+}
+
 export function move(d: Direction): void
 {
 	if (S.won || tipOpen()) return;
@@ -170,56 +198,8 @@ export function move(d: Direction): void
 	const r = tryMove(L, S.st, d);
 	if (!r.ok)
 	{
-		if (r.why === "wgate")
-		{
-			pulse(r.nx, r.ny, "deny");
-			setStatus(
-				r.f === "b"
-					? `<b>White gate.</b> It needs a bare face down, but rolling ${dirWord(d)} would put ${CNAME[r.has as Paint]} down.`
-					: `<b>${cap(FNAME[r.f])} white gate.</b> Your ${FNAME[r.f]} face has to be bare when you land, but it would be ${CNAME[r.has as Paint]}.`,
-				true,
-			);
-		}
-		else if (r.why === "gate")
-		{
-			const cn = CNAME[r.c];
-			pulse(r.nx, r.ny, "deny");
-			setStatus(
-				`<b>${cap(cn)} gate.</b> Rolling ${dirWord(d)} would put ${r.down ? CNAME[r.down] : "a bare"} face down.`,
-				true,
-			);
-		}
-		else if (r.why === "door")
-		{
-			const cn = CNAME[r.c];
-			setStatus(`<b>${cap(cn)} door is shut.</b> Flip a ${cn} switch or hold down a ${cn} button.`, true);
-		}
-		else if (r.why === "box")
-		{
-			const cn = CNAME[r.c];
-			setStatus(
-				r.c === "w"
-					? "<b>White box.</b> Only a completely bare cube can push it."
-					: `<b>${cap(cn)} box.</b> Only a cube painted solid ${cn} can push it.`,
-				true,
-			);
-		}
-		else if (r.why === "stuck")
-		{
-			setStatus(`<b>The box won't budge.</b> Something is in the way on the other side.`, true);
-		}
-		else if (r.why === "misaligned")
-		{
-			setStatus(
-				"<b>Not lined up.</b> A block only takes on a cube straight ahead while lying along that line.",
-				true,
-			);
-		}
-		else if (r.why === "heavy")
-		{
-			setStatus("<b>Too clumsy.</b> A block of cubes can't push a box.", true);
-		}
-		else setStatus("<b>Edge.</b> Nothing to roll onto that way.", true);
+		if (r.why === "wgate" || r.why === "gate") pulse(r.nx, r.ny, "deny");
+		setStatus(blockedText(r, d), true);
 		SFX.play("blocked");
 		if (!reduced)
 		{

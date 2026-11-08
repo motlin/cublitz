@@ -191,6 +191,21 @@ export function milestoneReached(m: Milestone, r: MoveSuccess): boolean
 	return false;
 }
 
+/** Two milestones with the same key point at the same thing, even when planned from different positions. */
+const milestoneKey = (m: Milestone): string => [m.type, "c" in m ? m.c : undefined, m.x, m.y].join(":");
+
+/** The tier a newly planned hint for m opens at: while it points at the same thing as the hint still shown, that
+ * hint's tier, one further when asked for more; at anything new, the first tier. */
+export const hintTier = (
+	shown:
+	{
+		m: Milestone;
+		tier: number;
+	} | null,
+	m: Milestone,
+	more: boolean,
+): number => (shown && milestoneKey(shown.m) === milestoneKey(m) ? Math.min(3, shown.tier + (more ? 1 : 0)) : 1);
+
 // Which face, before rolling d, ends up as face k after the roll
 export const preFace = (d: Direction, k: Face): Face =>
 	roll<Face>(

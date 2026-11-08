@@ -12,138 +12,36 @@ const openLevel = async (session: Session): Promise<void> =>
 {
 	await session.click("#titlePlay");
 };
-const CNAME: Record<string, string> =
+// Each reason a roll is refused has its own status, covered in tests/unit/ui/blocked.test.ts. This one proves the wiring.
+test("blocked move: color gate, bare face", async ({browser}) =>
 {
-	r: "red",
-	o: "orange",
-	y: "yellow",
-	g: "green",
-	c: "cyan",
-	b: "blue",
-	p: "purple",
-	w: "white",
-};
-const WORD: Record<string, string> =
-{
-	N: "north",
-	S: "south",
-	E: "east",
-	W: "west",
-};
-const cap = (s: string) => s[0]!.toUpperCase() + s.slice(1);
-
-type Blocked =
-{
-	title: string;
-	index: number;
-	why: string;
-	accept?: (r: Record<string, unknown>) => boolean;
-	text: (r: Record<string, string>, dir: string) => string;
-};
-const BLOCKED: Blocked[] = [
-	{
-		title: "edge",
-		index: 0,
-		why: "edge",
-		text: () => "<b>Edge.</b> Nothing to roll onto that way.",
-	},
-	{
-		title: "color gate, bare face",
-		index: 2,
-		why: "gate",
-		accept: (r) => !r["down"],
-		text: (r, d) => `<b>${cap(CNAME[r["c"]!]!)} gate.</b> Rolling ${WORD[d]} would put a bare face down.`,
-	},
-	{
-		title: "color gate, wrong color",
-		index: 3,
-		why: "gate",
-		accept: (r) => !!r["down"] && r["down"] !== r["c"],
-		text: (r, d) =>
-			`<b>${cap(CNAME[r["c"]!]!)} gate.</b> Rolling ${WORD[d]} would put ${CNAME[r["down"]!]} face down.`,
-	},
-	{
-		title: "plain white gate",
-		index: 20,
-		why: "wgate",
-		accept: (r) => r["f"] === "b",
-		text: (r, d) =>
-			`<b>White gate.</b> It needs a bare face down, but rolling ${WORD[d]} would put ${CNAME[r["has"]!]} down.`,
-	},
-	{
-		title: "named white gate",
-		index: 21,
-		why: "wgate",
-		text: (r) =>
-			`<b>East white gate.</b> Your east face has to be bare when you land, but it would be ${CNAME[r["has"]!]}.`,
-	},
-	{
-		title: "shut door",
-		index: 8,
-		why: "door",
-		text: () => "<b>Red door is shut.</b> Flip a red switch or hold down a red button.",
-	},
-	{
-		title: "colored box",
-		index: 9,
-		why: "box",
-		text: () => "<b>Blue box.</b> Only a cube painted solid blue can push it.",
-	},
-	{
-		title: "white box",
-		index: 29,
-		why: "box",
-		accept: (r) => r["c"] === "w",
-		text: () => "<b>White box.</b> Only a completely bare cube can push it.",
-	},
-	{
-		title: "stuck box",
-		index: 9,
-		why: "stuck",
-		text: () => "<b>The box won't budge.</b> Something is in the way on the other side.",
-	},
-];
-
-for (const {title, index, why, accept, text} of BLOCKED)
-{
-	test(`blocked move: ${title}`, async ({browser}) =>
-	{
-		const found = findBlockedMove(engine, level(index), why, accept);
-		if (!found) throw new Error(`No ${why} block on level ${index}`);
-		await withSession(
-			browser,
-			{
-				storage: atLevel(index),
-			},
-			async (session) =>
-			{
-				await openLevel(session);
-				await session.roll(found.path);
-				const moves = session.last.hud.moves;
-				const blocked = await session.press(keyFor(found.dir), "blocked roll");
-				let state = engine.initState(level(index));
-				for (const d of found.path)
-					state = (
-						engine.tryMove(level(index), state, d) as
-						{
-							st: typeof state;
-						}
-					).st;
-				const detail = engine.tryMove(level(index), state, found.dir) as unknown as Record<string, string>;
-				expect(blocked.status).toStrictEqual(
-					{
-						text: text(detail, found.dir).replace(/<\/?b>/g, ""),
-						html: text(detail, found.dir),
-						warn: true,
-					},
-				);
-				expect(blocked.hud.moves).toBe(moves);
-				expect(blocked.audio.length).toBeGreaterThan(0);
-				await session.press(keyFor(found.dir), "blocked roll again");
-			},
-		);
-	});
-}
+	const index = 2;
+	const found = findBlockedMove(engine, level(index), "gate", (r) => !r["down"]);
+	if (!found) throw new Error(`No gate block on level ${index}`);
+	await withSession(
+		browser,
+		{
+			storage: atLevel(index),
+		},
+		async (session) =>
+		{
+			await openLevel(session);
+			await session.roll(found.path);
+			const moves = session.last.hud.moves;
+			const blocked = await session.press(keyFor(found.dir), "blocked roll");
+			expect(blocked.status).toStrictEqual(
+				{
+					text: "Blue gate. Rolling east would put a bare face down.",
+					html: "<b>Blue gate.</b> Rolling east would put a bare face down.",
+					warn: true,
+				},
+			);
+			expect(blocked.hud.moves).toBe(moves);
+			expect(blocked.audio.length).toBeGreaterThan(0);
+			await session.press(keyFor(found.dir), "blocked roll again");
+		},
+	);
+});
 
 test("landing on a picky target without its colors", async ({browser}) =>
 {
@@ -313,60 +211,53 @@ test("win below par, over par, replay and best score", async ({browser}) =>
 	);
 });
 
-const HINT_LEVELS: [number, string[]][] = [
-	[1, ["gate", "goal"]],
-	[4, ["gate", "goal"]],
-	[8, ["door", "goal", "solid", "switch"]],
-	[9, ["button", "door", "goal", "solid"]],
-	[21, ["goal", "wgate"]],
-	[28, ["button", "door", "gate", "goal", "wash"]],
-];
+// Which milestone each hint points at, and the tier it opens at, is covered level by level in
+// tests/unit/core/hint-walk.test.ts. This one walks a level to prove the panel shows them.
 const milestone = (text: string): string =>
 {
-	if (text.includes("paint remover")) return "wash";
-	if (text.includes("white gate")) return "wgate";
 	if (text.includes(" gate.")) return "gate";
-	if (text.includes("coat all six")) return "solid";
-	if (text.includes(" switch.")) return "switch";
-	if (text.includes(" box onto ")) return "button";
-	if (text.includes(" door.")) return "door";
 	if (text.includes("Head for the target")) return "goal";
 	return `unknown: ${text}`;
 };
 
-for (const [index, expected] of HINT_LEVELS)
+test("hints at every tier while solving level 2", async ({browser}) =>
 {
-	test(`hints at every tier while solving level ${index + 1}`, async ({browser}) =>
-	{
-		await withSession(
-			browser,
+	const index = 1;
+	await withSession(
+		browser,
+		{
+			storage: atLevel(index),
+		},
+		async (session) =>
+		{
+			await openLevel(session);
+			const seen: string[] = [];
+			let i = 0;
+			for (const d of pathOf(index))
 			{
-				storage: atLevel(index),
-			},
-			async (session) =>
-			{
-				await openLevel(session);
-				const seen = new Set<string>();
-				let i = 0;
-				for (const d of pathOf(index))
-				{
-					const tier1 = await session.press("h", `hint at roll ${i}`);
-					seen.add(milestone(tier1.hint.text));
-					expect(tier1.hint.hidden).toBe(false);
-					// A hint keeps its tier while the milestone stays the same, and starts over at a new one.
-					let tier = tier1.hint.step;
-					if (tier === "Hint 1 of 3") tier = (await session.click("#hintMore")).hint.step;
-					if (tier === "Hint 2 of 3") tier = (await session.click("#hintMore")).hint.step;
-					expect(tier).toBe("Hint 3 of 3");
-					await session.press(keyFor(d), `roll after hint ${i}`);
-					i++;
-				}
-				expect([...seen].toSorted()).toStrictEqual(expected);
-				expect(session.last.win.hidden).toBe(false);
-			},
-		);
-	});
-}
+				const tier1 = await session.press("h", `hint at roll ${i}`);
+				expect(tier1.hint.hidden).toBe(false);
+				seen.push(`${milestone(tier1.hint.text)} ${tier1.hint.step}`);
+				// A hint keeps its tier while the milestone stays the same, and starts over at a new one.
+				let tier = tier1.hint.step;
+				if (tier === "Hint 1 of 3") tier = (await session.click("#hintMore")).hint.step;
+				if (tier === "Hint 2 of 3") tier = (await session.click("#hintMore")).hint.step;
+				expect(tier).toBe("Hint 3 of 3");
+				await session.press(keyFor(d), `roll after hint ${i}`);
+				i++;
+			}
+			expect(seen).toStrictEqual([
+				"gate Hint 1 of 3",
+				"gate Hint 3 of 3",
+				"gate Hint 3 of 3",
+				"gate Hint 3 of 3",
+				"gate Hint 3 of 3",
+				"goal Hint 1 of 3",
+			]);
+			expect(session.last.win.hidden).toBe(false);
+		},
+	);
+});
 
 test("hint can be hidden and re-asked, and is cleared by the solution", async ({browser}) =>
 {
@@ -465,11 +356,13 @@ test("two quick rolls off the solution leave a solution that works from where th
 	);
 });
 
+// Where "up to goal" stops and how following or leaving the path changes it are covered in
+// tests/unit/ui/solution.test.ts. This one presses each button once on a short level.
 test("solution reveal: next, up to goal, reveal the rest, pause, follow, diverge, undo, win as Solved", async ({
 	browser,
 }) =>
 {
-	const index = 8;
+	const index = 1;
 	await withSession(
 		browser,
 		{
@@ -487,12 +380,24 @@ test("solution reveal: next, up to goal, reveal the rest, pause, follow, diverge
 				},
 			);
 			await session.click("#solBtn", "pressing again reveals one more");
-			await session.click("#solNext");
-			await session.click("#solGoal");
 			await session.click("#solAll");
 			await session.tickIntervals(1);
 			await session.click("#solAll", "pause the auto reveal");
-			await session.tickIntervals(1);
+			const paused = await session.tickIntervals(1);
+			expect(paused.solution).toStrictEqual(
+				{
+					hidden: false,
+					text: `Showing 3 of ${path.length} rolls. Follow the arrows in number order, or reveal more.`,
+				},
+			);
+			await session.click("#solNext");
+			const goal = await session.click("#solGoal");
+			expect(goal.solution).toStrictEqual(
+				{
+					hidden: false,
+					text: `Showing 5 of ${path.length} rolls. Follow the arrows in number order, or reveal more.`,
+				},
+			);
 			await session.click("#solAll", "resume the auto reveal");
 			const all = await session.tickIntervals(path.length);
 			expect(all.solution).toStrictEqual(
@@ -501,13 +406,19 @@ test("solution reveal: next, up to goal, reveal the rest, pause, follow, diverge
 					text: `Full solution shown: ${path.length} rolls from where you are. Follow the arrows in number order; each one disappears as you roll it.`,
 				},
 			);
-			await session.roll(path.slice(0, 3));
+			const followed = await session.roll(path.slice(0, 3));
+			expect(followed.solution).toStrictEqual(
+				{
+					hidden: false,
+					text: `Full solution shown: ${path.length - 3} rolls from where you are. Follow the arrows in number order; each one disappears as you roll it.`,
+				},
+			);
 			await session.press("z", "undo keeps the reveal");
 			await session.click("#solHide");
 			expect(session.last.solution.hidden).toBe(true);
 			await session.click("#solBtn");
-			const off = path[3] === "N" ? "S" : "N";
-			await session.press(keyFor(off), "roll away from the solution re-plans it");
+			const diverged = await session.press("ArrowUp", "roll away from the solution re-plans it");
+			expect([diverged.hud.moves, diverged.solution.hidden]).toStrictEqual(["3", false]);
 			await session.press("r");
 			await session.click("#solBtn");
 			const solved = await session.roll(path);
@@ -515,7 +426,7 @@ test("solution reveal: next, up to goal, reveal the rest, pause, follow, diverge
 				{
 					hidden: false,
 					title: "Solved",
-					score: "19 moves · par 19",
+					score: "6 moves · par 6",
 					note: "You followed the solution this time. Replay it from memory when you are ready.",
 					nextHidden: false,
 					retryHidden: false,

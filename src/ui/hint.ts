@@ -1,4 +1,4 @@
-import {hintTexts, type Milestone, milestoneReached, nextMilestone} from "../core/hints.ts";
+import {hintTexts, hintTier, type Milestone, milestoneReached, nextMilestone} from "../core/hints.ts";
 import {solve} from "../core/solver.ts";
 import type {MoveSuccess, State} from "../core/types.ts";
 import {$} from "./dom.ts";
@@ -17,8 +17,6 @@ export type HintState =
 	at: State | null;
 };
 export let hintState: HintState | null = null;
-
-const mKey = (m: Milestone | null): string => (m ? [m.type, "c" in m ? m.c : undefined, m.x, m.y].join(":") : "");
 
 function clearTrail(): void
 {
@@ -88,12 +86,11 @@ export function hint(more?: boolean): void
 			return;
 		}
 		const m = nextMilestone(S.L, S.st, sol)!;
-		const same = hintState && mKey(hintState.m) === mKey(m);
 		SFX.play("hint");
 		hintState =
 		{
 			m,
-			tier: same ? Math.min(3, hintState!.tier + (more ? 1 : 0)) : 1,
+			tier: hintTier(hintState, m, !!more),
 			at,
 		};
 		setStatus("");

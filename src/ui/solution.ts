@@ -1,7 +1,7 @@
 import {nextMilestone} from "../core/hints.ts";
 import {tryMove} from "../core/rules.ts";
 import {solve} from "../core/solver.ts";
-import type {Direction, MoveSuccess, State} from "../core/types.ts";
+import type {Direction, Level, MoveSuccess, State} from "../core/types.ts";
 import {$} from "./dom.ts";
 import {clearHint} from "./hint.ts";
 import {scheduleOverlays} from "./overlays.ts";
@@ -80,14 +80,18 @@ function revealMore(n: number): void
 	solState.revealed = Math.min(solState.path.length, solState.revealed + n);
 	renderSolution();
 }
+/** How many of path's rolls, planned from st, to show so the arrows reach the next milestone past the revealed ones. */
+export function revealedToNextGoal(L: Level, st: State, path: string, revealed: number): number
+{
+	for (let i = 0; i < revealed; i++) st = (tryMove(L, st, path[i] as Direction) as MoveSuccess).st;
+	const m = nextMilestone(L, st, path.slice(revealed));
+	return Math.min(path.length, revealed + (m ? m.i + 1 : path.length));
+}
 function revealToNextGoal(): void
 {
 	if (!solState?.path || solState.at !== S.st) return;
-	let st = S.st;
-	for (let i = 0; i < solState.revealed; i++)
-		st = (tryMove(S.L, st, solState.path[i] as Direction) as MoveSuccess).st;
-	const m = nextMilestone(S.L, st, solState.path.slice(solState.revealed));
-	revealMore(m ? m.i + 1 : solState.path.length);
+	solState.revealed = revealedToNextGoal(S.L, S.st, solState.path, solState.revealed);
+	renderSolution();
 }
 export function showSolution(): void
 {
@@ -100,29 +104,46 @@ export function showSolution(): void
 	}
 	planSolution(1);
 }
+/** What is left of sol after rolling d from `from`: one roll shorter, still showing at least one arrow while any are
+ * left, when d was its next roll from where it was planned, or null when it has to be planned again. A path planned
+ * from an older position, still waiting on its re-plan, has to be planned again. */
+export function followSolution(
+	sol: Pick<SolutionState, "path" | "revealed" | "at">,
+	d: Direction,
+	from: State | undefined,
+):
+{
+	path: string;
+	revealed: number;
+} | null
+{
+	if (!sol.path?.startsWith(d) || sol.at !== from) return null;
+	const path = sol.path.slice(1);
+	return {
+		path,
+		revealed: path ? Math.max(1, sol.revealed - 1) : 0,
+	};
+}
 // Called after each successful roll
 export function solutionAfterMove(d: Direction): void
 {
 	if (!solState) return;
-	// A path planned from an older position, still waiting on its re-plan, has to be planned again
-	if (solState.path?.startsWith(d) && solState.at === S.hist[S.hist.length - 1])
-	{
-		solState.path = solState.path.slice(1);
-		solState.revealed = Math.max(0, solState.revealed - 1);
-		solState.at = S.st;
-		if (!solState.path)
-		{
-			clearSolution();
-			return;
-		}
-		if (solState.revealed === 0) solState.revealed = 1;
-		renderSolution();
-	}
-	else
+	const next = followSolution(solState, d, S.hist[S.hist.length - 1]);
+	if (!next)
 	{
 		stopAutoReveal();
 		planSolution(solState.revealed);
+		return;
 	}
+	if (!next.path)
+	{
+		clearSolution();
+		return;
+	}
+	solState.path = next.path;
+	solState.revealed = next.revealed;
+	solState.at = S.st;
+	renderSolution();
 }
 
 export function initSolution(): void
