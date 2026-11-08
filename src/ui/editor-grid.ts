@@ -226,3 +226,17 @@ export function edCellHTML(c: EditorCell | null, need: Need): string
 			: "";
 	return `<div class="ec ${c.t}"${style}></div>`;
 }
+
+// A phone's pinch on the grid, zooming from the tile size that fits.
+const TOUCH_MAX_CELL = 56;
+/** A second finger this soon after the first means it was the start of a pinch, not a stroke. */
+export const TOUCH_PINCH_GRACE = 400;
+
+/** The grid's zoom after a pinch step, from the fit up to the largest tile. It keeps its fractions, or a slow pinch's
+ * small steps would each round back to the same tile size. */
+export const touchGridZoom = (zoom: number, ratio: number, fit: number): number =>
+	Math.max(1, Math.min(Math.max(TOUCH_MAX_CELL, fit) / fit, zoom * ratio));
+
+/** The tile size of the grid at a zoom. */
+export const touchGridCell = (fit: number, zoom: number): number =>
+	Math.min(Math.max(TOUCH_MAX_CELL, fit), Math.round(fit * zoom));

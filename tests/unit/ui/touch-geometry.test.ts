@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vite-plus/test";
-import {fitBoard, gridAxes, swipeAxis} from "../../../src/ui/touch-geometry.ts";
+import {clampCamera, fitBoard, gridAxes, stepCamera, swipeAxis} from "../../../src/ui/touch-geometry.ts";
 
 const degrees = Object.fromEntries(Object.entries(gridAxes()).map(([d, a]) => [d, Math.round(a)]));
 
@@ -93,5 +93,99 @@ describe("fitBoard", () =>
 	it("does not fit an area that has no size yet", () =>
 	{
 		expect(fitBoard(5, 5, 0, 0).cell).toBe(24);
+	});
+});
+
+describe("the board's camera", () =>
+{
+	const view =
+	{
+		left: 0,
+		top: 100,
+		width: 300,
+		height: 200,
+	};
+
+	it("keeps the spot between pinching fingers under them", () =>
+	{
+		const pinched = stepCamera(
+			{
+				zoom: 1,
+				x: 0,
+				y: 0,
+			},
+			{
+				ratio: 2,
+				dx: 0,
+				dy: 0,
+				x: 250,
+				y: 150,
+			},
+			view,
+		);
+		expect(pinched).toStrictEqual(
+			{
+				zoom: 2,
+				x: -100,
+				y: 50,
+			},
+		);
+	});
+
+	it("stops at the most zoomed, and holds the board where its edge stays in view", () =>
+	{
+		const camera = clampCamera(
+			stepCamera(
+				{
+					zoom: 4,
+					x: 0,
+					y: 0,
+				},
+				{
+					ratio: 2,
+					dx: -900,
+					dy: 900,
+					x: 150,
+					y: 200,
+				},
+				view,
+			),
+			{
+				width: 280,
+				height: 120,
+			},
+			view,
+		);
+		expect(camera).toStrictEqual(
+			{
+				zoom: 5,
+				x: -566,
+				y: 216,
+			},
+		);
+	});
+
+	it("centres the board at the fit, wherever the fingers left it", () =>
+	{
+		expect(
+			clampCamera(
+				{
+					zoom: 1,
+					x: 40,
+					y: -30,
+				},
+				{
+					width: 280,
+					height: 120,
+				},
+				view,
+			),
+		).toStrictEqual(
+			{
+				zoom: 1,
+				x: 0,
+				y: 0,
+			},
+		);
 	});
 });

@@ -6,7 +6,18 @@ import {encodeLevel, levelFromCode} from "../core/share.ts";
 import {solve} from "../core/solver.ts";
 import type {Face, Level, LevelSource, Paint, PieceColor} from "../core/types.ts";
 import {$, domValue, type ElementById, needSelect, targetElement, targetInput, targetSelect} from "./dom.ts";
-import {blankGrid, draftFromLevel, edCellHTML, edToLevel, LOOSE_CUBE_STYLE, newEditor} from "./editor-grid.ts";
+import
+{
+	blankGrid,
+	draftFromLevel,
+	edCellHTML,
+	edToLevel,
+	LOOSE_CUBE_STYLE,
+	newEditor,
+	TOUCH_PINCH_GRACE,
+	touchGridCell,
+	touchGridZoom,
+} from "./editor-grid.ts";
 import {setMode} from "./modes.ts";
 import {startLevel} from "./play.ts";
 import {unlocked} from "./session.ts";
@@ -274,9 +285,6 @@ function renderMine(): void
 
 // On a phone the grid starts from the size that fits, so the whole level shows, and two fingers zoom from there.
 const TOUCH_MIN_CELL = 10;
-const TOUCH_MAX_CELL = 56;
-/** A second finger this soon after the first means it was the start of a pinch, not a stroke. */
-const PINCH_GRACE = 400;
 let gridZoom = 1;
 let stroke:
 {
@@ -293,16 +301,14 @@ function touchFitCell(): number
 }
 function touchCellSize(): number
 {
-	return Math.min(Math.max(TOUCH_MAX_CELL, touchFitCell()), Math.round(touchFitCell() * gridZoom));
+	return touchGridCell(touchFitCell(), gridZoom);
 }
 function zoomGrid({ratio, dx, dy, x, y}: CameraMove): void
 {
 	const wrap = $("edGridWrap"),
 		g = $("edGrid");
 	const before = touchCellSize();
-	// The zoom keeps its fractions, or a slow pinch's small steps would each round back to the same tile size.
-	const fit = touchFitCell();
-	gridZoom = Math.max(1, Math.min(Math.max(TOUCH_MAX_CELL, fit) / fit, gridZoom * ratio));
+	gridZoom = touchGridZoom(gridZoom, ratio, touchFitCell());
 	const after = touchCellSize();
 	g.style.setProperty("--ec", after + "px");
 	// The spot between the fingers stays under them.
@@ -430,7 +436,11 @@ export function initEditor(): void
 			drag: touchPaint,
 			cameraStart: () =>
 			{
-				if (stroke && performance.now() - stroke.at < PINCH_GRACE && stroke.grid !== JSON.stringify(ED!.grid))
+				if (
+					stroke &&
+					performance.now() - stroke.at < TOUCH_PINCH_GRACE &&
+					stroke.grid !== JSON.stringify(ED!.grid)
+				)
 				{
 					ED!.grid = JSON.parse(stroke.grid) as EditorDraft["grid"];
 					changed();
@@ -441,7 +451,7 @@ export function initEditor(): void
 		},
 		{
 			eagerCamera: true,
-			together: PINCH_GRACE,
+			together: TOUCH_PINCH_GRACE,
 		},
 	);
 	addFingerSurface(fingers, $("edGrid"));

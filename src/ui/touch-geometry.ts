@@ -1,4 +1,5 @@
 import type {Direction} from "../core/types.ts";
+import type {CameraMove} from "./gestures.ts";
 
 // What the board's CSS transform does to the grid, for a touch screen to fit the board and read swipes by what is
 // drawn. These are the numbers in .board and .viewport in game.css.
@@ -117,4 +118,59 @@ export function fitBoard(cols: number, rows: number, areaWidth: number, areaHeig
 		if (fit.width <= areaWidth - MARGIN * 2 && fit.height <= areaHeight - MARGIN * 2) break;
 	}
 	return fit;
+}
+
+export type Camera =
+{
+	zoom: number;
+	x: number;
+	y: number;
+};
+type Area =
+{
+	width: number;
+	height: number;
+};
+
+const MAX_ZOOM = 5;
+const PAN_SLACK = 16;
+
+/** The camera after one step of two fingers over the board's area, keeping the spot between them under them. */
+export function stepCamera(
+	camera: Camera,
+	{ratio, dx, dy, x, y}: CameraMove,
+	view: Area &
+	{
+		left: number;
+		top: number;
+	},
+): Camera
+{
+	const zoom = Math.max(1, Math.min(MAX_ZOOM, camera.zoom * ratio));
+	const scale = zoom / camera.zoom;
+	const fromX = x - view.left - view.width / 2,
+		fromY = y - view.top - view.height / 2;
+	return {
+		zoom,
+		x: fromX - (fromX - camera.x) * scale + dx,
+		y: fromY - (fromY - camera.y) * scale + dy,
+	};
+}
+
+/** The camera held where some of the fitted board stays in its area, and centred at the fit. */
+export function clampCamera(camera: Camera, fit: Area, area: Area): Camera
+{
+	if (camera.zoom <= 1)
+		return {
+			zoom: camera.zoom,
+			x: 0,
+			y: 0,
+		};
+	const limitX = Math.max(0, (fit.width * camera.zoom - area.width) / 2 + PAN_SLACK);
+	const limitY = Math.max(0, (fit.height * camera.zoom - area.height) / 2 + PAN_SLACK);
+	return {
+		zoom: camera.zoom,
+		x: Math.max(-limitX, Math.min(limitX, camera.x)),
+		y: Math.max(-limitY, Math.min(limitY, camera.y)),
+	};
 }

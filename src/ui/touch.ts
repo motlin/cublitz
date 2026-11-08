@@ -7,13 +7,11 @@ import {mode} from "./modes.ts";
 import {scheduleOverlays} from "./overlays.ts";
 import {move} from "./play.ts";
 import {S} from "./session.ts";
-import {type BoardFit, fitBoard, swipeAxis} from "./touch-geometry.ts";
+import {type BoardFit, type Camera, clampCamera, fitBoard, stepCamera, swipeAxis} from "./touch-geometry.ts";
 
 // The phone layout and its gestures. All of it starts when the query first matches, so a desktop page holds none of
 // it: the markup and game.css stay as they are, and a finger on a big touch screen acts as it always did.
 const COMPACT = "(pointer: coarse) and (max-width: 932px), (pointer: coarse) and (max-height: 500px)";
-const MAX_ZOOM = 5;
-const PAN_SLACK = 16;
 const REFIT_RETRY = 60;
 
 let query: MediaQueryList | null = null;
@@ -21,7 +19,7 @@ export const isCompact = (): boolean => (query ??= matchMedia(COMPACT)).matches;
 export const takesTouch = (e: PointerEvent): boolean => e.pointerType === "touch" && isCompact();
 
 let fit: BoardFit | null = null;
-let camera =
+let camera: Camera =
 {
 	zoom: 1,
 	x: 0,
@@ -127,21 +125,18 @@ export function compactCell(L: Level): number
 	return fit.cell;
 }
 
-function clampPan(): void
-{
-	if (!fit) return;
-	const v = $("viewport");
-	const slack = camera.zoom > 1 ? PAN_SLACK : 0;
-	const limitX = Math.max(0, (fit.width * camera.zoom - v.clientWidth) / 2 + slack);
-	const limitY = Math.max(0, (fit.height * camera.zoom - v.clientHeight) / 2 + slack);
-	camera.x = camera.zoom > 1 ? Math.max(-limitX, Math.min(limitX, camera.x)) : 0;
-	camera.y = camera.zoom > 1 ? Math.max(-limitY, Math.min(limitY, camera.y)) : 0;
-}
-
 function drawCamera(): void
 {
 	if (!fit) return;
-	clampPan();
+	const v = $("viewport");
+	camera = clampCamera(
+		camera,
+		fit,
+		{
+			width: v.clientWidth,
+			height: v.clientHeight,
+		},
+	);
 	const {zoom, x, y} = camera;
 	$("board").style.transform =
 		`translate(${x - fit.centerX}px, ${y - fit.centerY}px) scale3d(${zoom}, ${zoom}, ${zoom}) rotateX(52deg) rotateZ(18deg)`;
@@ -167,17 +162,9 @@ export function afterBoardRender(): void
 	drawCamera();
 }
 
-function moveCamera({ratio, dx, dy, x, y}: CameraMove): void
+function moveCamera(step: CameraMove): void
 {
-	const rect = $("viewport").getBoundingClientRect();
-	const zoom = Math.max(1, Math.min(MAX_ZOOM, camera.zoom * ratio));
-	const scale = zoom / camera.zoom;
-	// The spot between the fingers stays under them.
-	const fromX = x - rect.left - rect.width / 2,
-		fromY = y - rect.top - rect.height / 2;
-	camera.x = fromX - (fromX - camera.x) * scale + dx;
-	camera.y = fromY - (fromY - camera.y) * scale + dy;
-	camera.zoom = zoom;
+	camera = stepCamera(camera, step, $("viewport").getBoundingClientRect());
 	drawCamera();
 }
 

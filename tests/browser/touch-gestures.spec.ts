@@ -12,7 +12,6 @@ import
 	openPhone,
 	type Point,
 	rectOf,
-	rolled,
 	SCREENS,
 	type Screen,
 	settle,
@@ -21,8 +20,6 @@ import
 	unreachable,
 	viewportCentre,
 } from "./harness/touch.ts";
-
-const REST = 250;
 
 const openLevel16 = async (browser: Parameters<typeof openPhone>[0], screen: Screen) =>
 {
@@ -254,335 +251,6 @@ for (const screen of SCREENS)
 			await context.close();
 		});
 
-		test("a pinch across the board's edge zooms and rolls nothing, whichever finger is on the board", async ({
-			browser,
-		}) =>
-		{
-			const {context, page, cdp} = await openLevel16(browser, screen);
-			const v = await rectOf(page, "#viewport");
-			const status = await rectOf(page, "#status");
-			const head = await rectOf(page, ".levelhead");
-			const cx = (v.x + v.right) / 2;
-			const statusY = (status.y + status.bottom) / 2;
-			const headY = (head.y + head.bottom) / 2;
-			const report: Record<string, unknown> = {};
-			const cases: Record<string, [[number, number], [number, number]][]> =
-			{
-				"board then status": [
-					[
-						[cx, v.bottom - 30],
-						[cx - 30, v.bottom - 110],
-					],
-					[
-						[cx + 20, statusY],
-						[cx + 50, statusY + 30],
-					],
-				],
-				"status then board": [
-					[
-						[cx + 20, statusY],
-						[cx + 50, statusY + 30],
-					],
-					[
-						[cx, v.bottom - 30],
-						[cx - 30, v.bottom - 110],
-					],
-				],
-				"board then header": [
-					[
-						[cx, v.y + 30],
-						[cx + 30, v.y + 110],
-					],
-					[
-						[cx + 60, headY],
-						[cx + 90, Math.max(2, headY - 40)],
-					],
-				],
-			};
-			for (const [name, paths] of Object.entries(cases))
-			{
-				await together(cdp, paths);
-				await settle(page);
-				report[name] =
-				{
-					moves: (await cubeAt(page)).moves,
-					zoomed: (await cameraOf(page)).zoom > 1,
-				};
-				await refit(page);
-			}
-			const clean =
-			{
-				moves: 0,
-				zoomed: true,
-			};
-			expect(report).toStrictEqual(
-				{
-					"board then status": clean,
-					"status then board": clean,
-					"board then header": clean,
-				},
-			);
-			await context.close();
-		});
-
-		test("a pinch with one finger held still or drifting zooms and rolls nothing", async ({browser}) =>
-		{
-			const {context, page, cdp} = await openLevel16(browser, screen);
-			const [cx, cy] = await viewportCentre(page);
-			const report: Record<string, unknown> = {};
-			for (const [name, thumb] of [
-				["still", cx - 40],
-				["drifting", cx - 48],
-			] as const)
-			{
-				await together(
-					cdp,
-					[
-						[
-							[cx - 40, cy],
-							[thumb, cy],
-						],
-						[
-							[cx + 10, cy],
-							[cx + 90, cy],
-						],
-					],
-					12,
-				);
-				await settle(page);
-				report[name] =
-				{
-					moves: (await cubeAt(page)).moves,
-					zoomed: (await cameraOf(page)).zoom > 1,
-				};
-				await refit(page);
-			}
-			expect(report).toStrictEqual(
-				{
-					still:
-					{
-						moves: 0,
-						zoomed: true,
-					},
-					drifting:
-					{
-						moves: 0,
-						zoomed: true,
-					},
-				},
-			);
-			await context.close();
-		});
-
-		test("a thumb resting since before the swipe still does not block it, even if it jitters", async ({browser}) =>
-		{
-			const {context, page, cdp} = await openPhone(browser, screen, atLevel(30), OPEN_FLOOR);
-			const [cx, cy] = await viewportCentre(page);
-			const thumb = (dx: number) => (
-			{
-				id: 2,
-				x: cx + 90 + dx,
-				y: cy + 40,
-			});
-			const up = (i: number) => (
-			{
-				id: 1,
-				x: cx,
-				y: cy + 20 - i * 12,
-			});
-			await fingerScript(cdp, [
-				[thumb(0)],
-				REST,
-				[thumb(0), up(0)],
-				[thumb(4), up(1)],
-				[thumb(7), up(2)],
-				[thumb(5), up(3)],
-				[thumb(8), up(4)],
-				[thumb(8)],
-				[],
-			]);
-			expect(await rolled(page)).toBe("N");
-			await context.close();
-		});
-
-		test("a rigid two-finger pan never changes the zoom, at the fit or at the most zoomed", async ({browser}) =>
-		{
-			const {context, page, cdp} = await openLevel16(browser, screen);
-			const [cx, cy] = await viewportCentre(page);
-			const pan = async (spacing: number, by: number, steps: number, flip = false) =>
-			{
-				const a: [[number, number], [number, number]] = [
-					[cx, cy],
-					[cx + by, cy],
-				];
-				const b: [[number, number], [number, number]] = [
-					[cx + spacing, cy],
-					[cx + spacing + by, cy],
-				];
-				await together(cdp, flip ? [b, a] : [a, b], steps);
-			};
-			const report: Record<string, unknown> = {};
-			await pan(120, -50, 8);
-			await pan(80, 50, 8, true);
-			await pan(80, 0, 1);
-			report["at fit"] =
-			{
-				zoom: (await cameraOf(page)).zoom,
-				fitButton: await page.locator("#fitBtn").isVisible(),
-			};
-			for (let i = 0; i < 3; i++)
-				await together(
-					cdp,
-					[
-						[
-							[cx - 20, cy],
-							[Math.max(2, cx - 150), cy],
-						],
-						[
-							[cx + 20, cy],
-							[Math.min(screen.width - 2, cx + 150), cy],
-						],
-					],
-					10,
-				);
-			report["reached the most"] = (await cameraOf(page)).zoom;
-			for (let i = 0; i < 6; i++) await pan(60, i % 2 ? 100 : -100, 3, i % 3 === 0);
-			report["after pans"] = (await cameraOf(page)).zoom;
-			expect(report).toStrictEqual(
-				{
-					"at fit":
-					{
-						zoom: 1,
-						fitButton: false,
-					},
-					"reached the most": 5,
-					"after pans": 5,
-				},
-			);
-			await context.close();
-		});
-
-		test("a two-finger pan whose spacing wobbles a little stays a pan", async ({browser}) =>
-		{
-			const {context, page, cdp} = await openLevel16(browser, screen);
-			const [cx, cy] = await viewportCentre(page);
-			const frames = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => [
-				{
-					id: 1,
-					x: cx - 40 - i * 5,
-					y: cy,
-				},
-				{
-					id: 2,
-					x: cx + 40 - i * 5 + (i % 2 ? 4 : 0),
-					y: cy,
-				},
-			]);
-			await fingerScript(cdp, [...frames.flatMap((frame) => [frame, 20]), []]);
-			expect(
-				{
-					zoom: (await cameraOf(page)).zoom,
-					moves: (await cubeAt(page)).moves,
-				},
-			).toStrictEqual(
-				{
-					zoom: 1,
-					moves: 0,
-				},
-			);
-			await context.close();
-		});
-
-		test("a fast two-finger pan at low zoom moves the board its whole way, in either finger order", async ({
-			browser,
-		}) =>
-		{
-			const {context, page, cdp} = await openLevel16(browser, screen);
-			const [cx, cy] = await viewportCentre(page);
-			const moved: Record<string, number> = {};
-			for (const flip of [false, true])
-			{
-				await refit(page);
-				await together(cdp, [
-					[
-						[cx - 30, cy],
-						[cx - 75, cy],
-					],
-					[
-						[cx + 30, cy],
-						[cx + 75, cy],
-					],
-				]);
-				const a: [[number, number], [number, number]] = [
-					[cx + 20, cy],
-					[cx - 40, cy],
-				];
-				const b: [[number, number], [number, number]] = [
-					[cx + 70, cy],
-					[cx + 10, cy],
-				];
-				const before = await cameraOf(page);
-				await together(cdp, flip ? [b, a] : [a, b], 6, 14);
-				const after = await cameraOf(page);
-				moved[flip ? "flipped" : "plain"] = Math.round(after.x - before.x);
-				expect(after.zoom).toBe(before.zoom);
-			}
-			expect(moved).toStrictEqual(
-				{
-					plain: -60,
-					flipped: -60,
-				},
-			);
-			await context.close();
-		});
-
-		test("the pan stops with the board still in view, and the next level starts from the fit", async ({browser}) =>
-		{
-			const {context, page, cdp} = await openLevel16(browser, screen);
-			const [cx, cy] = await viewportCentre(page);
-			await together(cdp, [
-				[
-					[cx - 30, cy],
-					[cx - 90, cy],
-				],
-				[
-					[cx + 30, cy],
-					[cx + 90, cy],
-				],
-			]);
-			for (let i = 0; i < 8; i++)
-				await together(cdp, [
-					[
-						[cx + 40, cy],
-						[cx - 40, cy],
-					],
-					[
-						[cx + 90, cy],
-						[cx + 10, cy],
-					],
-				]);
-			const board = await rectOf(page, "#board");
-			const view = await rectOf(page, "#viewport");
-			expect(board.right > view.x + (view.right - view.x) * 0.7).toBe(true);
-			await openFromMenu(page, "9");
-			expect(
-				{
-					camera: await cameraOf(page),
-					fit: await page.locator("#fitBtn").isVisible(),
-				},
-			).toMatchObject(
-				{
-					camera:
-					{
-						zoom: 1,
-					},
-					fit: false,
-				},
-			);
-			expect(await clippedTiles(page)).toBe(0);
-			await context.close();
-		});
-
 		test("each d-pad arrow points along the axis it rolls on", async ({browser}) =>
 		{
 			const {context, page} = await openPhone(browser, screen, atLevel(30), OPEN_FLOOR);
@@ -729,212 +397,437 @@ for (const screen of SCREENS)
 				await context.close();
 			});
 		}
+	});
+}
 
-		test("the editor takes a pinch with one finger off the grid, whichever landed first", async ({browser}) =>
+// How fingers are read is covered on every screen in tests/unit/ui/touch-gestures.test.ts. These run the same
+// gestures through the page once, so the events still reach the surfaces and the camera still draws.
+test.describe(`${SCREENS[0]!.name}, through the page`, () =>
+{
+	const screen = SCREENS[0]!;
+
+	test("a pinch across the board's edge zooms and rolls nothing, whichever finger is on the board", async ({
+		browser,
+	}) =>
+	{
+		const {context, page, cdp} = await openLevel16(browser, screen);
+		const v = await rectOf(page, "#viewport");
+		const status = await rectOf(page, "#status");
+		const head = await rectOf(page, ".levelhead");
+		const cx = (v.x + v.right) / 2;
+		const statusY = (status.y + status.bottom) / 2;
+		const headY = (head.y + head.bottom) / 2;
+		const report: Record<string, unknown> = {};
+		const cases: Record<string, [[number, number], [number, number]][]> =
 		{
-			const {context, page, cdp} = await openEditor(browser, screen);
-			const cellAt = async (x: number, y: number): Promise<[number, number]> =>
+			"board then status": [
+				[
+					[cx, v.bottom - 30],
+					[cx - 30, v.bottom - 110],
+				],
+				[
+					[cx + 20, statusY],
+					[cx + 50, statusY + 30],
+				],
+			],
+			"status then board": [
+				[
+					[cx + 20, statusY],
+					[cx + 50, statusY + 30],
+				],
+				[
+					[cx, v.bottom - 30],
+					[cx - 30, v.bottom - 110],
+				],
+			],
+			"board then header": [
+				[
+					[cx, v.y + 30],
+					[cx + 30, v.y + 110],
+				],
+				[
+					[cx + 60, headY],
+					[cx + 90, Math.max(2, headY - 40)],
+				],
+			],
+		};
+		for (const [name, paths] of Object.entries(cases))
+		{
+			await together(cdp, paths);
+			await settle(page);
+			report[name] =
 			{
-				const box = (await page.locator(`#edGrid [data-x="${x}"][data-y="${y}"]`).boundingBox())!;
-				return [box.x + box.width / 2, box.y + box.height / 2];
+				moves: (await cubeAt(page)).moves,
+				zoomed: (await cameraOf(page)).zoom > 1,
 			};
-			const start = await gridState(page);
-			const scroll0 = await page.evaluate(() => scrollY);
-			const [ax, ay] = await cellAt(3, 4);
-			const grid = await rectOf(page, "#edGrid");
-			const off: [number, number] = [ax, grid.bottom + 16];
-			await fingerScript(cdp, [
-				[
-					{
-						id: 1,
-						x: ax,
-						y: ay,
-					},
-				],
-				15,
-				[
-					{
-						id: 1,
-						x: ax,
-						y: ay,
-					},
-					{
-						id: 2,
-						x: off[0],
-						y: off[1],
-					},
-				],
-				...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => [
-					{
-						id: 1,
-						x: ax,
-						y: ay - i * 6,
-					},
-					{
-						id: 2,
-						x: off[0],
-						y: off[1] + i * 6,
-					},
-				]),
-				[],
-			]);
-			const first = await gridState(page);
-			expect(first.code).toBe(start.code);
-			expect(parseFloat(first.cell) > parseFloat(start.cell)).toBe(true);
-			await page.locator('[data-resize="1,0"]').evaluate((el: HTMLElement) =>
-			{
-				el.click();
-			});
-			await page.locator('[data-resize="-1,0"]').evaluate((el: HTMLElement) =>
-			{
-				el.click();
-			});
-			await sleep(60);
-			const reset = await gridState(page);
-			expect(reset.cell).toBe(start.cell);
-			await page.evaluate((y) =>
-			{
-				scrollTo(0, y);
-			}, scroll0);
-			await sleep(60);
-			const [bx, by] = await cellAt(3, 4);
-			const grid2 = await rectOf(page, "#edGrid");
-			const off2: [number, number] = [bx, grid2.bottom + 16];
-			const before = await gridState(page);
-			await fingerScript(cdp, [
-				[
-					{
-						id: 1,
-						x: off2[0],
-						y: off2[1],
-					},
-				],
-				15,
-				[
-					{
-						id: 1,
-						x: off2[0],
-						y: off2[1],
-					},
-					{
-						id: 2,
-						x: bx,
-						y: by,
-					},
-				],
-				...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => [
-					{
-						id: 1,
-						x: off2[0],
-						y: off2[1] + i * 6,
-					},
-					{
-						id: 2,
-						x: bx,
-						y: by - i * 6,
-					},
-				]),
-				[],
-			]);
-			expect((await gridState(page)).code).toBe(before.code);
-			expect(await page.evaluate(() => scrollY)).toBe(scroll0);
-			await context.close();
-		});
-
-		test("a second finger on the grid stops the paint as it lands, however late", async ({browser}) =>
+			await refit(page);
+		}
+		const clean =
 		{
-			const {context, page, cdp} = await openEditor(browser, screen);
-			const cellAt = async (x: number, y: number): Promise<[number, number]> =>
+			moves: 0,
+			zoomed: true,
+		};
+		expect(report).toStrictEqual(
 			{
-				const box = (await page.locator(`#edGrid [data-x="${x}"][data-y="${y}"]`).boundingBox())!;
-				return [box.x + box.width / 2, box.y + box.height / 2];
-			};
-			const [ax, ay] = await cellAt(1, 2);
-			const [bx, by] = await cellAt(5, 2);
-			const [tx, ty] = await cellAt(3, 2);
-			await fingerScript(cdp, [
-				[
-					{
-						id: 1,
-						x: ax,
-						y: ay,
-					},
-				],
-				600,
-				[
-					{
-						id: 1,
-						x: ax,
-						y: ay,
-					},
-					{
-						id: 2,
-						x: bx,
-						y: by,
-					},
-				],
-			]);
-			const held = await gridState(page);
-			await fingerScript(cdp, [
-				[
-					{
-						id: 1,
-						x: ax,
-						y: ay,
-					},
-					{
-						id: 2,
-						x: bx,
-						y: by,
-					},
-				],
-				[
-					{
-						id: 1,
-						x: tx,
-						y: ty,
-					},
-					{
-						id: 2,
-						x: bx,
-						y: by,
-					},
-				],
-				[],
-			]);
-			expect((await gridState(page)).code).toBe(held.code);
-			await context.close();
-		});
+				"board then status": clean,
+				"status then board": clean,
+				"board then header": clean,
+			},
+		);
+		await context.close();
+	});
 
-		test("a slow pinch on the editor's grid zooms as far as a quick one", async ({browser}) =>
+	test("a rigid two-finger pan never changes the zoom, at the fit or at the most zoomed", async ({browser}) =>
+	{
+		const {context, page, cdp} = await openLevel16(browser, screen);
+		const [cx, cy] = await viewportCentre(page);
+		const pan = async (spacing: number, by: number, steps: number, flip = false) =>
 		{
-			const {context, page, cdp} = await openEditor(browser, screen);
-			const grid = await rectOf(page, "#edGrid");
-			const cx = (grid.x + grid.right) / 2;
-			const cy = (grid.y + grid.bottom) / 2;
-			const before = parseFloat((await gridState(page)).cell);
+			const a: [[number, number], [number, number]] = [
+				[cx, cy],
+				[cx + by, cy],
+			];
+			const b: [[number, number], [number, number]] = [
+				[cx + spacing, cy],
+				[cx + spacing + by, cy],
+			];
+			await together(cdp, flip ? [b, a] : [a, b], steps);
+		};
+		const report: Record<string, unknown> = {};
+		await pan(120, -50, 8);
+		await pan(80, 50, 8, true);
+		await pan(80, 0, 1);
+		report["at fit"] =
+		{
+			zoom: (await cameraOf(page)).zoom,
+			fitButton: await page.locator("#fitBtn").isVisible(),
+		};
+		for (let i = 0; i < 3; i++)
 			await together(
 				cdp,
 				[
 					[
-						[cx - 30, cy],
-						[cx - 40, cy],
+						[cx - 20, cy],
+						[Math.max(2, cx - 150), cy],
 					],
 					[
-						[cx + 30, cy],
-						[cx + 40, cy],
+						[cx + 20, cy],
+						[Math.min(screen.width - 2, cx + 150), cy],
 					],
 				],
-				40,
-				20,
+				10,
 			);
-			const wanted = Math.min(56, (before * 80) / 60);
-			const after = parseFloat((await gridState(page)).cell);
-			expect(Math.abs(after - wanted) <= 2).toBe(true);
-			await context.close();
-		});
+		report["reached the most"] = (await cameraOf(page)).zoom;
+		for (let i = 0; i < 6; i++) await pan(60, i % 2 ? 100 : -100, 3, i % 3 === 0);
+		report["after pans"] = (await cameraOf(page)).zoom;
+		expect(report).toStrictEqual(
+			{
+				"at fit":
+				{
+					zoom: 1,
+					fitButton: false,
+				},
+				"reached the most": 5,
+				"after pans": 5,
+			},
+		);
+		await context.close();
 	});
-}
+
+	test("a fast two-finger pan at low zoom moves the board its whole way, in either finger order", async ({
+		browser,
+	}) =>
+	{
+		const {context, page, cdp} = await openLevel16(browser, screen);
+		const [cx, cy] = await viewportCentre(page);
+		const moved: Record<string, number> = {};
+		for (const flip of [false, true])
+		{
+			await refit(page);
+			await together(cdp, [
+				[
+					[cx - 30, cy],
+					[cx - 75, cy],
+				],
+				[
+					[cx + 30, cy],
+					[cx + 75, cy],
+				],
+			]);
+			const a: [[number, number], [number, number]] = [
+				[cx + 20, cy],
+				[cx - 40, cy],
+			];
+			const b: [[number, number], [number, number]] = [
+				[cx + 70, cy],
+				[cx + 10, cy],
+			];
+			const before = await cameraOf(page);
+			await together(cdp, flip ? [b, a] : [a, b], 6, 14);
+			const after = await cameraOf(page);
+			moved[flip ? "flipped" : "plain"] = Math.round(after.x - before.x);
+			expect(after.zoom).toBe(before.zoom);
+		}
+		expect(moved).toStrictEqual(
+			{
+				plain: -60,
+				flipped: -60,
+			},
+		);
+		await context.close();
+	});
+
+	test("the pan stops with the board still in view, and the next level starts from the fit", async ({browser}) =>
+	{
+		const {context, page, cdp} = await openLevel16(browser, screen);
+		const [cx, cy] = await viewportCentre(page);
+		await together(cdp, [
+			[
+				[cx - 30, cy],
+				[cx - 90, cy],
+			],
+			[
+				[cx + 30, cy],
+				[cx + 90, cy],
+			],
+		]);
+		for (let i = 0; i < 8; i++)
+			await together(cdp, [
+				[
+					[cx + 40, cy],
+					[cx - 40, cy],
+				],
+				[
+					[cx + 90, cy],
+					[cx + 10, cy],
+				],
+			]);
+		const board = await rectOf(page, "#board");
+		const view = await rectOf(page, "#viewport");
+		expect(board.right > view.x + (view.right - view.x) * 0.7).toBe(true);
+		await openFromMenu(page, "9");
+		expect(
+			{
+				camera: await cameraOf(page),
+				fit: await page.locator("#fitBtn").isVisible(),
+			},
+		).toMatchObject(
+			{
+				camera:
+				{
+					zoom: 1,
+				},
+				fit: false,
+			},
+		);
+		expect(await clippedTiles(page)).toBe(0);
+		await context.close();
+	});
+
+	test("the editor takes a pinch with one finger off the grid, whichever landed first", async ({browser}) =>
+	{
+		const {context, page, cdp} = await openEditor(browser, screen);
+		const cellAt = async (x: number, y: number): Promise<[number, number]> =>
+		{
+			const box = (await page.locator(`#edGrid [data-x="${x}"][data-y="${y}"]`).boundingBox())!;
+			return [box.x + box.width / 2, box.y + box.height / 2];
+		};
+		const start = await gridState(page);
+		const scroll0 = await page.evaluate(() => scrollY);
+		const [ax, ay] = await cellAt(3, 4);
+		const grid = await rectOf(page, "#edGrid");
+		const off: [number, number] = [ax, grid.bottom + 16];
+		await fingerScript(cdp, [
+			[
+				{
+					id: 1,
+					x: ax,
+					y: ay,
+				},
+			],
+			15,
+			[
+				{
+					id: 1,
+					x: ax,
+					y: ay,
+				},
+				{
+					id: 2,
+					x: off[0],
+					y: off[1],
+				},
+			],
+			...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => [
+				{
+					id: 1,
+					x: ax,
+					y: ay - i * 6,
+				},
+				{
+					id: 2,
+					x: off[0],
+					y: off[1] + i * 6,
+				},
+			]),
+			[],
+		]);
+		const first = await gridState(page);
+		expect(first.code).toBe(start.code);
+		expect(parseFloat(first.cell) > parseFloat(start.cell)).toBe(true);
+		await page.locator('[data-resize="1,0"]').evaluate((el: HTMLElement) =>
+		{
+			el.click();
+		});
+		await page.locator('[data-resize="-1,0"]').evaluate((el: HTMLElement) =>
+		{
+			el.click();
+		});
+		await sleep(60);
+		const reset = await gridState(page);
+		expect(reset.cell).toBe(start.cell);
+		await page.evaluate((y) =>
+		{
+			scrollTo(0, y);
+		}, scroll0);
+		await sleep(60);
+		const [bx, by] = await cellAt(3, 4);
+		const grid2 = await rectOf(page, "#edGrid");
+		const off2: [number, number] = [bx, grid2.bottom + 16];
+		const before = await gridState(page);
+		await fingerScript(cdp, [
+			[
+				{
+					id: 1,
+					x: off2[0],
+					y: off2[1],
+				},
+			],
+			15,
+			[
+				{
+					id: 1,
+					x: off2[0],
+					y: off2[1],
+				},
+				{
+					id: 2,
+					x: bx,
+					y: by,
+				},
+			],
+			...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => [
+				{
+					id: 1,
+					x: off2[0],
+					y: off2[1] + i * 6,
+				},
+				{
+					id: 2,
+					x: bx,
+					y: by - i * 6,
+				},
+			]),
+			[],
+		]);
+		expect((await gridState(page)).code).toBe(before.code);
+		expect(await page.evaluate(() => scrollY)).toBe(scroll0);
+		await context.close();
+	});
+
+	test("a second finger on the grid stops the paint as it lands, however late", async ({browser}) =>
+	{
+		const {context, page, cdp} = await openEditor(browser, screen);
+		const cellAt = async (x: number, y: number): Promise<[number, number]> =>
+		{
+			const box = (await page.locator(`#edGrid [data-x="${x}"][data-y="${y}"]`).boundingBox())!;
+			return [box.x + box.width / 2, box.y + box.height / 2];
+		};
+		const [ax, ay] = await cellAt(1, 2);
+		const [bx, by] = await cellAt(5, 2);
+		const [tx, ty] = await cellAt(3, 2);
+		await fingerScript(cdp, [
+			[
+				{
+					id: 1,
+					x: ax,
+					y: ay,
+				},
+			],
+			600,
+			[
+				{
+					id: 1,
+					x: ax,
+					y: ay,
+				},
+				{
+					id: 2,
+					x: bx,
+					y: by,
+				},
+			],
+		]);
+		const held = await gridState(page);
+		await fingerScript(cdp, [
+			[
+				{
+					id: 1,
+					x: ax,
+					y: ay,
+				},
+				{
+					id: 2,
+					x: bx,
+					y: by,
+				},
+			],
+			[
+				{
+					id: 1,
+					x: tx,
+					y: ty,
+				},
+				{
+					id: 2,
+					x: bx,
+					y: by,
+				},
+			],
+			[],
+		]);
+		expect((await gridState(page)).code).toBe(held.code);
+		await context.close();
+	});
+
+	test("a slow pinch on the editor's grid zooms as far as a quick one", async ({browser}) =>
+	{
+		const {context, page, cdp} = await openEditor(browser, screen);
+		const grid = await rectOf(page, "#edGrid");
+		const cx = (grid.x + grid.right) / 2;
+		const cy = (grid.y + grid.bottom) / 2;
+		const before = parseFloat((await gridState(page)).cell);
+		await together(
+			cdp,
+			[
+				[
+					[cx - 30, cy],
+					[cx - 40, cy],
+				],
+				[
+					[cx + 30, cy],
+					[cx + 40, cy],
+				],
+			],
+			40,
+			20,
+		);
+		const wanted = Math.min(56, (before * 80) / 60);
+		const after = parseFloat((await gridState(page)).cell);
+		expect(Math.abs(after - wanted) <= 2).toBe(true);
+		await context.close();
+	});
+});
 
 test("at 320 wide the third hint step leaves the board tiles a readable size", async ({browser}) =>
 {
