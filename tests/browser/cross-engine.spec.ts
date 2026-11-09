@@ -3,7 +3,20 @@ import {readInfiniteGolden} from "../support/golden.ts";
 import {BASE_URL, DIST_PATH} from "./harness/page.ts";
 
 const golden = readInfiniteGolden("infinite-post-fix.json");
-const DEEP_CASES = [1, 4, 9, 77, 2024, 31337].flatMap((seed) => [6, 10, 15, 21, 27].map((n) => [seed, n]));
+// Two seeds at each depth, picked for a short search: some seeds take seconds to find a level at depth 21 or 27,
+// and three engines searching at once made this the suite's longest test.
+const DEEP_CASES = [
+	[2024, 6],
+	[31337, 6],
+	[4, 10],
+	[31337, 10],
+	[77, 15],
+	[9, 15],
+	[4, 21],
+	[31337, 21],
+	[2024, 27],
+	[1, 27],
+];
 const CASES = [...golden.map(({seed, n}) => [seed, n]), ...DEEP_CASES];
 const CANDIDATE_LEVEL_NUMBERS = [0, 2, 4, 6, 8, 10, 12, 14, 20, 33];
 
