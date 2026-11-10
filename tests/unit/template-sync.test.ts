@@ -202,7 +202,7 @@ it("keeps the Cloudflare Pages deploy on the current action pins", () =>
 			deploys: deploy.includes("node_modules/.bin/wrangler pages deploy --branch main"),
 			noCacheForCredentialsJob: deploy.includes("cache: false"),
 			runsBrowserHarness: deploy.includes("just test-browser"),
-			stalePins: /mise-action@(?!9b200bcecbfd6303e69a4a261b2e09e3757440a7)|cache: true/.test(deploy),
+			stalePins: /mise-action@(?!f5be966e4a917d54244728e6a5fdcd1d93a35e6c)|cache: true/.test(deploy),
 		},
 	).toStrictEqual(
 		{
